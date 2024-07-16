@@ -1,0 +1,7 @@
+{
+	"name": "@vyke/torao",
+	"version": "0.4.3",
+	"exports": {
+		".": "./src/index.ts"
+	}
+}

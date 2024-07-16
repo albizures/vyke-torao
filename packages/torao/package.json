@@ -1,0 +1,69 @@
+{
+	"name": "@vyke/torao",
+	"type": "module",
+	"version": "0.0.1",
+	"description": "Small and type-friendly library for game development",
+	"author": "Jose Albizures <jose@albizures.com> (https://albizures.com/)",
+	"license": "MIT",
+	"keywords": [
+		"helpers",
+		"typescript",
+		"torao",
+		"game",
+		"gameengine",
+		"engine"
+	],
+	"exports": {
+		".": {
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.cjs"
+		},
+		"./texture": {
+			"import": "./dist/texture.mjs",
+			"require": "./dist/texture.cjs"
+		}
+	},
+	"main": "./dist/index.cjs",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "run-s build:*",
+		"build:dist": "unbuild",
+		"build:docs": "tsdocs",
+		"stub": "unbuild --stub",
+		"test": "run-s test:unit test:types test:lint test:jsr",
+		"test:use": "knip",
+		"test:lint": "eslint .",
+		"test:unit": "vitest run",
+		"test:unit:dev": "vitest",
+		"test:jsr": "jsr publish --dry-run",
+		"test:types": "tsc --noEmit",
+		"release:bump": "standard-version -t v",
+		"release:jsr-sync": "jsr-sync --section=exports",
+		"release:publish": "pnpm publish --access public",
+		"release:push-tags": "git push --follow-tags origin main",
+		"release": "run-s test build release:jsr-sync release:bump release:publish release:push-tags"
+	},
+	"dependencies": {
+		"@vyke/results": "npm:@jsr/vyke__results@^0.4.3",
+		"@vyke/sola": "npm:@jsr/vyke__sola@^0.0.7",
+		"type-fest": "^4.21.0"
+	},
+	"devDependencies": {
+		"@vyke/jsr-sync": "^0.0.3",
+		"@vyke/tsdocs": "^0.0.8",
+		"jsr": "^0.13.1",
+		"npm-run-all": "^4.1.5",
+		"standard-version": "^9.5.0",
+		"typescript": "^5.5.3",
+		"unbuild": "^2.0.0",
+		"vitest": "^2.0.3"
+	},
+	"standard-version": {
+		"skip": {
+			"changelog": true
+		}
+	}
+}

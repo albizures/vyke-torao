@@ -1,0 +1,9 @@
+import { rootSola } from './sola'
+import type { Entity } from './entities'
+
+const _sola = rootSola.withTag('renderer')
+
+export type Renderer = {
+	render: (entities: Set<Entity>) => void
+	setup: (canvas: HTMLCanvasElement) => void
+}

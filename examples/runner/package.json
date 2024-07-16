@@ -1,0 +1,17 @@
+{
+	"name": "runner",
+	"version": "1.0.0",
+	"description": "",
+	"author": "",
+	"license": "MIT",
+	"keywords": [],
+	"main": "main.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+		"vite": "^5.3.4"
+	}
+}
