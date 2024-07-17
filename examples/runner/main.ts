@@ -33,8 +33,8 @@ const home = createScene('home', (context) => {
 	const _player = defineEntity({
 		label: 'player',
 		components: [
-			[position, position.create({ x: 0, y: 0 })],
-			[texture, texture.create(coinTexture)],
+			position.entryFrom({ x: 0, y: 0 }),
+			texture.entryFrom(coinTexture),
 		],
 	})
 
