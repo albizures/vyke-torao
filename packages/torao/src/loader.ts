@@ -24,3 +24,15 @@ export function loadImage(url: string): Loader<HTMLImageElement> {
 		image.src = url
 	})
 }
+
+export function loadCanvasContext(canvas: HTMLCanvasElement): Loader<CanvasRenderingContext2D> {
+	return () => {
+		const context = canvas.getContext('2d')
+		if (context) {
+			return Ok(context)
+		}
+		else {
+			return Err(new Error('Failed to get 2d context'))
+		}
+	}
+}

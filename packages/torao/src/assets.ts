@@ -2,6 +2,8 @@ import type { Simplify } from 'type-fest'
 import { isOk } from '@vyke/results/result'
 import { rootSola } from './sola'
 import type { Loader } from './loader'
+import { type Placeholder, PlaceholderType, definePlaceholder } from './placeholders'
+import type { Rectangle } from './shapes/Rectangle'
 
 const sola = rootSola.withTag('assets')
 
@@ -28,6 +30,7 @@ type BaseAsset = {
 	url: string
 	load: () => Promise<BaseAsset>
 	status: AssetStatus
+	fallback: (args: Rectangle) => Placeholder
 }
 
 export type ImageAsset = Simplify<BaseAsset & {
@@ -80,6 +83,7 @@ export type Asset<TValue, TType extends AssetType> = {
 	load: () => Promise<Asset<TValue, TType>>
 	status: AssetStatus
 	use: () => TValue
+	fallback: (args: Rectangle) => Placeholder
 }
 
 export type AssetArgs<TValue, TType extends AssetType> = {
@@ -95,6 +99,7 @@ export function createAsset<TValue, TType extends AssetType>(args: AssetArgs<TVa
 	const asset: Asset<TValue, TType> = {
 		...base,
 		label,
+		fallback: definePlaceholder(PlaceholderType.Rectangle),
 		async load() {
 			sola.info(`Loading asset: ${label}`)
 

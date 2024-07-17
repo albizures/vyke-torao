@@ -1,5 +1,5 @@
 import { rootSola } from './sola'
-import { AssetType } from './assets'
+import { AssetStatus, AssetType } from './assets'
 import { positionComp } from './components/position'
 import { textureComp } from './components/texture'
 import type { Entity } from './entities'
@@ -12,6 +12,7 @@ export function createRenderer2d(): Renderer {
 
 	return {
 		render(entities: Set<Entity>) {
+			context.clearRect(0, 0, context.canvas.width, context.canvas.height)
 			for (const entity of entities) {
 				const pos = entity.getComponent(positionComp)
 				const tex = entity.getComponent(textureComp)
@@ -19,6 +20,15 @@ export function createRenderer2d(): Renderer {
 				if (pos && tex) {
 					const { asset, atlas } = tex
 					if (asset.type === AssetType.Image || asset.type === AssetType.Canvas) {
+						if (asset.status === AssetStatus.Error) {
+							context.drawImage(asset.fallback(atlas.region).canvas,
+								pos.x, pos.y,
+								atlas.region.width, atlas.region.height,
+								atlas.region.x, atlas.region.y,
+								atlas.region.width, atlas.region.height,
+							)
+							continue
+						}
 						context.drawImage(asset.use(),
 							pos.x, pos.y,
 							atlas.region.width, atlas.region.height,
