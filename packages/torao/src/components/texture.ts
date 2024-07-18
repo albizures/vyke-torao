@@ -1,7 +1,7 @@
 import type { Simplify } from 'type-fest'
-import { type ComponentInstance, createComponent } from '../component'
 import { disposableBox } from '../disposable'
 import type { AnyTexture } from '../texture'
+import { type ComponentInstance, createComponent } from '../ecs'
 
 type TextureCompo = Simplify<ComponentInstance & AnyTexture>
 

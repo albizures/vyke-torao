@@ -2,7 +2,7 @@ import { rootSola } from './sola'
 import { AssetStatus, AssetType } from './assets'
 import { positionComp } from './components/position'
 import { textureComp } from './components/texture'
-import type { Entity } from './entities'
+import type { Entity } from './ecs/entity'
 import type { Renderer } from './renderer'
 
 const _sola = rootSola.withTag('renderer2d')

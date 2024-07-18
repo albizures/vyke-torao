@@ -1,4 +1,4 @@
-import { type Entity, type EntityArgs, createEntity } from './entities'
+import { type Entity, type EntityArgs, createEntity } from './ecs/entity'
 import { createAsset } from './assets'
 import type { AnyAsset, Asset, AssetArgs, AssetType } from './assets'
 import { type Resource, type ResourceArgs, type System, createResource } from './ecs'

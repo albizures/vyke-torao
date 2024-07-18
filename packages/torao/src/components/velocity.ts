@@ -1,4 +1,4 @@
-import { type ComponentInstance, createComponent } from '../component'
+import { type ComponentInstance, createComponent } from '../ecs'
 import { disposableBox } from '../disposable'
 
 type VelocityComp = ComponentInstance & {

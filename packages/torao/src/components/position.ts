@@ -1,5 +1,5 @@
 import type { Simplify } from 'type-fest'
-import { type ComponentInstance, createComponent } from '../component'
+import { type ComponentInstance, createComponent } from '../ecs'
 import { disposableBox } from '../disposable'
 import type { Vec2d } from '../vec'
 

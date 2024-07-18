@@ -1,8 +1,5 @@
+import type { Disposable } from '../disposable'
 import type { AnyComponent, ComponentInstance, InferComponentInstance } from './component'
-import type { Disposable } from './disposable'
-
-// import { rootSola } from './sola'
-// const sola = rootSola.withTag('entities')
 
 export type Entity = Disposable & {
 	label: string

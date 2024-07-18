@@ -1,5 +1,5 @@
-import type { AnyComponent, Component } from '../component'
-import type { Entity } from '../entities'
+import type { AnyComponent, Component } from './component'
+import type { Entity } from './entity'
 
 const IS_NOT = Symbol('isNot')
 

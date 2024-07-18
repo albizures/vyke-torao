@@ -1,4 +1,4 @@
-import type { Disposable } from './disposable'
+import type { Disposable } from '../disposable'
 
 export type AnyComponent = Component<ComponentInstance, any>
 

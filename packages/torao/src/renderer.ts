@@ -1,5 +1,5 @@
 import { rootSola } from './sola'
-import type { Entity } from './entities'
+import type { Entity } from './ecs/entity'
 
 const _sola = rootSola.withTag('renderer')
 
