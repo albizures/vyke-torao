@@ -3,7 +3,6 @@ import type { Vec2d } from '../../packages/torao/src/vec'
 import type { Disposable } from '../../packages/torao/src'
 import {
 	AssetType,
-	createComponent,
 	createGame,
 	createRenderer2d,
 	createScene,
@@ -12,7 +11,7 @@ import {
 	positionComp,
 	textureComp,
 } from '../../packages/torao/src'
-import { createQuery, createSystem } from '../../packages/torao/src/ecs'
+import { createComponent, createQuery, createSystem } from '../../packages/torao/src/ecs'
 
 const velocityComp = createComponent({
 	label: 'velocity',

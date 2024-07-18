@@ -1,6 +1,6 @@
 type StartArgs = {
 	update: () => void
-	render: () => void
+	render: (fps: number) => void
 }
 
 export type Loop = {
@@ -38,6 +38,7 @@ export function createLoop(tickRate: number): Loop {
 				}
 
 				const deltaTime = now - lastTime
+				const fps = Math.round(1 / (1000 / deltaTime))
 				lastTime = now
 				accumulator += deltaTime
 
@@ -48,7 +49,7 @@ export function createLoop(tickRate: number): Loop {
 					accumulator -= slice
 				}
 
-				render()
+				render(fps)
 
 				requestAnimationFrame(loop)
 			}
