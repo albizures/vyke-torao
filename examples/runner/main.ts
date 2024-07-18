@@ -27,7 +27,7 @@ const withVelocityAndPosition = createQuery({
 	position: positionComp,
 })
 
-const system: System = {
+const velocityAndPositionSystem: System = {
 	queries: [withVelocityAndPosition],
 	update() {
 		for (const entity of withVelocityAndPosition.get()) {
@@ -68,7 +68,7 @@ const home = createScene('home', (context) => {
 		],
 	})
 
-	defineSystem(system)
+	defineSystem(velocityAndPositionSystem)
 })
 
 createGame({

@@ -3,11 +3,16 @@ import type { Entity } from '../entities'
 
 const IS_NOT = Symbol('isNot')
 
+/**
+ * A query that requires a component not to be present on an entity.
+ */
 type QueryNot<TComponent extends AnyComponent> = {
 	[IS_NOT]: true
 	component: TComponent
 }
-
+/**
+ * Creates a query that requires a component not to be present on an entity.
+ */
 export function Not<TComponent extends AnyComponent>(component: TComponent): QueryNot<TComponent> {
 	return {
 		[IS_NOT]: true,
@@ -32,11 +37,17 @@ type QueryResult<TResultValues> = {
 	values: TResultValues
 }
 
+/**
+ * A query that can be used to filter entities based on their components.
+ */
 export type Query<TResultValues> = {
 	compute: (entries: Array<Entity>) => Array<QueryResult<TResultValues>>
 	get: () => Array<QueryResult<TResultValues>>
 }
 
+/**
+ * Creates a query that can be used to filter entities based on their components.
+ */
 export function createQuery<TParams extends QueryParams>(params: TParams): Query<InferQueryResultValues<TParams>> {
 	const values = Object.entries(params)
 	const components = new Set<AnyComponent>()
