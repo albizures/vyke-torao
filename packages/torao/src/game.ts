@@ -31,6 +31,14 @@ export function createGame<
 	renderer.setup(canvas)
 
 	function loop() {
+		if (currentScene.update) {
+			currentScene.update()
+		}
+
+		for (const system of currentScene.systems) {
+			system.update()
+		}
+
 		renderer.render(currentScene.entities)
 
 		requestAnimationFrame(loop)

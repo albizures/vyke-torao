@@ -14,20 +14,34 @@ export type Component<TInstance extends ComponentInstance, TArgs> = {
 type ComponentArgs<TInstance extends ComponentInstance, TArgs> = {
 	label?: string
 	create: (args: TArgs) => TInstance
-	is: (instance: unknown) => instance is TInstance
 }
 
 export function createComponent<
 	TInstance extends ComponentInstance,
 	TArgs,
 >(args: ComponentArgs<TInstance, TArgs>): Component<TInstance, TArgs> {
-	const { label, create, is } = args
+	const { label, create } = args
+	const IS_INSTANCE = Symbol('isInstance')
 
 	const component = {
-		label, create, is,
+		label,
+		is(instance: unknown): instance is TInstance {
+			return (instance as any ?? {})[IS_INSTANCE] === true
+		},
+		create(args: TArgs): TInstance {
+			return {
+				[IS_INSTANCE]: true,
+				...create(args),
+			}
+		},
 		entryFrom(args: TArgs): [Component<TInstance, TArgs>, TInstance] {
-			const instance = create(args)
-			return [component, instance]
+			return [
+				component,
+				{
+					[IS_INSTANCE]: true,
+					...create(args),
+				},
+			]
 		},
 	}
 

@@ -3,25 +3,15 @@ import { type ComponentInstance, createComponent } from '../component'
 import { disposableBox } from '../disposable'
 import type { Vec2d } from '../vec'
 
-const isPosition = Symbol('isPosition')
-
-type PositionComp = Simplify<ComponentInstance & Vec2d & {
-	[isPosition]: true
-}>
+type PositionComp = Simplify<ComponentInstance & Vec2d>
 
 type PositionArgs = Vec2d
 
 export const positionComp = createComponent({
 	label: 'position',
 	create: (args: PositionArgs) => {
-		const instance: PositionComp = {
-			...args,
-			[isPosition]: true,
-		}
+		const instance: PositionComp = args
 		disposableBox.register(instance)
 		return instance
-	},
-	is: (instance): instance is PositionComp => {
-		return !!(instance as PositionComp)[isPosition]
 	},
 })

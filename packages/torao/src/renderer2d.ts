@@ -22,17 +22,17 @@ export function createRenderer2d(): Renderer {
 					if (asset.type === AssetType.Image || asset.type === AssetType.Canvas) {
 						if (asset.status === AssetStatus.Error) {
 							context.drawImage(asset.fallback(atlas.region).canvas,
-								pos.x, pos.y,
-								atlas.region.width, atlas.region.height,
 								atlas.region.x, atlas.region.y,
+								atlas.region.width, atlas.region.height,
+								pos.x, pos.y,
 								atlas.region.width, atlas.region.height,
 							)
 							continue
 						}
 						context.drawImage(asset.use(),
-							pos.x, pos.y,
-							atlas.region.width, atlas.region.height,
 							atlas.region.x, atlas.region.y,
+							atlas.region.width, atlas.region.height,
+							pos.x, pos.y,
 							atlas.region.width, atlas.region.height,
 						)
 					}
