@@ -12,8 +12,7 @@ import {
 	positionComp,
 	textureComp,
 } from '../../packages/torao/src'
-import type { System } from '../../packages/torao/src/ecs'
-import { createQuery } from '../../packages/torao/src/ecs'
+import { createQuery, createSystem } from '../../packages/torao/src/ecs'
 
 const velocityComp = createComponent({
 	label: 'velocity',
@@ -27,7 +26,7 @@ const withVelocityAndPosition = createQuery({
 	position: positionComp,
 })
 
-const velocityAndPositionSystem: System = {
+const velocityAndPositionSystem = createSystem({
 	queries: [withVelocityAndPosition],
 	update() {
 		for (const entity of withVelocityAndPosition.get()) {
@@ -36,7 +35,7 @@ const velocityAndPositionSystem: System = {
 			position.y += velocity.y
 		}
 	},
-}
+})
 
 const home = createScene('home', (context) => {
 	const { defineEntity, defineAsset, defineSystem } = context

@@ -9,3 +9,19 @@ export type System = {
 	resources: Array<Resource<unknown>>
 	update: () => void
 }
+
+type SystemArgs = {
+	queries?: Array<Query<unknown>>
+	resources?: Array<Resource<unknown>>
+	update: () => void
+}
+
+export function createSystem(args: SystemArgs): System {
+	const { queries = [], resources = [], update } = args
+
+	return {
+		queries,
+		resources,
+		update,
+	}
+}
