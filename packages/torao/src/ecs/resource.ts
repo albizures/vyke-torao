@@ -10,7 +10,7 @@ export type Resource<TValue> = {
 	set: (value: TValue) => void
 }
 
-type ResourceArgs<TValue> = {
+export type ResourceArgs<TValue> = {
 	label: string
 	value: TValue
 }

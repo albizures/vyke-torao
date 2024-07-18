@@ -1,6 +1,8 @@
 import { rootSola } from './sola'
 import type { Renderer } from './renderer'
 import type { BuildableScene, Scene } from './scene'
+import { canvasRect } from './resources/canvas-rect'
+import { vec2 } from './vec'
 
 const _sola = rootSola.withTag('game')
 
@@ -54,6 +56,16 @@ export function createGame<
 
 			currentScene = await scene.build()
 			readyScenes.set(scene.label, currentScene)
+
+			const rect = canvas.getBoundingClientRect()
+			const size = vec2(rect.width, rect.height)
+
+			canvasRect.set({
+				size,
+				position: vec2(rect.left, rect.top),
+				halfSize: vec2.divideScalar(size, 2),
+			})
+
 			loop()
 		},
 	}

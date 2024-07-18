@@ -1,13 +1,20 @@
 import { type Entity, type EntityArgs, createEntity } from './entities'
 import { createAsset } from './assets'
 import type { AnyAsset, Asset, AssetArgs, AssetType } from './assets'
-import type { System } from './ecs/system'
+import { type Resource, type ResourceArgs, type System, createResource } from './ecs'
+import { sceneContext } from './resources/scene-context'
 
+/**
+ * A buildable scene is a scene that can be built asynchronously.
+ */
 export type BuildableScene = {
 	label: string
 	build: () => Promise<Scene>
 }
 
+/**
+ * A scene is a collection of entities and systems.
+ */
 export type Scene = {
 	label: string
 	entities: Set<Entity>
@@ -16,16 +23,25 @@ export type Scene = {
 }
 
 type UpdateFn = () => void
-type SceneBuilderContext = {
+export type SceneContext = {
 	entities: Set<Entity>
 	defineAsset: <TValue, TType extends AssetType>(args: AssetArgs<TValue, TType>) => Asset<TValue, TType>
 	defineEntity: (args: EntityArgs) => Entity
 	defineSystem: (args: System) => System
+	defineResource: <TValue>(args: ResourceArgs<TValue>) => Resource<TValue>
 }
-type SceneBuilder = (context: SceneBuilderContext) => UpdateFn | void
+type SceneBuilder = (context: SceneContext) => UpdateFn | void
 
+/**
+ * Creates a scene to be used in the game.
+ */
 export function createScene(label: string, builder: SceneBuilder): BuildableScene {
+	let scene: Scene
 	async function build() {
+		if (scene) {
+			return scene
+		}
+
 		const { entities, assets, context, systems } = createSceneContext()
 		const update = builder(context) ?? undefined
 
@@ -40,12 +56,16 @@ export function createScene(label: string, builder: SceneBuilder): BuildableScen
 			}
 		}
 
-		return {
+		sceneContext.set(context)
+
+		scene = {
 			label,
 			update,
 			entities,
 			systems,
 		}
+
+		return scene
 	}
 
 	return {
@@ -58,8 +78,9 @@ function createSceneContext() {
 	const assets = new Set<AnyAsset>()
 	const entities = new Set<Entity>()
 	const systems = new Set<System>()
+	const resources = new Set<Resource<unknown>>()
 
-	const context: SceneBuilderContext = {
+	const context: SceneContext = {
 		entities,
 		defineAsset<TValue, TType extends AssetType>(args: AssetArgs<TValue, TType>): Asset<TValue, TType> {
 			const asset = createAsset(args)
@@ -78,6 +99,12 @@ function createSceneContext() {
 		defineSystem(system: System): System {
 			systems.add(system)
 			return system
+		},
+		defineResource<TValue>(args: ResourceArgs<TValue>): Resource<TValue> {
+			const resource = createResource(args)
+
+			resources.add(resource as Resource<unknown>)
+			return resource
 		},
 	}
 	return {
