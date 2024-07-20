@@ -41,14 +41,21 @@ type QueryResult<TResultValues> = {
  * A query that can be used to filter entities based on their components.
  */
 export type Query<TResultValues> = {
+	label: string
 	compute: (entries: Array<Entity>) => Array<QueryResult<TResultValues>>
 	get: () => Array<QueryResult<TResultValues>>
+}
+
+type QueryArgs<TParams extends QueryParams> = {
+	label: string
+	params: TParams
 }
 
 /**
  * Creates a query that can be used to filter entities based on their components.
  */
-export function createQuery<TParams extends QueryParams>(params: TParams): Query<InferQueryResultValues<TParams>> {
+export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): Query<InferQueryResultValues<TParams>> {
+	const { params, label } = args
 	const values = Object.entries(params)
 	const components = new Set<AnyComponent>()
 	const notComponents = new Set<AnyComponent>()
@@ -116,6 +123,7 @@ export function createQuery<TParams extends QueryParams>(params: TParams): Query
 	}
 
 	return {
+		label,
 		compute,
 		get() {
 			return results

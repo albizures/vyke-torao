@@ -21,11 +21,14 @@ const velocityComp = createComponent({
 })
 
 const withVelocityAndPosition = createQuery({
-	velocity: velocityComp,
-	position: positionComp,
-})
+	label: 'with-velocity-and-position',
+	params: {
+		velocity: velocityComp,
+		position: positionComp,
+	} })
 
 const velocityAndPositionSystem = createSystem({
+	label: 'velocity-and-position',
 	queries: [withVelocityAndPosition],
 	update() {
 		for (const entity of withVelocityAndPosition.get()) {
