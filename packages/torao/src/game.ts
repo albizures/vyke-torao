@@ -3,6 +3,7 @@ import type { Renderer } from './renderer'
 import type { BuildableScene, Scene } from './scene'
 import { canvasRect } from './resources/canvas-rect'
 import { vec2 } from './vec'
+import { createLoop } from './loop'
 
 const _sola = rootSola.withTag('game')
 
@@ -19,20 +20,28 @@ type GameArgs<TScenes extends Record<string, BuildableScene>, TStartScene extend
 	renderer: Renderer
 	scenes: TScenes
 	startScene: TStartScene
+	tickRate?: number
 }
 
 export function createGame<
 	TScenes extends Record<string, BuildableScene>,
 	TStartScene extends keyof TScenes,
 >(args: GameArgs<TScenes, TStartScene>): Game {
-	const { canvas, scenes: sceneEntries, renderer, startScene } = args
+	const {
+		canvas,
+		scenes: sceneEntries,
+		renderer,
+		startScene,
+		tickRate = 40,
+	} = args
+	const loop = createLoop(tickRate)
 	const scenes = new Map(Object.entries(sceneEntries))
 	const readyScenes = new Map<string, Scene>()
 
 	let currentScene: Scene
 	renderer.setup(canvas)
 
-	function loop() {
+	function update() {
 		if (currentScene.update) {
 			currentScene.update()
 		}
@@ -40,10 +49,10 @@ export function createGame<
 		for (const system of currentScene.systems) {
 			system.update()
 		}
+	}
 
+	function render() {
 		renderer.render(currentScene.entities)
-
-		requestAnimationFrame(loop)
 	}
 
 	return {
@@ -66,7 +75,10 @@ export function createGame<
 				halfSize: vec2.divideScalar(size, 2),
 			})
 
-			loop()
+			loop.start({
+				update,
+				render,
+			})
 		},
 	}
 }
