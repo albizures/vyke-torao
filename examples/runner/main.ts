@@ -1,23 +1,18 @@
 import { AtlasType, createAtlas, createTexture } from '../../packages/torao/src/texture'
 import type { Vec2d } from '../../packages/torao/src/vec'
-import type { Disposable } from '../../packages/torao/src'
 import {
 	AssetType,
 	createGame,
 	createRenderer2d,
 	createScene,
-	disposableBox,
 	loadImage,
 	positionComp,
 	textureComp,
 } from '../../packages/torao/src'
 import { createComponent, createQuery, createSystem } from '../../packages/torao/src/ecs'
 
-const velocityComp = createComponent({
+const velocityComp = createComponent<Vec2d>({
 	label: 'velocity',
-	create(args: Vec2d & Disposable) {
-		return disposableBox.register(args)
-	},
 })
 
 const withVelocityAndPosition = createQuery({
@@ -25,7 +20,8 @@ const withVelocityAndPosition = createQuery({
 	params: {
 		velocity: velocityComp,
 		position: positionComp,
-	} })
+	},
+})
 
 const velocityAndPositionSystem = createSystem({
 	label: 'velocity-and-position',

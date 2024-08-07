@@ -1,8 +1,7 @@
-import type { Disposable } from '../disposable'
 import type { AnyComponent, ComponentInstance, InferComponentInstance } from './component'
 import { COMPONENTS } from './component'
 
-export type Entity = Disposable & {
+export type Entity = {
 	label: string
 	[COMPONENTS]: Map<AnyComponent, ComponentInstance>
 	getComponent: <TComponent extends AnyComponent>(component: TComponent) => InferComponentInstance<TComponent> | undefined

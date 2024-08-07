@@ -1,4 +1,3 @@
-import type { Disposable } from '../disposable'
 import type { Entity } from './entity'
 import type { AnyQuery } from './query'
 
@@ -6,7 +5,7 @@ export const COMPONENTS = Symbol('components')
 
 export type AnyComponent = Component<ComponentInstance, any>
 
-export type ComponentInstance = Disposable
+export type ComponentInstance = Record<string, any>
 
 export type Component<TInstance extends ComponentInstance, TArgs> = {
 	label?: string
@@ -21,14 +20,17 @@ export type Component<TInstance extends ComponentInstance, TArgs> = {
 
 type ComponentArgs<TInstance extends ComponentInstance, TArgs> = {
 	label?: string
-	create: (args: TArgs) => TInstance
+	create?: (args: TArgs) => TInstance
 }
 
 export function createComponent<
-	TInstance extends ComponentInstance,
-	TArgs,
+	TInstance extends ComponentInstance = Record<string, unknown>,
+	TArgs = TInstance,
 >(args: ComponentArgs<TInstance, TArgs>): Component<TInstance, TArgs> {
-	const { label, create } = args
+	const defaultCreate = (args: TArgs) => ({
+		...args,
+	}) as unknown as TInstance
+	const { label, create = defaultCreate } = args
 	const IS_INSTANCE = Symbol('isInstance')
 	const queries = new Set<AnyQuery>()
 

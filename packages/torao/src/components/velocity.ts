@@ -1,24 +1,6 @@
-import { type ComponentInstance, createComponent } from '../ecs'
-import { disposableBox } from '../disposable'
+import { createComponent } from '../ecs'
+import type { Vec2d } from '../vec'
 
-type VelocityComp = ComponentInstance & {
-	x: number
-	y: number
-}
-
-type VelocityArgs = {
-	x: number
-	y: number
-}
-
-export const velocityComp = createComponent({
+export const velocityComp = createComponent<Vec2d>({
 	label: 'velocity',
-	create: (args: VelocityArgs): VelocityComp => {
-		const instance: VelocityComp = {
-			...args,
-		}
-
-		disposableBox.register(instance)
-		return instance
-	},
 })
