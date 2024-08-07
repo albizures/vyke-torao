@@ -29,6 +29,10 @@
 		"./vec": {
 			"import": "./dist/vec.mjs",
 			"require": "./dist/vec.cjs"
+		},
+		"./resources": {
+			"import": "./dist/resources/index.mjs",
+			"require": "./dist/resources/index.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

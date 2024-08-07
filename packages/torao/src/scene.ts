@@ -2,7 +2,6 @@ import { type Entity, type EntityArgs, createEntity } from './ecs/entity'
 import { createAsset } from './assets'
 import type { AnyAsset, Asset, AssetArgs, AssetType } from './assets'
 import { type Resource, type ResourceArgs, type System, createResource } from './ecs'
-import { sceneContext } from './resources/scene-context'
 
 /**
  * A buildable scene is a scene that can be built asynchronously.
@@ -55,8 +54,6 @@ export function createScene(label: string, builder: SceneBuilder): BuildableScen
 				query.compute(entitiesArray)
 			}
 		}
-
-		sceneContext.set(context)
 
 		scene = {
 			label,

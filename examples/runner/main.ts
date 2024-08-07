@@ -9,6 +9,7 @@ import {
 	positionComp,
 	textureComp,
 } from '@vyke/torao'
+import { canvasRect } from '@vyke/torao/resources'
 import { createComponent, createQuery, createSystem } from '@vyke/torao/ecs'
 
 const velocityComp = createComponent<Vec2d>({
@@ -23,6 +24,13 @@ const withVelocityAndPosition = createQuery({
 	},
 })
 
+const withPosition = createQuery({
+	label: 'with-position',
+	params: {
+		position: positionComp,
+	},
+})
+
 const velocityAndPositionSystem = createSystem({
 	label: 'velocity-and-position',
 	queries: [withVelocityAndPosition],
@@ -31,6 +39,32 @@ const velocityAndPositionSystem = createSystem({
 			const { position, velocity } = entity.values
 			position.x += velocity.x
 			position.y += velocity.y
+		}
+	},
+})
+
+const loopSystem = createSystem({
+	label: 'loop',
+	queries: [withPosition],
+	update() {
+		const rect = canvasRect.value
+		for (const entity of withPosition.get()) {
+			const { position } = entity.values
+			if (position.x > rect.size.x) {
+				position.x = 0
+			}
+
+			if (position.x < 0) {
+				position.x = rect.size.x
+			}
+
+			if (position.y > rect.size.y) {
+				position.y = 0
+			}
+
+			if (position.y < 0) {
+				position.y = rect.size.y
+			}
 		}
 	},
 })
@@ -61,11 +95,12 @@ const home = createScene('home', (context) => {
 		components: [
 			positionComp.entryFrom({ x: 0, y: 0 }),
 			textureComp.entryFrom(coinTexture),
-			velocityComp.entryFrom({ x: 0.5, y: 0 }),
+			velocityComp.entryFrom({ x: 1, y: 1 }),
 		],
 	})
 
 	defineSystem(velocityAndPositionSystem)
+	defineSystem(loopSystem)
 })
 
 createGame({

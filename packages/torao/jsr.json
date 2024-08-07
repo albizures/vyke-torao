@@ -4,7 +4,8 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./texture": "./src/texture.ts",
-		"./ecs": "./src/ecs.ts",
-		"./vec": "./src/vec.ts"
+		"./ecs": "./src/ecs/index.ts",
+		"./vec": "./src/vec.ts",
+		"./resources": "./src/resources/index.ts"
 	}
 }
