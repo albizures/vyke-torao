@@ -44,7 +44,11 @@ export type Query<TResultValues> = {
 	label: string
 	compute: (entries: Array<Entity>) => Array<QueryResult<TResultValues>>
 	get: () => Array<QueryResult<TResultValues>>
+	removeEntity: (entity: Entity) => void
+	addEntity: (entity: Entity) => void
 }
+
+export type AnyQuery = Query<any>
 
 type QueryArgs<TParams extends QueryParams> = {
 	label: string
@@ -79,54 +83,89 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 
 	type ResultValue = InferQueryResultValues<TParams>
 
-	let results: Array<QueryResult<ResultValue>> = []
+	let results = new Map<Entity, QueryResult<ResultValue>>()
+	let arrayResults: Array<QueryResult<ResultValue>> = []
 
-	function compute(entities: Array<Entity>) {
-		const update: Array<QueryResult<Record<string, any>>> = []
-
-		for (const entity of entities) {
-			let valid = true
-
-			for (const component of components) {
-				if (!entity.getComponent(component)) {
-					valid = false
-					break
-				}
-			}
-
-			for (const component of notComponents) {
-				if (entity.getComponent(component)) {
-					valid = false
-					break
-				}
-			}
-
-			if (valid) {
-				const result: QueryResult<Record<string, any>> = {
-					entity,
-					values: {},
-				}
-
-				for (const [key, value] of values) {
-					if (!isQueryNot(value)) {
-						result.values[key] = entity.getComponent(value)
-					}
-				}
-
-				update.push(result)
+	/**
+	 * Returns the result of the query for a given entity.
+	 * If the entity does not match the query, returns undefined.
+	 */
+	function getResultFrom(entity: Entity): QueryResult<ResultValue> | undefined {
+		let valid = true
+		for (const component of components) {
+			if (!entity.getComponent(component)) {
+				valid = false
+				break
 			}
 		}
 
-		results = update as Array<QueryResult<ResultValue>>
+		for (const component of notComponents) {
+			if (entity.getComponent(component)) {
+				valid = false
+				break
+			}
+		}
 
-		return results
+		if (valid) {
+			const result: QueryResult<Record<string, any>> = {
+				entity,
+				values: {},
+			}
+
+			for (const [key, value] of values) {
+				if (!isQueryNot(value)) {
+					result.values[key] = entity.getComponent(value)
+				}
+			}
+
+			return result as QueryResult<ResultValue>
+		}
+	}
+
+	function compute(entities: Array<Entity>) {
+		for (const entity of entities) {
+			const result = getResultFrom(entity)
+
+			if (result) {
+				results.set(entity, result)
+			}
+			else {
+				results.delete(entity)
+			}
+		}
+
+		arrayResults = Array.from(results.values())
+
+		return arrayResults
 	}
 
 	return {
 		label,
 		compute,
 		get() {
-			return results
+			return arrayResults
+		},
+		removeEntity(entity) {
+			if (!results.has(entity)) {
+				return
+			}
+
+			results.delete(entity)
+			// this could be optimized by batching the removals
+			// and recomputing the results only once
+			// same for addEntity
+			arrayResults = Array.from(results.values())
+		},
+		addEntity(entity) {
+			const result = getResultFrom(entity)
+
+			if (result) {
+				results.set(entity, result)
+				arrayResults = Array.from(results.values())
+			}
+			else {
+				results.delete(entity)
+			}
 		},
 	}
 }
