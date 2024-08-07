@@ -1,5 +1,5 @@
-import { AtlasType, createAtlas, createTexture } from '../../packages/torao/src/texture'
-import type { Vec2d } from '../../packages/torao/src/vec'
+import { AtlasType, createAtlas, createTexture } from '@vyke/torao/texture'
+import type { Vec2d } from '@vyke/torao/vec'
 import {
 	AssetType,
 	createGame,
@@ -8,8 +8,8 @@ import {
 	loadImage,
 	positionComp,
 	textureComp,
-} from '../../packages/torao/src'
-import { createComponent, createQuery, createSystem } from '../../packages/torao/src/ecs'
+} from '@vyke/torao'
+import { createComponent, createQuery, createSystem } from '@vyke/torao/ecs'
 
 const velocityComp = createComponent<Vec2d>({
 	label: 'velocity',

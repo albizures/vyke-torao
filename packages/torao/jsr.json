@@ -2,6 +2,9 @@
 	"name": "@vyke/torao",
 	"version": "0.4.3",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./texture": "./src/texture.ts",
+		"./ecs": "./src/ecs.ts",
+		"./vec": "./src/vec.ts"
 	}
 }

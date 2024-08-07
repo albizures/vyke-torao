@@ -1,7 +1,8 @@
 {
-	"name": "@vyke/torao",
+	"name": "@vyke/torao-monorepo",
 	"type": "module",
 	"version": "0.0.1",
+	"packageManager": "pnpm@9.0.4",
 	"description": "Small and type-friendly library for game development",
 	"author": "Jose Albizures <jose@albizures.com> (https://albizures.com/)",
 	"license": "MIT",
@@ -29,10 +30,13 @@
 		"dist"
 	],
 	"scripts": {
+		"turbo": "turbo",
+		"build": "turbo build",
+		"dev": "turbo dev:build dev",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"dependencies": {
-		"@vyke/torao": "workspace:*"
+		"turbo": "^2.0.12"
 	},
 	"devDependencies": {
 		"@antfu/eslint-config": "^2.22.4",
