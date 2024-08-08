@@ -2,13 +2,13 @@ import { AtlasType, createAtlas, createTexture } from '@vyke/torao/texture'
 import type { Vec2d } from '@vyke/torao/vec'
 import {
 	AssetType,
+	createCanvas,
 	createGame,
 	createRenderer2d,
 	createScene,
 	loadImage,
-	positionComp,
-	textureComp,
 } from '@vyke/torao'
+import { Body, positionComp, textureComp } from '@vyke/torao/components'
 import { canvasRect } from '@vyke/torao/resources'
 import { createComponent, createQuery, createSystem } from '@vyke/torao/ecs'
 
@@ -24,10 +24,11 @@ const withVelocityAndPosition = createQuery({
 	},
 })
 
-const withPosition = createQuery({
-	label: 'with-position',
+const withPositionAndBody = createQuery({
+	label: 'with-position-and-body',
 	params: {
 		position: positionComp,
+		body: Body,
 	},
 })
 
@@ -45,24 +46,25 @@ const velocityAndPositionSystem = createSystem({
 
 const loopSystem = createSystem({
 	label: 'loop',
-	queries: [withPosition],
+	queries: [withPositionAndBody],
 	update() {
 		const rect = canvasRect.value
-		for (const entity of withPosition.get()) {
-			const { position } = entity.values
+		for (const entity of withPositionAndBody.get()) {
+			const { position, body } = entity.values
+
 			if (position.x > rect.size.x) {
-				position.x = 0
+				position.x = -body.x
 			}
 
-			if (position.x < 0) {
+			if (position.x < -body.x) {
 				position.x = rect.size.x
 			}
 
 			if (position.y > rect.size.y) {
-				position.y = 0
+				position.y = -body.y
 			}
 
-			if (position.y < 0) {
+			if (position.y < -body.y) {
 				position.y = rect.size.y
 			}
 		}
@@ -95,7 +97,8 @@ const home = createScene('home', (context) => {
 		components: [
 			positionComp.entryFrom({ x: 0, y: 0 }),
 			textureComp.entryFrom(coinTexture),
-			velocityComp.entryFrom({ x: 1, y: 1 }),
+			velocityComp.entryFrom({ x: 2, y: -1 }),
+			Body.entryFrom({ x: 32, y: 32 }),
 		],
 	})
 
@@ -104,7 +107,10 @@ const home = createScene('home', (context) => {
 })
 
 createGame({
-	canvas: document.querySelector('canvas')!,
+	canvas: createCanvas({
+		element: document.querySelector('canvas')!,
+		resizeMode: 'fill',
+	}),
 	renderer: createRenderer2d(),
 	scenes: {
 		home,

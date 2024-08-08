@@ -4,6 +4,7 @@ import { positionComp } from './components/position'
 import { textureComp } from './components/texture'
 import type { Entity } from './ecs/entity'
 import type { Renderer } from './renderer'
+import type { Canvas } from './canvas'
 
 const _sola = rootSola.withTag('renderer2d')
 
@@ -43,13 +44,18 @@ export function createRenderer2d(): Renderer {
 			context.clearRect(0, 0, context.canvas.width, context.canvas.height)
 			context.drawImage(buffer.canvas, 0, 0)
 		},
-		setup(canvas: HTMLCanvasElement) {
-			const { width, height } = canvas
+		setup(canvas: Canvas) {
+			const { size, element } = canvas
 
-			context = canvas.getContext('2d')!
+			context = element.getContext('2d')!
 
-			buffer.canvas.width = width
-			buffer.canvas.height = height
+			canvas.onResize((size) => {
+				buffer.canvas.width = size.x
+				buffer.canvas.height = size.y
+			})
+
+			buffer.canvas.width = size.x
+			buffer.canvas.height = size.y
 		},
 	}
 }

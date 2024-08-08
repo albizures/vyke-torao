@@ -33,6 +33,10 @@
 		"./resources": {
 			"import": "./dist/resources/index.mjs",
 			"require": "./dist/resources/index.cjs"
+		},
+		"./components": {
+			"import": "./dist/components/index.mjs",
+			"require": "./dist/components/index.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",
