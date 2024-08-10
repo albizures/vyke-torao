@@ -7,7 +7,7 @@ const _sola = rootSola.withTag('texture')
 
 export enum AtlasType {
 	Single,
-	Mutiple,
+	Multiple,
 }
 
 type BaseAtlas = {
@@ -21,7 +21,7 @@ export type SingleAtlas = BaseAtlas & {
 }
 
 export type MultipleAtlas = BaseAtlas & {
-	type: AtlasType.Mutiple
+	type: AtlasType.Multiple
 	amount: number
 	size: Vec2d
 	gap: Vec2d
@@ -41,7 +41,7 @@ type AtlasArgs<TType extends AtlasType> = TType extends AtlasType.Single ? {
 }
 
 export function createAtlas(args: AtlasArgs<AtlasType.Single>): SingleAtlas
-export function createAtlas(args: AtlasArgs<AtlasType.Mutiple>): MultipleAtlas
+export function createAtlas(args: AtlasArgs<AtlasType.Multiple>): MultipleAtlas
 export function createAtlas<TType extends AtlasType>(args: AtlasArgs<TType>): AnyAtlas {
 	const { type } = args
 
@@ -54,7 +54,7 @@ export function createAtlas<TType extends AtlasType>(args: AtlasArgs<TType>): An
 		}
 	}
 
-	if (type === AtlasType.Mutiple) {
+	if (type === AtlasType.Multiple) {
 		const { size, amount, region, gap = { x: 0, y: 0 } } = args
 		return {
 			type,

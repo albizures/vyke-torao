@@ -11,7 +11,7 @@ export type Loop = {
 }
 
 export function createLoop(tickRate: number): Loop {
-	let isRunnig = false
+	let isRunning = false
 	/**
 	 * this is the slice of time that we will use to update the game
 	 */
@@ -19,7 +19,7 @@ export function createLoop(tickRate: number): Loop {
 	return {
 		tickRate,
 		get isRunning() {
-			return isRunnig
+			return isRunning
 		},
 		/**
 		 * start the game loop
@@ -30,10 +30,10 @@ export function createLoop(tickRate: number): Loop {
 			const { update, render } = args
 			let lastTime = 0
 			let accumulator = 0
-			isRunnig = true
+			isRunning = true
 
 			const loop = (now: number) => {
-				if (!isRunnig) {
+				if (!isRunning) {
 					return
 				}
 
@@ -60,7 +60,7 @@ export function createLoop(tickRate: number): Loop {
 			})
 		},
 		stop: () => {
-			isRunnig = false
+			isRunning = false
 		},
 	}
 }
