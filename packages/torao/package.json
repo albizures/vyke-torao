@@ -37,6 +37,10 @@
 		"./components": {
 			"import": "./dist/components/index.mjs",
 			"require": "./dist/components/index.cjs"
+		},
+		"./prefabs": {
+			"import": "./dist/prefabs/index.mjs",
+			"require": "./dist/prefabs/index.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

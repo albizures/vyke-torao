@@ -34,7 +34,7 @@ export function createComponent<
 	const IS_INSTANCE = Symbol('isInstance')
 	const queries = new Set<AnyQuery>()
 
-	const component = {
+	const component: Component<TInstance, TArgs> = {
 		label,
 		queries,
 		is(instance: unknown): instance is TInstance {
@@ -73,6 +73,32 @@ export function createComponent<
 	}
 
 	return component
+}
+
+type ComponentIdArgs = {
+	label: string
+
+}
+
+export function createComponentTag(args: ComponentIdArgs) {
+	const baseComponent = createComponent({
+		label: args.label,
+		create: () => ({
+			tag: true,
+		}),
+	})
+	return {
+		...baseComponent,
+		create() {
+			return baseComponent.create({ tag: true })
+		},
+		entryFrom() {
+			return baseComponent.entryFrom({ tag: true })
+		},
+		addTo(entity: Entity) {
+			return baseComponent.addTo(entity, { tag: true })
+		},
+	}
 }
 
 export type InferComponentInstance<TComponent> = TComponent extends Component<infer TInstance, any> ? TInstance : never

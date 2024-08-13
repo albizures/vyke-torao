@@ -44,6 +44,7 @@ export type Query<TResultValues> = {
 	label: string
 	compute: (entries: Array<Entity>) => Array<QueryResult<TResultValues>>
 	get: () => Array<QueryResult<TResultValues>>
+	first: () => QueryResult<TResultValues> | undefined
 	removeEntity: (entity: Entity) => void
 	addEntity: (entity: Entity) => void
 }
@@ -144,6 +145,9 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 		compute,
 		get() {
 			return arrayResults
+		},
+		first() {
+			return arrayResults[0]
 		},
 		removeEntity(entity) {
 			if (!results.has(entity)) {

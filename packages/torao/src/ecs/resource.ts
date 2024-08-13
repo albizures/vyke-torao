@@ -29,7 +29,7 @@ export function createResource<TValue>(args: ResourceArgs<TValue>): Resource<TVa
 			return currentValue as ReadonlyDeep<TValue>
 		},
 		mutable() {
-			return value
+			return currentValue
 		},
 		set(update) {
 			currentValue = update

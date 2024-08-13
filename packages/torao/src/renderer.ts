@@ -1,10 +1,8 @@
 import { rootSola } from './sola'
-import type { Entity } from './ecs/entity'
 import type { Canvas } from './canvas'
-
-const _sola = rootSola.withTag('renderer')
+import type { System } from './ecs'
 
 export type Renderer = {
-	render: (entities: Set<Entity>) => void
+	systems: Set<System>
 	setup: (canvas: Canvas) => void
 }

@@ -1,5 +1,3 @@
-export * from './body'
-export * from './position'
+export * from './transform'
 export * from './velocity'
-export * from './body'
 export * from './texture'

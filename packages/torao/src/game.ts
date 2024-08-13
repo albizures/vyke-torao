@@ -30,9 +30,9 @@ export function createGame<
 		canvas,
 		scenes: sceneEntries,
 		renderer,
-		startScene,
 		tickRate = 40,
 	} = args
+	const startScene = args.startScene as string
 	const loop = createLoop(tickRate)
 	const scenes = new Map(Object.entries(sceneEntries))
 	const readyScenes = new Map<string, Scene>()
@@ -41,28 +41,27 @@ export function createGame<
 	renderer.setup(canvas)
 
 	function update() {
-		if (currentScene.update) {
-			currentScene.update()
-		}
-
-		for (const system of currentScene.systems) {
+		for (const system of currentScene.systems.update) {
 			system.update()
 		}
 	}
 
 	function render() {
-		renderer.render(currentScene.entities)
+		for (const system of currentScene.systems.render) {
+			system.update()
+		}
 	}
 
 	return {
 		canvas,
 		scenes,
-		startScene: startScene as string,
+		startScene,
 		renderer,
 		async start() {
-			const scene = scenes.get(startScene as string)!
+			const scene = scenes.get(startScene)!
 
-			currentScene = await scene.build()
+			currentScene = await scene.build(renderer.systems)
+
 			readyScenes.set(scene.label, currentScene)
 
 			loop.start({

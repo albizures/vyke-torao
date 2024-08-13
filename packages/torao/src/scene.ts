@@ -1,14 +1,15 @@
 import { type Entity, type EntityArgs, createEntity } from './ecs/entity'
 import { createAsset } from './assets'
 import type { AnyAsset, Asset, AssetArgs, AssetType } from './assets'
-import { type Resource, type ResourceArgs, type System, createResource } from './ecs'
+import { COMPONENTS, type Resource, type ResourceArgs, type System, createResource } from './ecs'
+import { Transform } from './components'
 
 /**
  * A buildable scene is a scene that can be built asynchronously.
  */
 export type BuildableScene = {
 	label: string
-	build: () => Promise<Scene>
+	build: (renderSystems: Set<System>) => Promise<Scene>
 }
 
 /**
@@ -17,39 +18,41 @@ export type BuildableScene = {
 export type Scene = {
 	label: string
 	entities: Set<Entity>
-	systems: Set<System>
-	update?: () => void
+	systems: {
+		update: Set<System>
+		render: Set<System>
+	}
 }
 
-type UpdateFn = () => void
 export type SceneContext = {
 	entities: Set<Entity>
 	defineAsset: <TValue, TType extends AssetType>(args: AssetArgs<TValue, TType>) => Asset<TValue, TType>
-	defineEntity: (args: EntityArgs) => Entity
+	spawn: (args: EntityArgs | Entity) => Entity
 	defineSystem: (args: System) => System
 	defineResource: <TValue>(args: ResourceArgs<TValue>) => Resource<TValue>
 }
-type SceneBuilder = (context: SceneContext) => UpdateFn | void
+type SceneBuilder = (context: SceneContext) => void
 
 /**
  * Creates a scene to be used in the game.
  */
 export function createScene(label: string, builder: SceneBuilder): BuildableScene {
 	let scene: Scene
-	async function build() {
+	async function build(renderSystems: Set<System>): Promise<Scene> {
 		if (scene) {
 			return scene
 		}
 
 		const { entities, assets, context, systems } = createSceneContext()
-		const update = builder(context) ?? undefined
+		systems.render = renderSystems
+		builder(context)
 
 		for (const asset of assets) {
 			await asset.load()
 		}
 
 		const entitiesArray = Array.from(entities)
-		for (const system of systems) {
+		for (const system of [...systems.render, ...systems.update]) {
 			for (const query of system.queries) {
 				query.compute(entitiesArray)
 			}
@@ -57,7 +60,6 @@ export function createScene(label: string, builder: SceneBuilder): BuildableScen
 
 		scene = {
 			label,
-			update,
 			entities,
 			systems,
 		}
@@ -74,7 +76,8 @@ export function createScene(label: string, builder: SceneBuilder): BuildableScen
 function createSceneContext() {
 	const assets = new Set<AnyAsset>()
 	const entities = new Set<Entity>()
-	const systems = new Set<System>()
+	const renderSystems = new Set<System>()
+	const updateSystems = new Set<System>()
 	const resources = new Set<Resource<unknown>>()
 
 	const context: SceneContext = {
@@ -86,15 +89,15 @@ function createSceneContext() {
 
 			return asset
 		},
-		defineEntity(args: EntityArgs): Entity {
-			const entity = createEntity(args)
+		spawn(args: EntityArgs | Entity): Entity {
+			const entity = COMPONENTS in args ? args : createEntity(args)
 
 			entities.add(entity)
 
 			return entity
 		},
 		defineSystem(system: System): System {
-			systems.add(system)
+			updateSystems.add(system)
 			return system
 		},
 		defineResource<TValue>(args: ResourceArgs<TValue>): Resource<TValue> {
@@ -108,6 +111,9 @@ function createSceneContext() {
 		assets,
 		entities,
 		context,
-		systems,
+		systems: {
+			update: updateSystems,
+			render: renderSystems,
+		},
 	}
 }

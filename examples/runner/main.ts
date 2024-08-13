@@ -1,5 +1,7 @@
-import { AtlasType, createAtlas, createTexture } from '@vyke/torao/texture'
 import type { Vec2d } from '@vyke/torao/vec'
+import { Texture, Transform } from '@vyke/torao/components'
+import { AtlasType, createAtlas, createTexture } from '@vyke/torao/texture'
+import { createComponent, createQuery, createSystem } from '@vyke/torao/ecs'
 import {
 	AssetType,
 	createCanvas,
@@ -8,71 +10,34 @@ import {
 	createScene,
 	loadImage,
 } from '@vyke/torao'
-import { Body, positionComp, textureComp } from '@vyke/torao/components'
-import { canvasRect } from '@vyke/torao/resources'
-import { createComponent, createQuery, createSystem } from '@vyke/torao/ecs'
 
-const velocityComp = createComponent<Vec2d>({
+const Velocity = createComponent<Vec2d>({
 	label: 'velocity',
 })
 
-const withVelocityAndPosition = createQuery({
+const withVelocityAndTransform = createQuery({
 	label: 'with-velocity-and-position',
 	params: {
-		velocity: velocityComp,
-		position: positionComp,
+		velocity: Velocity,
+		transform: Transform,
 	},
 })
 
-const withPositionAndBody = createQuery({
-	label: 'with-position-and-body',
-	params: {
-		position: positionComp,
-		body: Body,
-	},
-})
-
-const velocityAndPositionSystem = createSystem({
+const velocityAndTransformSystem = createSystem({
 	label: 'velocity-and-position',
-	queries: [withVelocityAndPosition],
+	queries: [withVelocityAndTransform],
 	update() {
-		for (const entity of withVelocityAndPosition.get()) {
-			const { position, velocity } = entity.values
+		for (const entity of withVelocityAndTransform.get()) {
+			const { transform, velocity } = entity.values
+			const { position } = transform
 			position.x += velocity.x
 			position.y += velocity.y
 		}
 	},
 })
 
-const loopSystem = createSystem({
-	label: 'loop',
-	queries: [withPositionAndBody],
-	update() {
-		const rect = canvasRect.value
-		for (const entity of withPositionAndBody.get()) {
-			const { position, body } = entity.values
-
-			if (position.x > rect.size.x) {
-				position.x = -body.x
-			}
-
-			if (position.x < -body.x) {
-				position.x = rect.size.x
-			}
-
-			if (position.y > rect.size.y) {
-				position.y = -body.y
-			}
-
-			if (position.y < -body.y) {
-				position.y = rect.size.y
-			}
-		}
-	},
-})
-
 const home = createScene('home', (context) => {
-	const { defineEntity, defineAsset, defineSystem } = context
+	const { spawn, defineAsset, defineSystem } = context
 	const coinAsset = defineAsset({
 		label: 'coin',
 		type: AssetType.Image,
@@ -92,18 +57,16 @@ const home = createScene('home', (context) => {
 		}),
 	})
 
-	const _player = defineEntity({
+	spawn({
 		label: 'player',
 		components: [
-			positionComp.entryFrom({ x: 0, y: 0 }),
-			textureComp.entryFrom(coinTexture),
-			velocityComp.entryFrom({ x: 2, y: -1 }),
-			Body.entryFrom({ x: 32, y: 32 }),
+			Transform.entryFrom({}),
+			Texture.entryFrom(coinTexture),
+			Velocity.entryFrom({ x: 2, y: 0 }),
 		],
 	})
 
-	defineSystem(velocityAndPositionSystem)
-	defineSystem(loopSystem)
+	defineSystem(velocityAndTransformSystem)
 })
 
 createGame({

@@ -7,6 +7,7 @@
 		"./ecs": "./src/ecs/index.ts",
 		"./vec": "./src/vec.ts",
 		"./resources": "./src/resources/index.ts",
-		"./components": "./src/components/index.ts"
+		"./components": "./src/components/index.ts",
+		"./prefabs": "./src/prefabs/index.ts"
 	}
 }
