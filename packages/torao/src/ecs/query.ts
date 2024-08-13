@@ -87,6 +87,39 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 	let results = new Map<Entity, QueryResult<ResultValue>>()
 	let arrayResults: Array<QueryResult<ResultValue>> = []
 
+	const query: Query<InferQueryResultValues<TParams>> = {
+		label,
+		compute,
+		get() {
+			return arrayResults
+		},
+		first() {
+			return arrayResults[0]
+		},
+		removeEntity(entity) {
+			if (!results.has(entity)) {
+				return
+			}
+
+			results.delete(entity)
+			// this could be optimized by batching the removals
+			// and recomputing the results only once
+			// same for addEntity
+			arrayResults = Array.from(results.values())
+		},
+		addEntity(entity) {
+			const result = getResultFrom(entity)
+
+			if (result) {
+				results.set(entity, result)
+				arrayResults = Array.from(results.values())
+			}
+			else {
+				results.delete(entity)
+			}
+		},
+	}
+
 	/**
 	 * Returns the result of the query for a given entity.
 	 * If the entity does not match the query, returns undefined.
@@ -96,7 +129,11 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 		for (const component of components) {
 			if (!entity.getComponent(component)) {
 				valid = false
+				component.queries.delete(query)
 				break
+			}
+			else {
+				component.queries.add(query)
 			}
 		}
 
@@ -140,36 +177,9 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 		return arrayResults
 	}
 
-	return {
-		label,
-		compute,
-		get() {
-			return arrayResults
-		},
-		first() {
-			return arrayResults[0]
-		},
-		removeEntity(entity) {
-			if (!results.has(entity)) {
-				return
-			}
-
-			results.delete(entity)
-			// this could be optimized by batching the removals
-			// and recomputing the results only once
-			// same for addEntity
-			arrayResults = Array.from(results.values())
-		},
-		addEntity(entity) {
-			const result = getResultFrom(entity)
-
-			if (result) {
-				results.set(entity, result)
-				arrayResults = Array.from(results.values())
-			}
-			else {
-				results.delete(entity)
-			}
-		},
+	for (const component of components) {
+		component.queries.add(query)
 	}
+
+	return query
 }

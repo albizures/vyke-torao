@@ -8,6 +8,8 @@
 		"./vec": "./src/vec.ts",
 		"./resources": "./src/resources/index.ts",
 		"./components": "./src/components/index.ts",
-		"./prefabs": "./src/prefabs/index.ts"
+		"./prefabs": "./src/prefabs/index.ts",
+		"./systems": "./src/systems/index.ts",
+		"./queries": "./src/queries/index.ts"
 	}
 }

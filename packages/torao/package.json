@@ -41,6 +41,14 @@
 		"./prefabs": {
 			"import": "./dist/prefabs/index.mjs",
 			"require": "./dist/prefabs/index.cjs"
+		},
+		"./systems": {
+			"import": "./dist/systems/index.mjs",
+			"require": "./dist/systems/index.cjs"
+		},
+		"./queries": {
+			"import": "./dist/queries/index.mjs",
+			"require": "./dist/queries/index.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

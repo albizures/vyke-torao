@@ -3,7 +3,7 @@ import type { AnyQuery } from './query'
 
 export const COMPONENTS = Symbol('components')
 
-export type AnyComponent = Component<ComponentInstance, any>
+export type AnyComponent = Component<any, any>
 
 export type ComponentInstance = Record<string, any>
 
@@ -16,6 +16,7 @@ export type Component<TInstance extends ComponentInstance, TArgs> = {
 	removeFrom: (entity: Entity) => void
 	getFrom: (entity: Entity) => TInstance | undefined
 	addTo: (entity: Entity, args: TArgs) => void
+	setValue: (entity: Entity, value: TInstance) => void
 }
 
 type ComponentArgs<TInstance extends ComponentInstance, TArgs> = {
@@ -70,35 +71,16 @@ export function createComponent<
 		getFrom(entity: Entity): TInstance | undefined {
 			return entity[COMPONENTS].get(component) as TInstance | undefined
 		},
+		setValue(entity: Entity, value: TInstance) {
+			entity[COMPONENTS].set(component, value)
+
+			for (const query of queries) {
+				query.addEntity(entity)
+			}
+		},
 	}
 
 	return component
-}
-
-type ComponentIdArgs = {
-	label: string
-
-}
-
-export function createComponentTag(args: ComponentIdArgs) {
-	const baseComponent = createComponent({
-		label: args.label,
-		create: () => ({
-			tag: true,
-		}),
-	})
-	return {
-		...baseComponent,
-		create() {
-			return baseComponent.create({ tag: true })
-		},
-		entryFrom() {
-			return baseComponent.entryFrom({ tag: true })
-		},
-		addTo(entity: Entity) {
-			return baseComponent.addTo(entity, { tag: true })
-		},
-	}
 }
 
 export type InferComponentInstance<TComponent> = TComponent extends Component<infer TInstance, any> ? TInstance : never
