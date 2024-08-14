@@ -11,7 +11,7 @@ type TransformData = {
 }
 
 export const Transform = createComponent<TransformData, Partial<TransformData>>({
-	label: 'transform',
+	id: 'transform',
 	create(args: Partial<TransformData>) {
 		const { position = vec2(0, 0), angle = 0, scale = vec2(1, 1) } = args
 		return {

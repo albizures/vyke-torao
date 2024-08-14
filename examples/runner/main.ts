@@ -1,7 +1,7 @@
-import type { Vec2d } from '@vyke/torao/vec'
-import { Texture, Transform } from '@vyke/torao/components'
+import { Texture, Transform, Velocity } from '@vyke/torao/components'
 import { AtlasType, createAtlas, createTexture } from '@vyke/torao/texture'
-import { createComponent, createQuery, createSystem } from '@vyke/torao/ecs'
+import { velocityAndTransformSystem } from '@vyke/torao/systems'
+import { createComponentTag, createQuery, createSystem } from '@vyke/torao/ecs'
 import {
 	AssetType,
 	createCanvas,
@@ -10,36 +10,69 @@ import {
 	createScene,
 	loadImage,
 } from '@vyke/torao'
+import { camera2D, camera2DQuery } from '@vyke/torao/prefabs'
+import { withVelocityAndTransform } from '@vyke/torao/queries'
 
-const Velocity = createComponent<Vec2d>({
-	label: 'velocity',
-})
+const Player = createComponentTag('player')
 
-const withVelocityAndTransform = createQuery({
-	label: 'with-velocity-and-position',
+const playerAndTransform = createQuery({
+	id: 'player-and-transform',
 	params: {
-		velocity: Velocity,
+		player: Player,
 		transform: Transform,
 	},
 })
 
-const velocityAndTransformSystem = createSystem({
-	label: 'velocity-and-position',
-	queries: [withVelocityAndTransform],
-	update() {
-		for (const entity of withVelocityAndTransform.get()) {
-			const { transform, velocity } = entity.values
-			const { position } = transform
-			position.x += velocity.x
-			position.y += velocity.y
+const followPlayerSystem = createSystem({
+	id: 'follow-player',
+	queries: {
+		player: playerAndTransform.required().first(),
+		camera: camera2DQuery.required().first(),
+	},
+	update(args) {
+		const { entities } = args
+		const { player, camera } = entities
+
+		if (camera && player) {
+			const { transform } = player.values
+			const { transform: { position } } = camera.values
+			Transform.setValue(camera.entity, {
+				...transform,
+				position: {
+					x: -transform.position.x,
+					y: position.y,
+				},
+			})
 		}
 	},
 })
 
+// const gravitySystem = createSystem({
+// 	id: 'gravity',
+// 	queries: [withVelocityAndTransform],
+// 	update() {
+// 		for (const item of withVelocityAndTransform.get()) {
+// 			const { velocity, transform } = item.values
+
+// 			if (transform.position.y < 0) {
+// 				Velocity.setValue(item.entity, {
+// 					...velocity,
+// 					y: 0,
+// 				})
+// 			} else {
+// 				Velocity.setValue(item.entity, {
+// 					...velocity,
+// 					y: velocity.y - 0.1,
+// 				})
+// 			}
+// 		}
+// 	},
+// })
+
 const home = createScene('home', (context) => {
-	const { spawn, defineAsset, defineSystem } = context
+	const { spawn, defineAsset, registerSystem } = context
 	const coinAsset = defineAsset({
-		label: 'coin',
+		id: 'coin',
 		type: AssetType.Image,
 		loader: loadImage('assets/images/coin.png'),
 	})
@@ -58,15 +91,21 @@ const home = createScene('home', (context) => {
 	})
 
 	spawn({
-		label: 'player',
+		id: 'player',
 		components: [
+			Player.entryFrom(),
 			Transform.entryFrom({}),
 			Texture.entryFrom(coinTexture),
 			Velocity.entryFrom({ x: 2, y: 0 }),
 		],
 	})
 
-	defineSystem(velocityAndTransformSystem)
+	spawn(camera2D.create({
+		id: 'camera',
+	}))
+
+	registerSystem(velocityAndTransformSystem)
+	registerSystem(followPlayerSystem)
 })
 
 createGame({

@@ -25,7 +25,7 @@ export enum AssetStatus {
 }
 
 type BaseAsset = {
-	label: string
+	id: string
 	type: AssetType
 	url: string
 	load: () => Promise<BaseAsset>
@@ -77,7 +77,7 @@ function createBaseAsset<TType extends AssetType>(url: string, type: TType) {
 }
 
 export type Asset<TValue, TType extends AssetType> = {
-	label: string
+	id: string
 	type: TType
 	url: string
 	load: () => Promise<Asset<TValue, TType>>
@@ -87,21 +87,21 @@ export type Asset<TValue, TType extends AssetType> = {
 }
 
 export type AssetArgs<TValue, TType extends AssetType> = {
-	label: string
+	id: string
 	type: TType
 	loader: Loader<TValue>
 }
 
 export function createAsset<TValue, TType extends AssetType>(args: AssetArgs<TValue, TType>): Asset<TValue, TType> {
-	const { label, type, loader } = args
-	const base = createBaseAsset(label, type)
+	const { id, type, loader } = args
+	const base = createBaseAsset(id, type)
 
 	const asset: Asset<TValue, TType> = {
 		...base,
-		label,
+		id,
 		fallback: definePlaceholder(PlaceholderType.Rectangle),
 		async load() {
-			sola.info(`Loading asset: ${label}`)
+			sola.info(`Loading asset: ${id}`)
 
 			asset.status = AssetStatus.Loading
 

@@ -1,7 +1,7 @@
 import type { Entity } from './ecs'
 
 export type Prefab<TArgs> = {
-	label: string
+	id: string
 	create: (args: TArgs) => Entity
 }
 

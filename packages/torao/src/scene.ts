@@ -8,7 +8,7 @@ import { Transform } from './components'
  * A buildable scene is a scene that can be built asynchronously.
  */
 export type BuildableScene = {
-	label: string
+	id: string
 	build: (renderSystems: Set<System>) => Promise<Scene>
 }
 
@@ -16,7 +16,7 @@ export type BuildableScene = {
  * A scene is a collection of entities and systems.
  */
 export type Scene = {
-	label: string
+	id: string
 	entities: Set<Entity>
 	systems: {
 		update: Set<System>
@@ -36,7 +36,7 @@ type SceneBuilder = (context: SceneContext) => void
 /**
  * Creates a scene to be used in the game.
  */
-export function createScene(label: string, builder: SceneBuilder): BuildableScene {
+export function createScene(id: string, builder: SceneBuilder): BuildableScene {
 	let scene: Scene
 	async function build(renderSystems: Set<System>): Promise<Scene> {
 		if (scene) {
@@ -59,7 +59,7 @@ export function createScene(label: string, builder: SceneBuilder): BuildableScen
 		}
 
 		scene = {
-			label,
+			id,
 			entities,
 			systems,
 		}
@@ -68,7 +68,7 @@ export function createScene(label: string, builder: SceneBuilder): BuildableScen
 	}
 
 	return {
-		label,
+		id,
 		build,
 	}
 }

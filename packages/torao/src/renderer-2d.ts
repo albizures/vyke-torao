@@ -7,7 +7,7 @@ import { AssetStatus, AssetType } from './assets'
 import { camera2DQuery } from './prefabs'
 
 const renderer2dSystem = createSystem({
-	label: 'velocity-and-position',
+	id: 'velocity-and-position',
 	queries: {
 		entitiesToRender: withTransformAndTexture.required(),
 		camera2d: camera2DQuery.required().first(),

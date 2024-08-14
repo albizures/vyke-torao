@@ -4,14 +4,14 @@ import type { ReadonlyDeep } from 'type-fest'
  * A resource is a value that can be shared between systems.
  */
 export type Resource<TValue> = {
-	label: string
+	id: string
 	readonly value: ReadonlyDeep<TValue>
 	mutable: () => TValue
 	set: (value: TValue) => void
 }
 
 export type ResourceArgs<TValue> = {
-	label: string
+	id: string
 	value: TValue
 }
 
@@ -19,12 +19,12 @@ export type ResourceArgs<TValue> = {
  * Creates a resource that can be shared between systems.
  */
 export function createResource<TValue>(args: ResourceArgs<TValue>): Resource<TValue> {
-	const { label, value } = args
+	const { id, value } = args
 
 	let currentValue = value
 
 	return {
-		label,
+		id,
 		get value() {
 			return currentValue as ReadonlyDeep<TValue>
 		},

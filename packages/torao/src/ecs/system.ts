@@ -15,23 +15,23 @@ type UpdateArgs<TValues> = {
  * A system is a function that updates the state of the game.
  */
 export type System = {
-	label: string
+	id: string
 	queries: Array<AnyQuery>
 	run: () => void
 }
 type Queries = Record<string, AnyQuery>
 
 type SystemArgs<TQueries extends Queries> = {
-	label: string
+	id: string
 	queries?: TQueries
 	update: (args: UpdateArgs<InferValues<TQueries>>) => void
 }
 
 export function createSystem<TQueries extends Queries>(args: SystemArgs<TQueries>): System {
-	const { label, queries, update } = args
+	const { id, queries, update } = args
 
 	return {
-		label,
+		id,
 		queries: Object.values(queries ?? {}),
 		run() {
 			const entities = {} as Partial<InferValues<TQueries>>

@@ -62,7 +62,7 @@ export function createGame<
 
 			currentScene = await scene.build(renderer.systems)
 
-			readyScenes.set(scene.label, currentScene)
+			readyScenes.set(scene.id, currentScene)
 
 			loop.start({
 				update,

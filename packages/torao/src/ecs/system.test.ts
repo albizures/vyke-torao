@@ -8,7 +8,7 @@ import { createComponentTag } from './tag'
 function createTest() {
 	const Enemy = createComponentTag('enemy')
 	const player = createEntity({
-		label: 'player',
+		id: 'player',
 		components: [
 			Transform.entryFrom({ position: { x: 0, y: 0 } }),
 		],
@@ -16,14 +16,14 @@ function createTest() {
 
 	const enemies = [
 		createEntity({
-			label: 'enemy 1',
+			id: 'enemy 1',
 			components: [
 				[Transform, Transform.create({ position: { x: 0, y: 0 } })],
 				[Enemy, Enemy.create()],
 			],
 		}),
 		createEntity({
-			label: 'enemy 2',
+			id: 'enemy 2',
 			components: [
 				Transform.entryFrom({ position: { x: 0, y: 0 } }),
 				Enemy.entryFrom(),
@@ -33,16 +33,16 @@ function createTest() {
 
 	const update = vi.fn()
 	const system = createSystem({
-		label: 'follow-player',
+		id: 'follow-player',
 		queries: {
 			player: createQuery({
-				label: 'query-test',
+				id: 'query-test',
 				params: {
 					transform: Transform,
 				},
 			}).required().first(),
 			enemies: createQuery({
-				label: 'query-test',
+				id: 'query-test',
 				params: {
 					transform: Transform,
 					enemy: Enemy,

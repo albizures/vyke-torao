@@ -2,7 +2,7 @@ import { createSystem } from '../ecs'
 import { withVelocityAndTransform } from '../queries'
 
 export const velocityAndTransformSystem = createSystem({
-	label: 'velocity-and-position',
+	id: 'velocity-and-position',
 	queries: {
 		velocityAndTransform: withVelocityAndTransform,
 	},

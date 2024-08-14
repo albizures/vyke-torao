@@ -8,7 +8,7 @@ export type AnyComponent = Component<any, any>
 export type ComponentInstance = Record<string, any>
 
 export type Component<TInstance extends ComponentInstance, TArgs> = {
-	label?: string
+	id: string
 	create: (args: TArgs) => TInstance
 	entryFrom: (args: TArgs) => [Component<TInstance, TArgs>, TInstance]
 	is: (instance: unknown) => instance is TInstance
@@ -20,7 +20,7 @@ export type Component<TInstance extends ComponentInstance, TArgs> = {
 }
 
 type ComponentArgs<TInstance extends ComponentInstance, TArgs> = {
-	label?: string
+	id: string
 	create?: (args: TArgs) => TInstance
 }
 
@@ -31,12 +31,12 @@ export function createComponent<
 	const defaultCreate = (args: TArgs) => ({
 		...args,
 	}) as unknown as TInstance
-	const { label, create = defaultCreate } = args
+	const { id, create = defaultCreate } = args
 	const IS_INSTANCE = Symbol('isInstance')
 	const queries = new Set<AnyQuery>()
 
 	const component: Component<TInstance, TArgs> = {
-		label,
+		id,
 		queries,
 		is(instance: unknown): instance is TInstance {
 			return (instance as any ?? {})[IS_INSTANCE] === true

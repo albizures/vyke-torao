@@ -43,7 +43,7 @@ type QueryResult<TResultValues> = {
  * A query that can be used to filter entities based on their components.
  */
 export type Query<TResultValues> = {
-	label: string
+	id: string
 	compute: (entries: Array<Entity>) => Array<QueryResult<TResultValues>>
 	use: () => Array<QueryResult<TResultValues>>
 	useFirst: () => QueryResult<TResultValues> | undefined
@@ -71,7 +71,7 @@ export type RequiredFirstQuery<TResultValues> = Query<TResultValues> & {
 export type AnyQuery = Query<any>
 
 type QueryArgs<TParams extends QueryParams> = {
-	label: string
+	id: string
 	params: TParams
 }
 
@@ -79,7 +79,7 @@ type QueryArgs<TParams extends QueryParams> = {
  * Creates a query that can be used to filter entities based on their components.
  */
 export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): Query<InferQueryResultValues<TParams>> {
-	const { params, label } = args
+	const { params, id } = args
 	const values = Object.entries(params)
 	const components = new Set<AnyComponent>()
 	const notComponents = new Set<AnyComponent>()
@@ -89,14 +89,14 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 			notComponents.add(value.component)
 
 			if (components.has(value.component)) {
-				throw new Error(`Component "${value.component.label}" cannot be both required and excluded`)
+				throw new Error(`Component "${value.component.id}" cannot be both required and excluded`)
 			}
 		}
 		else {
 			components.add(value)
 
 			if (notComponents.has(value)) {
-				throw new Error(`Component "${value.label}" cannot be both required and excluded`)
+				throw new Error(`Component "${value.id}" cannot be both required and excluded`)
 			}
 		}
 	}
@@ -107,7 +107,7 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 	let arrayResults: Array<QueryResult<ResultValue>> = []
 
 	const query: Query<InferQueryResultValues<TParams>> = {
-		label,
+		id,
 		compute,
 		use() {
 			return arrayResults

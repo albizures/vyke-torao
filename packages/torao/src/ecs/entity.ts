@@ -2,7 +2,7 @@ import type { AnyComponent, ComponentInstance, InferComponentInstance } from './
 import { COMPONENTS } from './component'
 
 export type Entity = {
-	label: string
+	id: string
 	[COMPONENTS]: Map<AnyComponent, ComponentInstance>
 	getComponent: <TComponent extends AnyComponent>(component: TComponent) => InferComponentInstance<TComponent> | undefined
 	addComponent: <TComponent extends AnyComponent>(component: TComponent, instance: InferComponentInstance<TComponent>) => void
@@ -11,15 +11,15 @@ export type Entity = {
 }
 
 export type EntityArgs = {
-	label: string
+	id: string
 	components: Array<[AnyComponent, ComponentInstance]>
 }
 
 export function createEntity(args: EntityArgs): Entity {
-	const { label, components: componentEntries } = args
+	const { id, components: componentEntries } = args
 
 	const entity: Entity = {
-		label,
+		id,
 		[COMPONENTS]: new Map(componentEntries),
 		getComponent<TComponent extends AnyComponent>(component: TComponent) {
 			return component.getFrom(entity) as InferComponentInstance<TComponent> | undefined
