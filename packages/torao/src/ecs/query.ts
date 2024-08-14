@@ -53,20 +53,17 @@ export type Query<TResultValues> = {
 	first: () => FirstQuery<TResultValues>
 }
 
-export type RequiredQuery<TResultValues> = Query<TResultValues> & {
+export type RequiredQuery<TResultValues> = Omit<Query<TResultValues>, 'first'> & {
 	[IS_REQUIRED]: true
 	first: () => RequiredFirstQuery<TResultValues>
 }
 
-export type FirstQuery<TResultValues> = Query<TResultValues> & {
+export type FirstQuery<TResultValues> = Omit<Query<TResultValues>, 'required'> & {
 	[IS_FIRST]: true
 	required: () => RequiredFirstQuery<TResultValues>
 }
 
-export type RequiredFirstQuery<TResultValues> = Query<TResultValues> & {
-	[IS_REQUIRED]: true
-	[IS_FIRST]: true
-}
+export type RequiredFirstQuery<TResultValues> = FirstQuery<TResultValues> & RequiredQuery<TResultValues>
 
 export type AnyQuery = Query<any>
 
@@ -215,11 +212,7 @@ function createRequiredQuery<TParams extends QueryParams>(args: QueryArgs<TParam
 		...query,
 		[IS_REQUIRED]: true,
 		first() {
-			return {
-				...createFirstQuery(args),
-				[IS_FIRST]: true,
-				[IS_REQUIRED]: true,
-			}
+			return createRequiredFirstQuery(args)
 		},
 	}
 }
@@ -230,10 +223,27 @@ function createFirstQuery<TParams extends QueryParams>(args: QueryArgs<TParams>)
 		...query,
 		[IS_FIRST]: true,
 		required() {
+			return createRequiredFirstQuery(args)
+		},
+	}
+}
+
+export function createRequiredFirstQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): RequiredFirstQuery<InferQueryResultValues<TParams>> {
+	const query: RequiredFirstQuery<InferQueryResultValues<TParams>> = {
+		...createQuery(args),
+		[IS_FIRST]: true,
+		[IS_REQUIRED]: true,
+		required() {
 			return {
-				...createRequiredQuery(args),
-				[IS_FIRST]: true,
+				...query,
+			}
+		},
+		first() {
+			return {
+				...query,
 			}
 		},
 	}
+
+	return query
 }

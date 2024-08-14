@@ -11,7 +11,6 @@ import {
 	loadImage,
 } from '@vyke/torao'
 import { camera2D, camera2DQuery } from '@vyke/torao/prefabs'
-import { withVelocityAndTransform } from '@vyke/torao/queries'
 
 const Player = createComponentTag('player')
 
@@ -33,41 +32,17 @@ const followPlayerSystem = createSystem({
 		const { entities } = args
 		const { player, camera } = entities
 
-		if (camera && player) {
-			const { transform } = player.values
-			const { transform: { position } } = camera.values
-			Transform.setValue(camera.entity, {
-				...transform,
-				position: {
-					x: -transform.position.x,
-					y: position.y,
-				},
-			})
-		}
+		const { transform } = player.values
+		const { transform: { position } } = camera.values
+		Transform.setValue(camera.entity, {
+			...transform,
+			position: {
+				x: -transform.position.x,
+				y: position.y,
+			},
+		})
 	},
 })
-
-// const gravitySystem = createSystem({
-// 	id: 'gravity',
-// 	queries: [withVelocityAndTransform],
-// 	update() {
-// 		for (const item of withVelocityAndTransform.get()) {
-// 			const { velocity, transform } = item.values
-
-// 			if (transform.position.y < 0) {
-// 				Velocity.setValue(item.entity, {
-// 					...velocity,
-// 					y: 0,
-// 				})
-// 			} else {
-// 				Velocity.setValue(item.entity, {
-// 					...velocity,
-// 					y: velocity.y - 0.1,
-// 				})
-// 			}
-// 		}
-// 	},
-// })
 
 const home = createScene('home', (context) => {
 	const { spawn, defineAsset, registerSystem } = context

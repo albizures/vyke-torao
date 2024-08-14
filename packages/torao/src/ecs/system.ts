@@ -1,10 +1,12 @@
-import { type AnyQuery, type FirstQuery, IS_FIRST, IS_REQUIRED } from './query'
+import { type AnyQuery, type FirstQuery, IS_FIRST, IS_REQUIRED, type RequiredFirstQuery } from './query'
 
 type InferValues<TQueries extends Queries> = {
 	[TKey in keyof TQueries]:
-	TQueries[TKey] extends FirstQuery<any>
-		? ReturnType<TQueries[TKey]['useFirst']>
-		: ReturnType<TQueries[TKey]['use']>
+	TQueries[TKey] extends RequiredFirstQuery<any>
+		? NonNullable<ReturnType<TQueries[TKey]['useFirst']>>
+	 	: TQueries[TKey] extends FirstQuery<any>
+			? ReturnType<TQueries[TKey]['useFirst']>
+			: ReturnType<TQueries[TKey]['use']>
 }
 
 type UpdateArgs<TValues> = {
