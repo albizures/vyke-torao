@@ -1,7 +1,9 @@
 import type { AnyComponent, Component } from './component'
 import type { Entity } from './entity'
 
-const IS_NOT = Symbol('isNot')
+export const IS_NOT = Symbol('isNot')
+export const IS_REQUIRED = Symbol('isRequired')
+export const IS_FIRST = Symbol('isFirst')
 
 /**
  * A query that requires a component not to be present on an entity.
@@ -43,10 +45,27 @@ type QueryResult<TResultValues> = {
 export type Query<TResultValues> = {
 	label: string
 	compute: (entries: Array<Entity>) => Array<QueryResult<TResultValues>>
-	get: () => Array<QueryResult<TResultValues>>
-	first: () => QueryResult<TResultValues> | undefined
+	use: () => Array<QueryResult<TResultValues>>
+	useFirst: () => QueryResult<TResultValues> | undefined
 	removeEntity: (entity: Entity) => void
 	addEntity: (entity: Entity) => void
+	required: () => RequiredQuery<TResultValues>
+	first: () => FirstQuery<TResultValues>
+}
+
+export type RequiredQuery<TResultValues> = Query<TResultValues> & {
+	[IS_REQUIRED]: true
+	first: () => RequiredFirstQuery<TResultValues>
+}
+
+export type FirstQuery<TResultValues> = Query<TResultValues> & {
+	[IS_FIRST]: true
+	required: () => RequiredFirstQuery<TResultValues>
+}
+
+export type RequiredFirstQuery<TResultValues> = Query<TResultValues> & {
+	[IS_REQUIRED]: true
+	[IS_FIRST]: true
 }
 
 export type AnyQuery = Query<any>
@@ -90,10 +109,10 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 	const query: Query<InferQueryResultValues<TParams>> = {
 		label,
 		compute,
-		get() {
+		use() {
 			return arrayResults
 		},
-		first() {
+		useFirst() {
 			return arrayResults[0]
 		},
 		removeEntity(entity) {
@@ -117,6 +136,12 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 			else {
 				results.delete(entity)
 			}
+		},
+		required() {
+			return createRequiredQuery(args)
+		},
+		first() {
+			return createFirstQuery(args)
 		},
 	}
 
@@ -182,4 +207,33 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 	}
 
 	return query
+}
+
+function createRequiredQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): RequiredQuery<InferQueryResultValues<TParams>> {
+	const query = createQuery(args)
+	return {
+		...query,
+		[IS_REQUIRED]: true,
+		first() {
+			return {
+				...createFirstQuery(args),
+				[IS_FIRST]: true,
+				[IS_REQUIRED]: true,
+			}
+		},
+	}
+}
+
+function createFirstQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): FirstQuery<InferQueryResultValues<TParams>> {
+	const query = createQuery(args)
+	return {
+		...query,
+		[IS_FIRST]: true,
+		required() {
+			return {
+				...createRequiredQuery(args),
+				[IS_FIRST]: true,
+			}
+		},
+	}
 }

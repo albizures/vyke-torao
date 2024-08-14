@@ -33,7 +33,8 @@
 		"turbo": "turbo",
 		"build": "turbo build",
 		"dev": "turbo dev:build dev",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"test:unit:dev": "turbo test:unit:dev"
 	},
 	"dependencies": {
 		"turbo": "^2.0.12"

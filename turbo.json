@@ -13,6 +13,10 @@
 		"dev": {
 			"persistent": true,
 			"cache": false
+		},
+		"test:unit:dev": {
+			"persistent": true,
+			"cache": false
 		}
 	}
 }

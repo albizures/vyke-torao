@@ -10,9 +10,7 @@ type Camera2DArgs = {
 	angle?: number
 }
 
-const Camera2D = createComponentTag({
-	label: 'camera-2d',
-})
+const Camera2D = createComponentTag('camera-2d')
 
 export const camera2DQuery = createQuery({
 	label: 'Camera 2D Query',

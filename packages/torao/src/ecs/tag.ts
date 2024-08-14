@@ -1,14 +1,9 @@
 import { createComponent } from './component'
 import type { Entity } from './entity'
 
-type ComponentIdArgs = {
-	label: string
-
-}
-
-export function createComponentTag(args: ComponentIdArgs) {
+export function createComponentTag(label: string) {
 	const baseComponent = createComponent({
-		label: args.label,
+		label,
 		create: () => ({
 			tag: true,
 		}),

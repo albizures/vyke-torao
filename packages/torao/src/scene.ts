@@ -28,7 +28,7 @@ export type SceneContext = {
 	entities: Set<Entity>
 	defineAsset: <TValue, TType extends AssetType>(args: AssetArgs<TValue, TType>) => Asset<TValue, TType>
 	spawn: (args: EntityArgs | Entity) => Entity
-	defineSystem: (args: System) => System
+	registerSystem: (args: System) => System
 	defineResource: <TValue>(args: ResourceArgs<TValue>) => Resource<TValue>
 }
 type SceneBuilder = (context: SceneContext) => void
@@ -96,7 +96,7 @@ function createSceneContext() {
 
 			return entity
 		},
-		defineSystem(system: System): System {
+		registerSystem(system: System): System {
 			updateSystems.add(system)
 			return system
 		},

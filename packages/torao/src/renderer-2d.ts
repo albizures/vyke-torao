@@ -8,13 +8,19 @@ import { camera2DQuery } from './prefabs'
 
 const renderer2dSystem = createSystem({
 	label: 'velocity-and-position',
-	queries: [withTransformAndTexture, camera2DQuery],
-	update() {
+	queries: {
+		entitiesToRender: withTransformAndTexture.required(),
+		camera2d: camera2DQuery.required().first(),
+	},
+	update(args) {
+		const { entities } = args
+		const { entitiesToRender, camera2d } = entities
+
 		const { buffer, context } = CanvasBuffer.mutable()
 
 		buffer.clearRect(0, 0, context.canvas.width, context.canvas.height)
 		buffer.save()
-		const camera2d = camera2DQuery.first()
+
 		if (camera2d) {
 			const { transform } = camera2d.values
 			const { position, scale, angle } = transform
@@ -24,7 +30,7 @@ const renderer2dSystem = createSystem({
 			buffer.scale(scale.x, scale.y)
 		}
 
-		for (const entity of withTransformAndTexture.get()) {
+		for (const entity of entitiesToRender) {
 			const { transform, texture } = entity.values
 			const { asset, atlas } = texture
 			const { position, scale, angle: rotation } = transform

@@ -3,9 +3,14 @@ import { withVelocityAndTransform } from '../queries'
 
 export const velocityAndTransformSystem = createSystem({
 	label: 'velocity-and-position',
-	queries: [withVelocityAndTransform],
-	update() {
-		for (const entity of withVelocityAndTransform.get()) {
+	queries: {
+		velocityAndTransform: withVelocityAndTransform,
+	},
+	update(args) {
+		const { entities } = args
+		const { velocityAndTransform } = entities
+
+		for (const entity of velocityAndTransform) {
 			const { transform, velocity } = entity.values
 			const { position } = transform
 			position.x += velocity.x

@@ -42,13 +42,13 @@ export function createGame<
 
 	function update() {
 		for (const system of currentScene.systems.update) {
-			system.update()
+			system.run()
 		}
 	}
 
 	function render() {
 		for (const system of currentScene.systems.render) {
-			system.update()
+			system.run()
 		}
 	}
 
