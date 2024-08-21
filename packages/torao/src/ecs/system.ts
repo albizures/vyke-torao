@@ -1,3 +1,4 @@
+import { InvalidSystemTypeError } from '../error'
 import { type AnyQuery, type FirstQuery, IS_FIRST, IS_REQUIRED, type RequiredFirstQuery } from './query'
 
 type InferValues<TQueries extends Queries> = {
@@ -11,6 +12,8 @@ type InferValues<TQueries extends Queries> = {
 
 type UpdateArgs<TValues> = {
 	entities: TValues
+	deltaTime: number
+	fps: number
 }
 
 /**
@@ -19,23 +22,68 @@ type UpdateArgs<TValues> = {
 export type System = {
 	id: string
 	queries: Array<AnyQuery>
-	run: () => void
+	run: (args: RunArgs) => void
+	type: SystemType
 }
 type Queries = Record<string, AnyQuery>
 
-type SystemArgs<TQueries extends Queries> = {
+export enum SystemType {
+	FixedUpdate = 0,
+	Update = 1,
+	Render = 2,
+}
+
+type SystemFn = (args: UpdateArgs<any>) => void
+
+type SystemFns =
+	| { fixedUpdate: SystemFn }
+	| { update: SystemFn }
+	| { render: SystemFn }
+
+type RunArgs = {
+	deltaTime: number
+	fps: number
+}
+
+type SystemArgs<TQueries extends Queries> = SystemFns & {
 	id: string
 	queries?: TQueries
-	update: (args: UpdateArgs<InferValues<TQueries>>) => void
 }
 
 export function createSystem<TQueries extends Queries>(args: SystemArgs<TQueries>): System {
-	const { id, queries, update } = args
+	const { id, queries } = args
+
+	const { fn, type } = extraTypeAndFn()
+
+	function extraTypeAndFn() {
+		if ('fixedUpdate' in args) {
+			return {
+				fn: args.fixedUpdate,
+				type: SystemType.FixedUpdate,
+			}
+		}
+		else if ('update' in args) {
+			return {
+				fn: args.update,
+				type: SystemType.Update,
+			}
+		}
+		else if ('render' in args) {
+			return {
+				fn: args.render,
+				type: SystemType.Render,
+			}
+		}
+
+		throw new InvalidSystemTypeError('unknown')
+	}
 
 	return {
 		id,
+		type,
 		queries: Object.values(queries ?? {}),
-		run() {
+		run(args: RunArgs) {
+			const { deltaTime, fps } = args
 			const entities = {} as Partial<InferValues<TQueries>>
 
 			for (const key in queries) {
@@ -53,7 +101,11 @@ export function createSystem<TQueries extends Queries>(args: SystemArgs<TQueries
 				entities[key] = value as InferValues<TQueries>[typeof key]
 			}
 
-			update({ entities: entities as InferValues<TQueries> })
+			fn({
+				deltaTime,
+				fps,
+				entities: entities as InferValues<TQueries>,
+			})
 		},
 	}
 }

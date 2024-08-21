@@ -1,7 +1,8 @@
 import { rootSola } from './sola'
 import type { Renderer } from './renderer'
 import type { BuildableScene, Scene } from './scene'
-import { createLoop } from './loop'
+import type { LoopFnArgs } from './loop'
+import { createLoop, createRequestAnimationFrameLoopRunner } from './loop'
 import type { Canvas } from './canvas'
 
 const _sola = rootSola.withTag('game')
@@ -30,25 +31,32 @@ export function createGame<
 		canvas,
 		scenes: sceneEntries,
 		renderer,
-		tickRate = 40,
+		tickRate = 50,
 	} = args
 	const startScene = args.startScene as string
-	const loop = createLoop(tickRate)
+	const loop = createLoop({ tickRate })
+	const loopRunner = createRequestAnimationFrameLoopRunner(loop)
 	const scenes = new Map(Object.entries(sceneEntries))
 	const readyScenes = new Map<string, Scene>()
 
 	let currentScene: Scene
 	renderer.setup(canvas)
 
-	function update() {
+	function update(args: LoopFnArgs) {
 		for (const system of currentScene.systems.update) {
-			system.run()
+			system.run(args)
 		}
 	}
 
-	function render() {
+	function render(args: LoopFnArgs) {
 		for (const system of currentScene.systems.render) {
-			system.run()
+			system.run(args)
+		}
+	}
+
+	function fixedUpdate(args: LoopFnArgs) {
+		for (const system of currentScene.systems.fixedUpdate) {
+			system.run(args)
 		}
 	}
 
@@ -64,7 +72,8 @@ export function createGame<
 
 			readyScenes.set(scene.id, currentScene)
 
-			loop.start({
+			loopRunner.start({
+				fixedUpdate,
 				update,
 				render,
 			})

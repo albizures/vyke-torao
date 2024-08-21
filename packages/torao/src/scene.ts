@@ -1,8 +1,8 @@
 import { type Entity, type EntityArgs, createEntity } from './ecs/entity'
 import { createAsset } from './assets'
 import type { AnyAsset, Asset, AssetArgs, AssetType } from './assets'
-import { COMPONENTS, type Resource, type ResourceArgs, type System, createResource } from './ecs'
-import { Transform } from './components'
+import { COMPONENTS, type Resource, type ResourceArgs, type System, SystemType, createResource } from './ecs'
+import { InvalidSystemTypeError } from './error'
 
 /**
  * A buildable scene is a scene that can be built asynchronously.
@@ -19,6 +19,7 @@ export type Scene = {
 	id: string
 	entities: Set<Entity>
 	systems: {
+		fixedUpdate: Set<System>
 		update: Set<System>
 		render: Set<System>
 	}
@@ -28,7 +29,7 @@ export type SceneContext = {
 	entities: Set<Entity>
 	defineAsset: <TValue, TType extends AssetType>(args: AssetArgs<TValue, TType>) => Asset<TValue, TType>
 	spawn: (args: EntityArgs | Entity) => Entity
-	registerSystem: (args: System) => System
+	registerSystem: (system: System) => System
 	defineResource: <TValue>(args: ResourceArgs<TValue>) => Resource<TValue>
 }
 type SceneBuilder = (context: SceneContext) => void
@@ -52,7 +53,8 @@ export function createScene(id: string, builder: SceneBuilder): BuildableScene {
 		}
 
 		const entitiesArray = Array.from(entities)
-		for (const system of [...systems.render, ...systems.update]) {
+		const allSystems = [...systems.fixedUpdate, ...systems.update, ...systems.render]
+		for (const system of allSystems) {
 			for (const query of system.queries) {
 				query.compute(entitiesArray)
 			}
@@ -76,9 +78,16 @@ export function createScene(id: string, builder: SceneBuilder): BuildableScene {
 function createSceneContext() {
 	const assets = new Set<AnyAsset>()
 	const entities = new Set<Entity>()
-	const renderSystems = new Set<System>()
-	const updateSystems = new Set<System>()
+	const render = new Set<System>()
+	const update = new Set<System>()
+	const fixedUpdate = new Set<System>()
 	const resources = new Set<Resource<unknown>>()
+
+	const byType = {
+		[SystemType.FixedUpdate]: fixedUpdate,
+		[SystemType.Update]: update,
+		[SystemType.Render]: render,
+	}
 
 	const context: SceneContext = {
 		entities,
@@ -97,7 +106,15 @@ function createSceneContext() {
 			return entity
 		},
 		registerSystem(system: System): System {
-			updateSystems.add(system)
+			const systems = byType[system.type]
+
+			if (systems) {
+				systems.add(system)
+			}
+			else {
+				throw new InvalidSystemTypeError(system.type)
+			}
+
 			return system
 		},
 		defineResource<TValue>(args: ResourceArgs<TValue>): Resource<TValue> {
@@ -112,8 +129,9 @@ function createSceneContext() {
 		entities,
 		context,
 		systems: {
-			update: updateSystems,
-			render: renderSystems,
+			fixedUpdate,
+			update,
+			render,
 		},
 	}
 }

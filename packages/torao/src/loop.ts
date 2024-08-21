@@ -1,66 +1,102 @@
-type StartArgs = {
-	update: () => void
-	render: (fps: number) => void
+export type LoopFnArgs = {
+	deltaTime: number
+	fps: number
+}
+export type LoopFns = {
+	fixedUpdate: (args: LoopFnArgs) => void
+	update: (args: LoopFnArgs) => void
+	render: (args: LoopFnArgs) => void
+}
+
+type TickArgs = LoopFns & {
+	timestamp: number
 }
 
 export type Loop = {
 	readonly tickRate: number
-	readonly isRunning: boolean
+	frame: (args: TickArgs) => void
+}
+
+type LoopArgs = {
+	tickRate?: number
+}
+
+export function createLoop(args?: LoopArgs): Loop {
+	const { tickRate = 50 } = args ?? {}
+	/**
+	 * this is the slice of time that we will run in fixed updates
+	 */
+	let slice = 1000 / tickRate
+	let lastTime = 0
+	let accumulator = 0
+
+	const fnArgs: LoopFnArgs = {
+		deltaTime: 0,
+		fps: 0,
+	}
+	return {
+		tickRate,
+		/**
+		 * it will call the fixedUpdate function every defined tickRate
+		 * and the render and update function every frame
+		 */
+		frame(args: TickArgs) {
+			const { timestamp, fixedUpdate, update, render } = args
+
+			const deltaTime = timestamp - lastTime
+			const fps = Math.round(1 / (1000 / deltaTime))
+			lastTime = timestamp
+			accumulator += deltaTime
+
+			while (accumulator >= slice) {
+				fnArgs.deltaTime = slice
+				fixedUpdate(fnArgs)
+				accumulator -= slice
+			}
+
+			fnArgs.deltaTime = deltaTime
+			fnArgs.fps = fps
+
+			update(fnArgs)
+			render(fnArgs)
+		},
+	}
+}
+
+type StartArgs = LoopFns
+
+export type LoopRunner = {
 	start: (args: StartArgs) => void
 	stop: () => void
 }
 
-export function createLoop(tickRate: number): Loop {
+export function createRequestAnimationFrameLoopRunner(loop: Loop): LoopRunner {
+	let id: number
 	let isRunning = false
-	/**
-	 * this is the slice of time that we will use to update the game
-	 */
-	let slice = 1000 / tickRate
 	return {
-		tickRate,
-		get isRunning() {
-			return isRunning
-		},
-		/**
-		 * start the game loop
-		 * it will call the update function every defined tickRate
-		 * and the render function every frame
-		 */
 		start: (args: StartArgs) => {
-			const { update, render } = args
-			let lastTime = 0
-			let accumulator = 0
-			isRunning = true
+			const { fixedUpdate, update, render } = args
 
-			const loop = (now: number) => {
-				if (!isRunning) {
-					return
+			function tick(timestamp: number) {
+				if (isRunning) {
+					loop.frame({
+						timestamp,
+						fixedUpdate,
+						update,
+						render,
+					})
+					id = requestAnimationFrame(tick)
 				}
-
-				const deltaTime = now - lastTime
-				const fps = Math.round(1 / (1000 / deltaTime))
-				lastTime = now
-				accumulator += deltaTime
-
-				while (accumulator >= slice) {
-					// this will ensure the update function is called
-					// the correct amount of times regardless of the frame rate
-					update()
-					accumulator -= slice
-				}
-
-				render(fps)
-
-				requestAnimationFrame(loop)
 			}
 
-			requestAnimationFrame((now) => {
-				lastTime = now
-				requestAnimationFrame(loop)
-			})
+			isRunning = true
+			id = requestAnimationFrame(tick)
 		},
 		stop: () => {
 			isRunning = false
+			if (id) {
+				cancelAnimationFrame(id)
+			}
 		},
 	}
 }

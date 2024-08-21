@@ -31,7 +31,7 @@ export function createEntity(args: EntityArgs): Entity {
 			component.removeFrom(entity)
 		},
 		setComponent(component, instance) {
-			component.setValue(entity, instance)
+			component.setIn(entity, instance)
 		},
 	}
 

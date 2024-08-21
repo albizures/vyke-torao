@@ -16,7 +16,7 @@ export type Component<TInstance extends ComponentInstance, TArgs> = {
 	removeFrom: (entity: Entity) => void
 	getFrom: (entity: Entity) => TInstance | undefined
 	addTo: (entity: Entity, args: TArgs) => void
-	setValue: (entity: Entity, value: TInstance) => void
+	setIn: (entity: Entity, value: Partial<TInstance>) => void
 }
 
 type ComponentArgs<TInstance extends ComponentInstance, TArgs> = {
@@ -71,8 +71,11 @@ export function createComponent<
 		getFrom(entity: Entity): TInstance | undefined {
 			return entity[COMPONENTS].get(component) as TInstance | undefined
 		},
-		setValue(entity: Entity, value: TInstance) {
-			entity[COMPONENTS].set(component, value)
+		setIn(entity: Entity, value: Partial<TInstance>) {
+			entity[COMPONENTS].set(component, {
+				...entity[COMPONENTS].get(component),
+				...value,
+			})
 
 			for (const query of queries) {
 				query.addEntity(entity)
