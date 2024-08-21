@@ -1,7 +1,7 @@
 import type { Rectangle } from './shapes/Rectangle'
 import type { Square } from './shapes/Square'
 import type { Triangle } from './shapes/Triangle'
-import type { Vec2d } from './vec'
+import type { Vec2D } from './vec'
 
 export enum PlaceholderType {
 	Rectangle,
@@ -16,7 +16,7 @@ export type PlaceholderData = {
 	[PlaceholderType.Circle]: { radius: number }
 	[PlaceholderType.Triangle]: Triangle
 	[PlaceholderType.Square]: Square
-	[PlaceholderType.Ellipse]: Vec2d
+	[PlaceholderType.Ellipse]: Vec2D
 }
 
 export type Placeholder = {

@@ -1,20 +1,20 @@
-export type Vec2d = {
+export type Vec2D = {
 	x: number
 	y: number
 }
 
-export function vec2(x: number, y: number): Vec2d {
+export function vec2D(x: number, y: number): Vec2D {
 	return { x, y }
 }
 
-vec2.divide = (a: Vec2d, b: Vec2d): Vec2d => {
-	return vec2(a.x / b.x, a.y / b.y)
+vec2D.divide = (a: Vec2D, b: Vec2D): Vec2D => {
+	return vec2D(a.x / b.x, a.y / b.y)
 }
 
-vec2.add = (a: Vec2d, b: Vec2d): Vec2d => {
-	return vec2(a.x + b.x, a.y + b.y)
+vec2D.add = (a: Vec2D, b: Vec2D): Vec2D => {
+	return vec2D(a.x + b.x, a.y + b.y)
 }
 
-vec2.divideScalar = (a: Vec2d, scalar: number): Vec2d => {
-	return vec2(a.x / scalar, a.y / scalar)
+vec2D.divideScalar = (a: Vec2D, scalar: number): Vec2D => {
+	return vec2D(a.x / scalar, a.y / scalar)
 }

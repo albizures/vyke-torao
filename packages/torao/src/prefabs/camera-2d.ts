@@ -1,12 +1,12 @@
 import { Transform } from '../components'
 import { createComponentTag, createEntity, createQuery } from '../ecs'
 import { createPrefab } from '../prefab'
-import type { Vec2d } from '../vec'
+import type { Vec2D } from '../vec'
 
 type Camera2DArgs = {
 	id: string
-	position?: Vec2d
-	scale?: Vec2d
+	position?: Vec2D
+	scale?: Vec2D
 	angle?: number
 }
 

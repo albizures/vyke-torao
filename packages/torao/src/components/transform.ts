@@ -1,19 +1,19 @@
 import { createComponent } from '../ecs'
-import { type Vec2d, vec2 } from '../vec'
+import { type Vec2D, vec2D } from '../vec'
 
 type TransformData = {
-	position: Vec2d
+	position: Vec2D
 	/**
 	 * Rotation in radians.
 	 */
 	angle: number
-	scale: Vec2d
+	scale: Vec2D
 }
 
 export const Transform = createComponent<TransformData, Partial<TransformData>>({
 	id: 'transform',
 	create(args: Partial<TransformData>) {
-		const { position = vec2(0, 0), angle = 0, scale = vec2(1, 1) } = args
+		const { position = vec2D(0, 0), angle = 0, scale = vec2D(1, 1) } = args
 		return {
 			position,
 			angle,

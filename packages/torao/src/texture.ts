@@ -1,7 +1,7 @@
 import { rootSola } from './sola'
 import type { AnyAsset, CanvasAsset, ImageAsset } from './assets'
 import type { Region2d } from './region'
-import type { Vec2d } from './vec'
+import type { Vec2D } from './vec'
 
 const _sola = rootSola.withTag('texture')
 
@@ -23,8 +23,8 @@ export type SingleAtlas = BaseAtlas & {
 export type MultipleAtlas = BaseAtlas & {
 	type: AtlasType.Multiple
 	amount: number
-	size: Vec2d
-	gap: Vec2d
+	size: Vec2D
+	gap: Vec2D
 }
 
 export type AnyAtlas = SingleAtlas | MultipleAtlas
@@ -35,9 +35,9 @@ type AtlasArgs<TType extends AtlasType> = TType extends AtlasType.Single ? {
 } : {
 	type: TType
 	region: Region2d
-	size: Vec2d
+	size: Vec2D
 	amount: number
-	gap?: Vec2d
+	gap?: Vec2D
 }
 
 export function createAtlas(args: AtlasArgs<AtlasType.Single>): SingleAtlas
