@@ -1,18 +1,20 @@
 import type { Renderer } from './renderer'
-import type { Canvas } from './canvas'
 import { CanvasBuffer } from './resources'
-import { createSystem } from './ecs'
+import { SystemType, createSystem } from './ecs'
 import { withTransformAndTexture } from './queries'
 import { AssetStatus, AssetType } from './assets'
 import { camera2DQuery } from './prefabs'
+import { Canvas } from './resources/canvas'
+import type { Vec2D } from './vec'
 
 const renderer2dSystem = createSystem({
 	id: 'velocity-and-position',
+	type: SystemType.Render,
 	queries: {
 		entitiesToRender: withTransformAndTexture.required(),
 		camera2d: camera2DQuery.required().first(),
 	},
-	update(args) {
+	fn(args) {
 		const { entities } = args
 		const { entitiesToRender, camera2d } = entities
 
@@ -20,7 +22,6 @@ const renderer2dSystem = createSystem({
 
 		buffer.clearRect(0, 0, context.canvas.width, context.canvas.height)
 		buffer.save()
-
 		if (camera2d) {
 			const { transform } = camera2d.values
 			const { position, scale, angle } = transform
@@ -58,26 +59,30 @@ const renderer2dSystem = createSystem({
 	},
 })
 
-export function createRenderer2d(): Renderer {
-	let context: CanvasRenderingContext2D
-	const buffer = document.createElement('canvas').getContext('2d')!
+const renderer2dSetupSystem = createSystem({
+	id: 'renderer-2d-setup',
+	type: SystemType.Setup,
+	fn() {
+		const canvas = Canvas.value
+		const { size, element } = canvas
 
-	return {
-		systems: new Set([renderer2dSystem]),
-		setup(canvas: Canvas) {
-			const { size, element } = canvas
+		const context = element.getContext('2d')!
+		const buffer = document.createElement('canvas').getContext('2d')!
 
-			context = element.getContext('2d')!
+		function setSize(size: Vec2D) {
+			context.canvas.width = size.x
+			context.canvas.height = size.y
+		}
 
-			canvas.onResize((size) => {
-				buffer.canvas.width = size.x
-				buffer.canvas.height = size.y
-			})
+		canvas.onResize(setSize)
 
-			buffer.canvas.width = size.x
-			buffer.canvas.height = size.y
+		setSize(size)
 
-			CanvasBuffer.set({ buffer, context })
-		},
-	}
-}
+		CanvasBuffer.set({ buffer, context })
+	},
+})
+
+export const renderer2d = [
+	renderer2dSetupSystem,
+	renderer2dSystem,
+]

@@ -10,10 +10,8 @@ type InferValues<TQueries extends Queries> = {
 			: ReturnType<TQueries[TKey]['use']>
 }
 
-type UpdateArgs<TValues> = {
+type SystemFnArgs<TValues> = {
 	entities: TValues
-	deltaTime: number
-	fps: number
 }
 
 /**
@@ -22,7 +20,7 @@ type UpdateArgs<TValues> = {
 export type System = {
 	id: string
 	queries: Array<AnyQuery>
-	run: (args: RunArgs) => void
+	run: () => void
 	type: SystemType
 }
 type Queries = Record<string, AnyQuery>
@@ -31,59 +29,29 @@ export enum SystemType {
 	FixedUpdate = 0,
 	Update = 1,
 	Render = 2,
+	Setup = 3,
+	EnterScene = 4,
+	BeforeFrame = 5,
+	AfterFrame = 6,
 }
 
-type SystemFn = (args: UpdateArgs<any>) => void
+type SystemFn<TEntities> = (args: SystemFnArgs<TEntities>) => void
 
-type SystemFns =
-	| { fixedUpdate: SystemFn }
-	| { update: SystemFn }
-	| { render: SystemFn }
-
-type RunArgs = {
-	deltaTime: number
-	fps: number
-}
-
-type SystemArgs<TQueries extends Queries> = SystemFns & {
+type SystemArgs<TQueries extends Queries> = {
 	id: string
 	queries?: TQueries
+	type: SystemType
+	fn: SystemFn<InferValues<TQueries>>
 }
 
 export function createSystem<TQueries extends Queries>(args: SystemArgs<TQueries>): System {
-	const { id, queries } = args
-
-	const { fn, type } = extraTypeAndFn()
-
-	function extraTypeAndFn() {
-		if ('fixedUpdate' in args) {
-			return {
-				fn: args.fixedUpdate,
-				type: SystemType.FixedUpdate,
-			}
-		}
-		else if ('update' in args) {
-			return {
-				fn: args.update,
-				type: SystemType.Update,
-			}
-		}
-		else if ('render' in args) {
-			return {
-				fn: args.render,
-				type: SystemType.Render,
-			}
-		}
-
-		throw new InvalidSystemTypeError('unknown')
-	}
+	const { id, queries, fn, type } = args
 
 	return {
 		id,
 		type,
 		queries: Object.values(queries ?? {}),
-		run(args: RunArgs) {
-			const { deltaTime, fps } = args
+		run() {
 			const entities = {} as Partial<InferValues<TQueries>>
 
 			for (const key in queries) {
@@ -102,8 +70,6 @@ export function createSystem<TQueries extends Queries>(args: SystemArgs<TQueries
 			}
 
 			fn({
-				deltaTime,
-				fps,
 				entities: entities as InferValues<TQueries>,
 			})
 		},

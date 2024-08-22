@@ -8,20 +8,21 @@ import type { Rectangle } from './shapes/Rectangle'
 const sola = rootSola.withTag('assets')
 
 export enum AssetType {
-	Image,
-	Audio,
-	Video,
-	JSON,
-	Text,
-	Binary,
-	Canvas,
+	Image = 0,
+	Audio = 1,
+	Video = 2,
+	JSON = 3,
+	Text = 4,
+	Binary = 5,
+	Canvas = 6,
+	Path2D = 7,
 }
 
 export enum AssetStatus {
-	Created,
-	Loading,
-	Loaded,
-	Error,
+	Created = 0,
+	Loading = 1,
+	Loaded = 2,
+	Error = 3,
 }
 
 type BaseAsset = {
@@ -63,7 +64,20 @@ export type CanvasAsset = Simplify<BaseAsset & {
 	use: () => HTMLCanvasElement
 }>
 
-export type AnyAsset = ImageAsset | AudioAsset | VideoAsset | JSONAsset | TextAsset | BinaryAsset | CanvasAsset
+export type Path2DAsset = Simplify<BaseAsset & {
+	type: AssetType.Path2D
+	use: () => Path2D
+}>
+
+export type AnyAsset =
+	| ImageAsset
+	| AudioAsset
+	| VideoAsset
+	| JSONAsset
+	| TextAsset
+	| BinaryAsset
+	| CanvasAsset
+	| Path2DAsset
 
 function createBaseAsset<TType extends AssetType>(url: string, type: TType) {
 	return {

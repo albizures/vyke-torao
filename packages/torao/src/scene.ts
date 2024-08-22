@@ -9,7 +9,7 @@ import { InvalidSystemTypeError } from './error'
  */
 export type BuildableScene = {
 	id: string
-	build: (renderSystems: Set<System>) => Promise<Scene>
+	build: (defaultSystem: Set<System>) => Promise<Scene>
 }
 
 /**
@@ -22,6 +22,9 @@ export type Scene = {
 		fixedUpdate: Set<System>
 		update: Set<System>
 		render: Set<System>
+		enterScene: Set<System>
+		beforeFrame: Set<System>
+		afterFrame: Set<System>
 	}
 }
 
@@ -39,13 +42,12 @@ type SceneBuilder = (context: SceneContext) => void
  */
 export function createScene(id: string, builder: SceneBuilder): BuildableScene {
 	let scene: Scene
-	async function build(renderSystems: Set<System>): Promise<Scene> {
+	async function build(defaultSystem: Set<System>): Promise<Scene> {
 		if (scene) {
 			return scene
 		}
 
-		const { entities, assets, context, systems } = createSceneContext()
-		systems.render = renderSystems
+		const { entities, assets, context, systems } = createSceneContext(defaultSystem)
 		builder(context)
 
 		for (const asset of assets) {
@@ -75,18 +77,33 @@ export function createScene(id: string, builder: SceneBuilder): BuildableScene {
 	}
 }
 
-function createSceneContext() {
+function createSceneContext(defaultSystem: Set<System>) {
 	const assets = new Set<AnyAsset>()
 	const entities = new Set<Entity>()
 	const render = new Set<System>()
 	const update = new Set<System>()
 	const fixedUpdate = new Set<System>()
 	const resources = new Set<Resource<unknown>>()
+	const enterScene = new Set<System>()
+	const beforeFrame = new Set<System>()
+	const afterFrame = new Set<System>()
 
 	const byType = {
 		[SystemType.FixedUpdate]: fixedUpdate,
 		[SystemType.Update]: update,
 		[SystemType.Render]: render,
+		[SystemType.EnterScene]: enterScene,
+		[SystemType.BeforeFrame]: beforeFrame,
+		[SystemType.AfterFrame]: afterFrame,
+		[SystemType.Setup]: undefined,
+	}
+
+	for (const system of defaultSystem) {
+		const systems = byType[system.type]
+
+		if (systems) {
+			systems.add(system)
+		}
 	}
 
 	const context: SceneContext = {
@@ -132,6 +149,9 @@ function createSceneContext() {
 			fixedUpdate,
 			update,
 			render,
+			enterScene,
+			beforeFrame,
+			afterFrame,
 		},
 	}
 }

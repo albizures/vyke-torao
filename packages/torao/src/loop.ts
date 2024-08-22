@@ -1,20 +1,22 @@
-export type LoopFnArgs = {
+export type LoopValues = {
 	deltaTime: number
 	fps: number
 }
 export type LoopFns = {
-	fixedUpdate: (args: LoopFnArgs) => void
-	update: (args: LoopFnArgs) => void
-	render: (args: LoopFnArgs) => void
+	beforeFrame: (args: LoopValues) => void
+	afterFrame: (args: LoopValues) => void
+	fixedUpdate: (args: LoopValues) => void
+	update: (args: LoopValues) => void
+	render: (args: LoopValues) => void
 }
 
-type TickArgs = LoopFns & {
+type FrameArgs = LoopFns & {
 	timestamp: number
 }
 
 export type Loop = {
 	readonly tickRate: number
-	frame: (args: TickArgs) => void
+	frame: (args: FrameArgs) => void
 }
 
 type LoopArgs = {
@@ -30,7 +32,7 @@ export function createLoop(args?: LoopArgs): Loop {
 	let lastTime = 0
 	let accumulator = 0
 
-	const fnArgs: LoopFnArgs = {
+	const fnArgs: LoopValues = {
 		deltaTime: 0,
 		fps: 0,
 	}
@@ -40,7 +42,7 @@ export function createLoop(args?: LoopArgs): Loop {
 		 * it will call the fixedUpdate function every defined tickRate
 		 * and the render and update function every frame
 		 */
-		frame(args: TickArgs) {
+		frame(args: FrameArgs) {
 			const { timestamp, fixedUpdate, update, render } = args
 
 			const deltaTime = timestamp - lastTime
@@ -73,18 +75,23 @@ export type LoopRunner = {
 export function createRequestAnimationFrameLoopRunner(loop: Loop): LoopRunner {
 	let id: number
 	let isRunning = false
+
 	return {
 		start: (args: StartArgs) => {
-			const { fixedUpdate, update, render } = args
+			const { fixedUpdate, update, render, beforeFrame, afterFrame } = args
+			const frameArgs: FrameArgs = {
+				fixedUpdate,
+				update,
+				render,
+				beforeFrame,
+				afterFrame,
+				timestamp: 0,
+			}
 
 			function tick(timestamp: number) {
 				if (isRunning) {
-					loop.frame({
-						timestamp,
-						fixedUpdate,
-						update,
-						render,
-					})
+					frameArgs.timestamp = timestamp
+					loop.frame(frameArgs)
 					id = requestAnimationFrame(tick)
 				}
 			}

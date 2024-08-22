@@ -1,23 +1,24 @@
 import { rootSola } from './sola'
-import type { Renderer } from './renderer'
 import type { BuildableScene, Scene } from './scene'
-import type { LoopFnArgs } from './loop'
+import type { LoopValues } from './loop'
 import { createLoop, createRequestAnimationFrameLoopRunner } from './loop'
-import type { Canvas } from './canvas'
+import type { Canvas as CanvasValue } from './canvas'
+import type { System } from './ecs'
+import { SystemType } from './ecs'
+import { Canvas, Loop } from './resources'
 
 const _sola = rootSola.withTag('game')
 
 type Game = {
-	canvas: Canvas
+	canvas: CanvasValue
 	scenes: Map<string, BuildableScene>
 	startScene: string
-	renderer: Renderer
 	start: () => void
 }
 
 type GameArgs<TScenes extends Record<string, BuildableScene>, TStartScene extends keyof TScenes> = {
-	canvas: Canvas
-	renderer: Renderer
+	canvas: CanvasValue
+	systems: Array<System>
 	scenes: TScenes
 	startScene: TStartScene
 	tickRate?: number
@@ -30,8 +31,8 @@ export function createGame<
 	const {
 		canvas,
 		scenes: sceneEntries,
-		renderer,
 		tickRate = 50,
+		systems,
 	} = args
 	const startScene = args.startScene as string
 	const loop = createLoop({ tickRate })
@@ -40,23 +41,38 @@ export function createGame<
 	const readyScenes = new Map<string, Scene>()
 
 	let currentScene: Scene
-	renderer.setup(canvas)
+	Canvas.set(canvas)
+	for (const system of systems) {
+		if (system.type === SystemType.Setup) {
+			system.run()
+		}
+	}
 
-	function update(args: LoopFnArgs) {
+	function beforeFrame(args: LoopValues) {
+		Loop.set(args)
+		for (const system of currentScene.systems.beforeFrame) {
+			system.run()
+		}
+	}
+
+	function afterFrame() {}
+
+	function update() {
 		for (const system of currentScene.systems.update) {
-			system.run(args)
+			system.run()
 		}
 	}
 
-	function render(args: LoopFnArgs) {
+	function render() {
 		for (const system of currentScene.systems.render) {
-			system.run(args)
+			system.run()
 		}
 	}
 
-	function fixedUpdate(args: LoopFnArgs) {
+	function fixedUpdate(args: LoopValues) {
+		Loop.set(args)
 		for (const system of currentScene.systems.fixedUpdate) {
-			system.run(args)
+			system.run()
 		}
 	}
 
@@ -64,18 +80,22 @@ export function createGame<
 		canvas,
 		scenes,
 		startScene,
-		renderer,
 		async start() {
 			const scene = scenes.get(startScene)!
 
-			currentScene = await scene.build(renderer.systems)
+			currentScene = await scene.build(new Set(systems))
 
+			for (const system of currentScene.systems.enterScene) {
+				system.run()
+			}
 			readyScenes.set(scene.id, currentScene)
 
 			loopRunner.start({
 				fixedUpdate,
 				update,
 				render,
+				beforeFrame,
+				afterFrame,
 			})
 		},
 	}

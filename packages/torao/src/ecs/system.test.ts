@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Transform } from '../components'
-import { createSystem } from './system'
+import { SystemType, createSystem } from './system'
 import { createQuery } from './query'
 import { createEntity } from './entity'
 import { createComponentTag } from './tag'
@@ -31,9 +31,10 @@ function createTest() {
 		}),
 	]
 
-	const update = vi.fn()
+	const fn = vi.fn()
 	const system = createSystem({
 		id: 'follow-player',
+		type: SystemType.Update,
 		queries: {
 			player: createQuery({
 				id: 'query-test',
@@ -49,20 +50,20 @@ function createTest() {
 				},
 			}),
 		},
-		update,
+		fn,
 	})
 
 	return {
 		player,
 		enemies,
-		update,
+		fn,
 		system,
 	}
 }
 
 describe('when no entities are given', () => {
 	it('should not run', () => {
-		const { system, update } = createTest()
+		const { system, fn: update } = createTest()
 		system.run()
 
 		expect(update).not.toHaveBeenCalled()
@@ -71,7 +72,7 @@ describe('when no entities are given', () => {
 
 describe('when entities match', () => {
 	it('should run', () => {
-		const { system, update, player, enemies } = createTest()
+		const { system, fn: update, player, enemies } = createTest()
 
 		for (const query of system.queries) {
 			query.compute([player, ...enemies])
@@ -105,6 +106,25 @@ describe('when entities match', () => {
 					}),
 				]),
 			}),
+		}))
+	})
+})
+
+describe('when not queries are given', () => {
+	it('should run', () => {
+		const fn = vi.fn()
+		const system = createSystem({
+			id: 'follow-player',
+			type: SystemType.Update,
+			fn,
+		})
+
+		system.run()
+
+		expect(system.queries).toHaveLength(0)
+		expect(fn).toHaveBeenCalledTimes(1)
+		expect(fn).toHaveBeenCalledWith(expect.objectContaining({
+			entities: {},
 		}))
 	})
 })

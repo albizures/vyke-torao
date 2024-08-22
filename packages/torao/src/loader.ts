@@ -36,3 +36,11 @@ export function loadCanvasContext(canvas: HTMLCanvasElement): Loader<CanvasRende
 		}
 	}
 }
+
+export function loadPath2D(builder: (path: Path2D) => void): Loader<Path2D> {
+	return () => {
+		const path = new Path2D()
+		builder(path)
+		return Ok(path)
+	}
+}

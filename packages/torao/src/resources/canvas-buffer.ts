@@ -1,9 +1,18 @@
 import { createResource } from '../ecs'
 
-export const CanvasBuffer = createResource({
+type CanvasBufferValue = {
+	context: CanvasRenderingContext2D
+	buffer: CanvasRenderingContext2D
+}
+
+export const CanvasBuffer = createResource<CanvasBufferValue>({
 	id: 'canvas-buffer',
 	value: {
-		context: null as unknown as CanvasRenderingContext2D,
-		buffer: null as unknown as CanvasRenderingContext2D,
+		get context(): CanvasRenderingContext2D {
+			throw new Error('Trying to access invalid canvas buffer context')
+		},
+		get buffer(): CanvasRenderingContext2D {
+			throw new Error('Trying to access invalid canvas buffer')
+		},
 	},
 })
