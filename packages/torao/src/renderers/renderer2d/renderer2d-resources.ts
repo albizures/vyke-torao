@@ -1,4 +1,4 @@
-import { createResource } from '../ecs'
+import { createResource } from '../../ecs'
 
 type CanvasBufferValue = {
 	context: CanvasRenderingContext2D

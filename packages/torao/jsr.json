@@ -10,6 +10,7 @@
 		"./components": "./src/components/index.ts",
 		"./prefabs": "./src/prefabs/index.ts",
 		"./systems": "./src/systems/index.ts",
-		"./queries": "./src/queries/index.ts"
+		"./queries": "./src/queries/index.ts",
+		"./renderers/renderer2d": "./src/renderers/renderer2d/index.ts"
 	}
 }

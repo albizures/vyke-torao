@@ -49,6 +49,10 @@
 		"./queries": {
 			"import": "./dist/queries/index.mjs",
 			"require": "./dist/queries/index.cjs"
+		},
+		"./renderers/renderer2d": {
+			"import": "./dist/renderers/renderer2d/index.mjs",
+			"require": "./dist/renderers/renderer2d/index.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

@@ -43,7 +43,7 @@ export function createLoop(args?: LoopArgs): Loop {
 		 * and the render and update function every frame
 		 */
 		frame(args: FrameArgs) {
-			const { timestamp, fixedUpdate, update, render } = args
+			const { timestamp, fixedUpdate, update, render, beforeFrame, afterFrame } = args
 
 			const deltaTime = timestamp - lastTime
 			const fps = Math.round(1 / (1000 / deltaTime))
@@ -59,8 +59,10 @@ export function createLoop(args?: LoopArgs): Loop {
 			fnArgs.deltaTime = deltaTime
 			fnArgs.fps = fps
 
+			beforeFrame(fnArgs)
 			update(fnArgs)
 			render(fnArgs)
+			afterFrame(fnArgs)
 		},
 	}
 }

@@ -55,7 +55,11 @@ export function createGame<
 		}
 	}
 
-	function afterFrame() {}
+	function afterFrame() {
+		for (const system of currentScene.systems.afterFrame) {
+			system.run()
+		}
+	}
 
 	function update() {
 		for (const system of currentScene.systems.update) {
