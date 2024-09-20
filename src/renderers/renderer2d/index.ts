@@ -56,6 +56,7 @@ const renderer2dSystem = createSystem({
 			const { transform, texture } = entity.values
 			const { asset, atlas } = texture
 			const { position, scale, angle } = transform
+
 			if (asset.type === AssetType.Image || asset.type === AssetType.Canvas) {
 				const image = asset.status === AssetStatus.Error
 					? asset.fallback(atlas.region).canvas
@@ -89,7 +90,6 @@ const render2dPath2dSystem = createSystem({
 
 		for (const entity of entitiesToRender) {
 			const { transform, texture, texture2d } = entity.values
-			// console.log(entity.values)
 
 			const { asset } = texture
 			const { position, scale, angle } = transform

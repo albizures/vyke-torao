@@ -1,9 +1,9 @@
-import { Transform, Velocity } from '@vyke/torao/components'
-import { AtlasType, createAtlas, createTexture } from '@vyke/torao/texture'
-import { velocityAndTransformSystem } from '@vyke/torao/systems'
-import { SystemType, createComponentTag, createQuery, createSystem } from '@vyke/torao/ecs'
-import { camera2D, camera2DQuery } from '@vyke/torao/prefabs'
-import { Path2DTexture, Texture, renderer2d } from '@vyke/torao/renderers/renderer2d'
+import { Transform, Velocity } from '../../src/components'
+import { AtlasType, createAtlas, createTexture } from '../../src/texture'
+import { velocityAndTransformSystem } from '../../src/systems'
+import { SystemType, createComponentTag, createQuery, createSystem } from '../../src/ecs'
+import { camera2D, camera2DQuery } from '../../src/prefabs'
+import { Path2DTexture, Texture, renderer2d } from '../../src/renderers/renderer2d'
 import {
 	AssetType,
 	createCanvas,
@@ -11,7 +11,7 @@ import {
 	createScene,
 	loadImage,
 	loadPath2D,
-} from '@vyke/torao'
+} from '../../src'
 
 const Player = createComponentTag('player')
 
@@ -50,7 +50,7 @@ const home = createScene('home', (context) => {
 	const coinAsset = defineAsset({
 		id: 'coin',
 		type: AssetType.Image,
-		loader: loadImage('assets/images/coin.png'),
+		loader: loadImage('/assets/images/coin.png'),
 	})
 
 	const coinTexture = createTexture({
@@ -95,7 +95,7 @@ const home = createScene('home', (context) => {
 				position: { x: 50, y: 10 },
 			}),
 			Texture.entryFrom(coinTexture),
-			Texture.entryFrom(ss),
+			// Texture.entryFrom(ss),
 			// Path2DTexture.entryFrom({
 			// 	paint(context, path) {
 			// 		// context.fillStyle = 'red'

@@ -1,8 +1,7 @@
 {
-	"name": "@vyke/torao-monorepo",
+	"name": "@vyke/torao",
 	"type": "module",
 	"version": "0.0.1",
-	"packageManager": "pnpm@9.0.4",
 	"description": "Small and type-friendly library for game development",
 	"author": "Jose Albizures <jose@albizures.com> (https://albizures.com/)",
 	"license": "MIT",
@@ -22,6 +21,38 @@
 		"./texture": {
 			"import": "./dist/texture.mjs",
 			"require": "./dist/texture.cjs"
+		},
+		"./ecs": {
+			"import": "./dist/ecs/index.mjs",
+			"require": "./dist/ecs/index.cjs"
+		},
+		"./vec": {
+			"import": "./dist/vec.mjs",
+			"require": "./dist/vec.cjs"
+		},
+		"./resources": {
+			"import": "./dist/resources/index.mjs",
+			"require": "./dist/resources/index.cjs"
+		},
+		"./components": {
+			"import": "./dist/components/index.mjs",
+			"require": "./dist/components/index.cjs"
+		},
+		"./prefabs": {
+			"import": "./dist/prefabs/index.mjs",
+			"require": "./dist/prefabs/index.cjs"
+		},
+		"./systems": {
+			"import": "./dist/systems/index.mjs",
+			"require": "./dist/systems/index.cjs"
+		},
+		"./queries": {
+			"import": "./dist/queries/index.mjs",
+			"require": "./dist/queries/index.cjs"
+		},
+		"./renderers/renderer2d": {
+			"import": "./dist/renderers/renderer2d/index.mjs",
+			"require": "./dist/renderers/renderer2d/index.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",
@@ -30,21 +61,43 @@
 		"dist"
 	],
 	"scripts": {
-		"turbo": "turbo",
-		"build": "turbo build",
-		"dev": "turbo dev:build dev",
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"test:unit:dev": "turbo test:unit:dev"
+		"dev": "vite",
+		"build": "run-s build:*",
+		"build:dist": "unbuild",
+		"build:docs": "tsdocs",
+		"dev:build": "nodemon --watch src -e ts --exec pnpm run build:dist",
+		"stub": "unbuild --stub",
+		"test": "run-s test:unit test:types test:lint test:jsr",
+		"test:use": "knip",
+		"test:lint": "eslint .",
+		"test:unit": "vitest run",
+		"test:unit:dev": "vitest",
+		"test:jsr": "jsr publish --dry-run",
+		"test:types": "tsc --noEmit",
+		"release:bump": "standard-version -t v",
+		"release:jsr-sync": "jsr-sync --section=exports",
+		"release:publish": "pnpm publish --access public",
+		"release:push-tags": "git push --follow-tags origin main",
+		"release": "run-s test build release:jsr-sync release:bump release:publish release:push-tags"
 	},
 	"dependencies": {
-		"turbo": "^2.0.12"
+		"@vyke/results": "npm:@jsr/vyke__results@^0.4.3",
+		"@vyke/sola": "npm:@jsr/vyke__sola@^0.0.7",
+		"type-fest": "^4.21.0"
 	},
 	"devDependencies": {
 		"@antfu/eslint-config": "^2.22.4",
-		"eslint": "^9.7.0",
-		"knip": "^5.26.0",
+		"@vyke/jsr-sync": "^0.0.3",
+		"@vyke/tsdocs": "^0.0.8",
+		"eslint": "9.5.0",
+		"jsr": "^0.13.1",
+		"nodemon": "^3.1.4",
 		"npm-run-all": "^4.1.5",
-		"typescript": "^5.5.3"
+		"standard-version": "^9.5.0",
+		"typescript": "^5.5.3",
+		"unbuild": "^2.0.0",
+		"vite": "^5.4.6",
+		"vitest": "^2.0.3"
 	},
 	"standard-version": {
 		"skip": {
