@@ -115,6 +115,8 @@ export function createAsset<TValue, TType extends AssetType>(args: AssetArgs<TVa
 		id,
 		fallback: definePlaceholder(PlaceholderType.Rectangle),
 		async load() {
+			// futher calls to load will return the same promise
+			asset.load = () => Promise.resolve(asset)
 			sola.info(`Loading asset: ${id}`)
 
 			asset.status = AssetStatus.Loading
