@@ -146,7 +146,7 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 	 * Returns the result of the query for a given entity.
 	 * If the entity does not match the query, returns undefined.
 	 */
-	function getResultFrom(entity: Entity): QueryResult<ResultValue> | undefined {
+	function getResultFrom(entity: Entity): QueryResult<ResultValue> | void {
 		let valid = true
 		for (const component of components) {
 			if (!entity.getComponent(component)) {

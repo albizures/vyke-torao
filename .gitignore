@@ -262,3 +262,6 @@ dist
 .DS_Store
 
 .turbo
+
+.astro/
+build

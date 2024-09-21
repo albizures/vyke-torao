@@ -1,4 +1,3 @@
-import { rootSola } from './sola'
 import type { BuildableScene, Scene } from './scene'
 import type { LoopValues } from './loop'
 import { createLoop, createRequestAnimationFrameLoopRunner } from './loop'
@@ -6,14 +5,14 @@ import type { Canvas as CanvasValue } from './canvas'
 import type { System } from './ecs'
 import { SystemType } from './ecs'
 import { Canvas, Loop } from './resources'
+import type { Asset, AssetType } from './assets'
 
-const _sola = rootSola.withTag('game')
-
-type Game = {
+export type Game = {
 	canvas: CanvasValue
 	scenes: Map<string, BuildableScene>
 	startScene: string
 	start: () => void
+	assets: Set<Asset<unknown, AssetType>>
 }
 
 type GameArgs<TScenes extends Record<string, BuildableScene>, TStartScene extends keyof TScenes> = {
@@ -50,6 +49,7 @@ export function createGame<
 
 	function beforeFrame(args: LoopValues) {
 		Loop.set(args)
+
 		for (const system of currentScene.systems.beforeFrame) {
 			system.run()
 		}
@@ -102,5 +102,6 @@ export function createGame<
 				afterFrame,
 			})
 		},
+		assets: new Set(),
 	}
 }

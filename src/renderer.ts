@@ -1,4 +1,3 @@
-import { rootSola } from './sola'
 import type { Canvas } from './canvas'
 import type { System } from './ecs'
 

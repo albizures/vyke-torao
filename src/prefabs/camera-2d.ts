@@ -23,11 +23,11 @@ export const camera2DQuery = createQuery({
 export const camera2D = createPrefab({
 	id: 'Camera 2D',
 	create: (args: Camera2DArgs) => {
-		const { id, position, angle, scale } = args
+		const { id } = args
 		const entity = createEntity({
 			id,
 			components: [
-				Transform.entryFrom({ position, angle, scale }),
+				Transform.entryFrom(args),
 				Camera2D.entryFrom(),
 			],
 		})

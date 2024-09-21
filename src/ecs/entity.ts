@@ -20,7 +20,7 @@ export function createEntity(args: EntityArgs): Entity {
 
 	const entity: Entity = {
 		id,
-		[COMPONENTS]: new Map(componentEntries),
+		[COMPONENTS]: new Map(),
 		getComponent<TComponent extends AnyComponent>(component: TComponent) {
 			return component.getFrom(entity) as InferComponentInstance<TComponent> | undefined
 		},
@@ -33,6 +33,10 @@ export function createEntity(args: EntityArgs): Entity {
 		setComponent(component, instance) {
 			component.setIn(entity, instance)
 		},
+	}
+
+	for (const [component, instance] of componentEntries) {
+		component.addTo(entity, instance)
 	}
 
 	return entity

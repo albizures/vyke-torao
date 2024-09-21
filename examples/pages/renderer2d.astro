@@ -1,3 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>renderer2d</title>
+  </head>
+  <body>
+    <canvas></canvas>
+  </body>
+</html>
+
+<script>
 import { Transform } from '../../src/components'
 import { AtlasType, createAtlas, createTexture } from '../../src/texture'
 import { createComponentTag } from '../../src/ecs'
@@ -8,32 +21,15 @@ import {
 	createCanvas,
 	createGame,
 	createScene,
-	loadImage,
 	loadPath2D,
 } from '../../src'
+import { textures } from '../textures'
 
 const Coin = createComponentTag('coin')
 const Square = createComponentTag('square')
 
 const home = createScene('home', (context) => {
 	const { spawn, defineAsset } = context
-
-	const coinTexture = createTexture({
-		asset: defineAsset({
-			id: 'coin',
-			type: AssetType.Image,
-			loader: loadImage('/assets/images/coin.png'),
-		}),
-		atlas: createAtlas({
-			type: AtlasType.Single,
-			region: {
-				x: 0,
-				y: 0,
-				width: 32,
-				height: 32,
-			},
-		}),
-	})
 
 	const rect = createTexture({
 		asset: defineAsset({
@@ -78,7 +74,7 @@ const home = createScene('home', (context) => {
 			Transform.entryFrom({
 				position: { x: 50, y: 10 },
 			}),
-			Texture.entryFrom(coinTexture),
+			Texture.entryFrom(textures.coin),
 		],
 	})
 
@@ -100,3 +96,4 @@ createGame({
 	},
 	startScene: 'home',
 }).start()
+</script>

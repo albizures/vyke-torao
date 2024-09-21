@@ -1,9 +1,9 @@
 import type { Simplify } from 'type-fest'
-import { isOk } from '@vyke/results/result'
 import { rootSola } from './sola'
 import type { Loader } from './loader'
 import { type Placeholder, PlaceholderType, definePlaceholder } from './placeholders'
 import type { Rectangle } from './shapes/Rectangle'
+import type { Game } from './game'
 
 const sola = rootSola.withTag('assets')
 
@@ -119,13 +119,13 @@ export function createAsset<TValue, TType extends AssetType>(args: AssetArgs<TVa
 
 			asset.status = AssetStatus.Loading
 
-			const value = await loader()
+			try {
+				const value = await loader()
 
-			if (isOk(value)) {
 				asset.status = AssetStatus.Loaded
-				asset.use = () => value.value
+				asset.use = () => value
 			}
-			else {
+			catch {
 				asset.status = AssetStatus.Error
 			}
 

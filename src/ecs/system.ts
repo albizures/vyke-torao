@@ -1,4 +1,3 @@
-import { InvalidSystemTypeError } from '../error'
 import { type AnyQuery, type FirstQuery, IS_FIRST, IS_REQUIRED, type RequiredFirstQuery } from './query'
 
 type InferValues<TQueries extends Queries> = {

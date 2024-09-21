@@ -1,9 +1,6 @@
-import { rootSola } from './sola'
 import type { AnyAsset, CanvasAsset, ImageAsset } from './assets'
 import type { Region2d } from './region'
 import type { Vec2D } from './vec'
-
-const _sola = rootSola.withTag('texture')
 
 export enum AtlasType {
 	Single,

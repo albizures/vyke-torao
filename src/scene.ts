@@ -55,7 +55,14 @@ export function createScene(id: string, builder: SceneBuilder): BuildableScene {
 		}
 
 		const entitiesArray = Array.from(entities)
-		const allSystems = [...systems.fixedUpdate, ...systems.update, ...systems.render]
+		const allSystems = [
+			...systems.fixedUpdate,
+			...systems.update,
+			...systems.render,
+			...systems.enterScene,
+			...systems.beforeFrame,
+			...systems.afterFrame,
+		]
 		for (const system of allSystems) {
 			for (const query of system.queries) {
 				query.compute(entitiesArray)
@@ -77,16 +84,20 @@ export function createScene(id: string, builder: SceneBuilder): BuildableScene {
 	}
 }
 
+function set<TItem>() {
+	return new Set<TItem>()
+}
+
 function createSceneContext(defaultSystem: Set<System>) {
-	const assets = new Set<AnyAsset>()
-	const entities = new Set<Entity>()
-	const render = new Set<System>()
-	const update = new Set<System>()
-	const fixedUpdate = new Set<System>()
-	const resources = new Set<Resource<unknown>>()
-	const enterScene = new Set<System>()
-	const beforeFrame = new Set<System>()
-	const afterFrame = new Set<System>()
+	const assets = set<AnyAsset>()
+	const entities = set<Entity>()
+	const render = set<System>()
+	const update = set<System>()
+	const fixedUpdate = set<System>()
+	const resources = set<Resource<unknown>>()
+	const enterScene = set<System>()
+	const beforeFrame = set<System>()
+	const afterFrame = set<System>()
 
 	const byType = {
 		[SystemType.FixedUpdate]: fixedUpdate,

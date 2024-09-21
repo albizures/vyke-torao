@@ -1,7 +1,8 @@
-import { AssetStatus, AssetType } from '../../assets'
+import { AssetStatus, AssetType, type CanvasAsset, type ImageAsset } from '../../assets'
 import { SystemType, createSystem } from '../../ecs'
 import { camera2DQuery } from '../../prefabs'
 import { Canvas } from '../../resources'
+import type { AnyAtlas } from '../../texture'
 import type { Vec2D } from '../../vec'
 import { render2dEntities, render2dPath2dEntities } from './renderer2d-queries'
 import { CanvasBuffer } from './renderer2d-resources'
@@ -16,6 +17,7 @@ const render2dBeforeFrameSystem = createSystem({
 		const { entities } = args
 		const { camera2d } = entities
 		const { buffer, context } = CanvasBuffer.mutable()
+
 		buffer.clearRect(0, 0, context.canvas.width, context.canvas.height)
 
 		const { transform } = camera2d.values
@@ -58,10 +60,7 @@ const renderer2dSystem = createSystem({
 			const { position, scale, angle } = transform
 
 			if (asset.type === AssetType.Image || asset.type === AssetType.Canvas) {
-				const image = asset.status === AssetStatus.Error
-					? asset.fallback(atlas.region).canvas
-					: asset.use()
-
+				const image = getImage(asset, atlas)
 				buffer.save()
 				buffer.rotate(angle)
 
@@ -76,6 +75,16 @@ const renderer2dSystem = createSystem({
 		}
 	},
 })
+
+function getImage(asset: ImageAsset | CanvasAsset, atlas: AnyAtlas): HTMLCanvasElement | HTMLImageElement {
+	if (asset.status === AssetStatus.Loaded) {
+		return asset.use()
+	}
+
+	asset.load()
+
+	return asset.fallback(atlas.region).canvas
+}
 
 const render2dPath2dSystem = createSystem({
 	id: 'renderer-2d-path2d',
