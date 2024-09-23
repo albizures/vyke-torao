@@ -28,7 +28,7 @@ export function createLoop(args?: LoopArgs): Loop {
 	/**
 	 * this is the slice of time that we will run in fixed updates
 	 */
-	let slice = 1000 / tickRate
+	const slice = 1000 / tickRate
 	let lastTime = 0
 	let accumulator = 0
 
@@ -69,12 +69,12 @@ export function createLoop(args?: LoopArgs): Loop {
 
 type StartArgs = LoopFns
 
-export type LoopRunner = {
+export type Runner = {
 	start: (args: StartArgs) => void
 	stop: () => void
 }
 
-export function createRequestAnimationFrameLoopRunner(loop: Loop): LoopRunner {
+export function createRequestAnimationFrameRunner(loop: Loop = createLoop()): Runner {
 	let id: number
 	let isRunning = false
 
@@ -106,6 +106,50 @@ export function createRequestAnimationFrameLoopRunner(loop: Loop): LoopRunner {
 			if (id) {
 				cancelAnimationFrame(id)
 			}
+		},
+	}
+}
+
+type StepRunner = Runner & {
+	nextStep: (time: number) => void
+}
+
+export function createStepRunner(loop: Loop = createLoop()): StepRunner {
+	let timestamp = 0
+	let frameArgs: FrameArgs = {
+		timestamp: 0,
+		fixedUpdate: () => {},
+		update: () => {},
+		render: () => {},
+		beforeFrame: () => {},
+		afterFrame: () => {},
+	}
+
+	function tick() {
+		frameArgs.timestamp = timestamp
+		loop.frame(frameArgs)
+	}
+
+	return {
+		start: (args: StartArgs) => {
+			const { fixedUpdate, update, render, beforeFrame, afterFrame } = args
+
+			frameArgs = {
+				fixedUpdate,
+				update,
+				render,
+				beforeFrame,
+				afterFrame,
+				timestamp: 0,
+			}
+		},
+		stop: () => {
+			timestamp = 0
+		},
+		nextStep: (time: number) => {
+			timestamp += time
+
+			tick()
 		},
 	}
 }

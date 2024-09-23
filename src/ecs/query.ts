@@ -100,7 +100,7 @@ export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams
 
 	type ResultValue = InferQueryResultValues<TParams>
 
-	let results = new Map<Entity, QueryResult<ResultValue>>()
+	const results = new Map<Entity, QueryResult<ResultValue>>()
 	let arrayResults: Array<QueryResult<ResultValue>> = []
 
 	const query: Query<InferQueryResultValues<TParams>> = {

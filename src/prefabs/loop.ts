@@ -1,5 +1,5 @@
-import { createComponent, createEntity, createQuery } from '../ecs'
 import type { LoopValues } from '../loop'
+import { createComponent, createEntity, createQuery } from '../ecs'
 import { createPrefab } from '../prefab'
 
 const Loop = createComponent<LoopValues>({

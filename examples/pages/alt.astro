@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>renderer2d</title>
+  </head>
+  <body>
+    <canvas></canvas>
+  </body>
+</html>
+
+<script>
+import { AssetType, AtlasType, createAsset, createAtlas, createCanvas, createTexture, loadImage, loadPath2D } from '../../src'
+import { createGame, start } from '../../src/alt'
+import { createComponent, createEntity, entryFrom } from '../../src/ecs/alt'
+import { camera2D, Path2DTexture, renderer2d, Texture, Transform } from '../../src/renderers/alt'
+
+const Coin = createComponent({
+	id: 'coin',
+})
+const Square = createComponent({
+	id: 'square',
+})
+
+const { game, createScene } = createGame({
+	canvas: createCanvas({
+		element: document.querySelector('canvas')!,
+		resizeMode: 'fill',
+	}),
+	assets: {
+		coin: createAsset({
+			id: 'coin',
+			type: AssetType.Image,
+			loader: loadImage('/assets/images/coin.png'),
+		}),
+		rect: createAsset({
+			id: 'rect',
+			type: AssetType.Path2D,
+			loader: loadPath2D((path) => {
+				path.rect(0, 0, 32, 32)
+			}),
+		}),
+	},
+})
+
+const home = createScene('home', (context) => {
+	const { assets } = context
+	const rect = createTexture({
+		asset: assets.rect,
+		atlas: createAtlas({
+			type: AtlasType.Single,
+			region: {
+				width: 32,
+				height: 32,
+			},
+		}),
+	})
+
+	const square = createEntity({
+		id: 'square',
+		components: [
+			entryFrom(Square, {}),
+			entryFrom(Transform, {
+				position: { x: 10, y: 10 },
+			}),
+			entryFrom(Texture, rect),
+			entryFrom(Path2DTexture, {
+				paint(context, path) {
+					// context.fillStyle = 'red'
+					context.stroke(path)
+				},
+			}),
+		],
+	})
+
+	const coin = createEntity({
+		id: 'coin',
+		components: [
+			entryFrom(Coin, {}),
+			entryFrom(Transform, {
+				position: { x: 50, y: 10 },
+			}),
+			entryFrom(Texture, createTexture({
+				asset: assets.coin,
+				atlas: createAtlas({
+					type: AtlasType.Single,
+					region: {
+						width: 32,
+						height: 32,
+					},
+				}),
+			})),
+		],
+	})
+
+	const camera = createEntity(camera2D.create({
+		id: 'camera',
+	}))
+
+	return {
+		entities: [square, coin, camera],
+		systems: [
+			...renderer2d.systems,
+		],
+	}
+})
+
+start(game, home)
+</script>

@@ -1,5 +1,5 @@
-import { createComponent } from './component'
 import type { Entity } from './entity'
+import { createComponent } from './component'
 
 export function createComponentTag(id: string) {
 	const baseComponent = createComponent({

@@ -1,3 +1,4 @@
+import type { SetOptional } from 'type-fest'
 import type { AnyAsset, CanvasAsset, ImageAsset } from './assets'
 import type { Region2d } from './region'
 import type { Vec2D } from './vec'
@@ -28,10 +29,10 @@ export type AnyAtlas = SingleAtlas | MultipleAtlas
 
 type AtlasArgs<TType extends AtlasType> = TType extends AtlasType.Single ? {
 	type: TType
-	region: Region2d
+	region: SetOptional<Region2d, 'x' | 'y'>
 } : {
 	type: TType
-	region: Region2d
+	region: SetOptional<Region2d, 'x' | 'y'>
 	size: Vec2D
 	amount: number
 	gap?: Vec2D
@@ -44,18 +45,28 @@ export function createAtlas<TType extends AtlasType>(args: AtlasArgs<TType>): An
 
 	if (type === AtlasType.Single) {
 		const { region } = args
+		const { x = 0, y = 0 } = region
 		return {
 			type,
-			region,
+			region: {
+				...region,
+				x,
+				y,
+			},
 			amount: 1,
 		}
 	}
 
 	if (type === AtlasType.Multiple) {
 		const { size, amount, region, gap = { x: 0, y: 0 } } = args
+		const { x = 0, y = 0 } = region
 		return {
 			type,
-			region,
+			region: {
+				...region,
+				x,
+				y,
+			},
 			size,
 			amount,
 			gap,

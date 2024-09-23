@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Transform } from '../components'
-import { SystemType, createSystem } from './system'
-import { createQuery } from './query'
 import { createEntity } from './entity'
+import { createQuery } from './query'
+import { createSystem, SystemType } from './system'
 import { createComponentTag } from './tag'
 
 function createTest() {

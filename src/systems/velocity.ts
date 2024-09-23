@@ -1,4 +1,4 @@
-import { SystemType, createSystem } from '../ecs'
+import { createSystem, SystemType } from '../ecs'
 import { withVelocityAndTransform } from '../queries'
 import { Loop } from '../resources'
 

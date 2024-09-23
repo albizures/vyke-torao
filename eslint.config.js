@@ -11,7 +11,7 @@ export default antfu(
 	{
 		files: ['*.ts', '*.tsx'],
 		rules: {
-			// for some reason this rules is not working
+			// for some reason this rule is not working
 			// when listed as general rule.
 			'ts/consistent-type-imports': [
 				'error',
@@ -24,7 +24,6 @@ export default antfu(
 	},
 	{
 		rules: {
-			'prefer-const': 'off',
 			'ts/array-type': ['error', { default: 'generic', readonly: 'generic' }],
 			'ts/consistent-type-definitions': ['error', 'type'],
 			'ts/indent': 'off',

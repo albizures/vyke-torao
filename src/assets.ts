@@ -1,9 +1,8 @@
 import type { Simplify } from 'type-fest'
-import { rootSola } from './sola'
 import type { Loader } from './loader'
-import { type Placeholder, PlaceholderType, definePlaceholder } from './placeholders'
 import type { Rectangle } from './shapes/Rectangle'
-import type { Game } from './game'
+import { definePlaceholder, type Placeholder, PlaceholderType } from './placeholders'
+import { rootSola } from './sola'
 
 const sola = rootSola.withTag('assets')
 

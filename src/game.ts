@@ -1,11 +1,11 @@
-import type { BuildableScene, Scene } from './scene'
-import type { LoopValues } from './loop'
-import { createLoop, createRequestAnimationFrameLoopRunner } from './loop'
+import type { Asset, AssetType } from './assets'
 import type { Canvas as CanvasValue } from './canvas'
 import type { System } from './ecs'
+import type { LoopValues } from './loop'
+import type { BuildableScene, Scene } from './scene'
 import { SystemType } from './ecs'
+import { createLoop, createRequestAnimationFrameRunner } from './loop'
 import { Canvas, Loop } from './resources'
-import type { Asset, AssetType } from './assets'
 
 export type Game = {
 	canvas: CanvasValue
@@ -35,7 +35,7 @@ export function createGame<
 	} = args
 	const startScene = args.startScene as string
 	const loop = createLoop({ tickRate })
-	const loopRunner = createRequestAnimationFrameLoopRunner(loop)
+	const loopRunner = createRequestAnimationFrameRunner(loop)
 	const scenes = new Map(Object.entries(sceneEntries))
 	const readyScenes = new Map<string, Scene>()
 

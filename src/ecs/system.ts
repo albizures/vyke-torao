@@ -4,7 +4,7 @@ type InferValues<TQueries extends Queries> = {
 	[TKey in keyof TQueries]:
 	TQueries[TKey] extends RequiredFirstQuery<any>
 		? NonNullable<ReturnType<TQueries[TKey]['useFirst']>>
-	 	: TQueries[TKey] extends FirstQuery<any>
+		: TQueries[TKey] extends FirstQuery<any>
 			? ReturnType<TQueries[TKey]['useFirst']>
 			: ReturnType<TQueries[TKey]['use']>
 }

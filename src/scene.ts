@@ -1,7 +1,7 @@
-import { type Entity, type EntityArgs, createEntity } from './ecs/entity'
-import { createAsset } from './assets'
 import type { AnyAsset, Asset, AssetArgs, AssetType } from './assets'
-import { COMPONENTS, type Resource, type ResourceArgs, type System, SystemType, createResource } from './ecs'
+import { createAsset } from './assets'
+import { COMPONENTS, createResource, type Resource, type ResourceArgs, type System, SystemType } from './ecs'
+import { createEntity, type Entity, type EntityArgs } from './ecs/entity'
 import { InvalidSystemTypeError } from './error'
 
 /**

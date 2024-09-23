@@ -1,5 +1,5 @@
 import { Transform } from '../../components'
-import { Not, createQuery } from '../../ecs'
+import { createQuery, Not } from '../../ecs'
 import { Path2DTexture, Texture } from './renderer2d-components'
 
 export const render2dEntities = createQuery({

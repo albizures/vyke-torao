@@ -1,17 +1,115 @@
-import type { AnyAtlas } from '../../texture'
-import type { Vec2D } from '../../vec'
-import { AssetStatus, AssetType, type CanvasAsset, type ImageAsset } from '../../assets'
-import { createSystem, SystemType } from '../../ecs'
-import { camera2DQuery } from '../../prefabs'
-import { Canvas } from '../../resources'
-import { render2dEntities, render2dPath2dEntities } from './renderer2d-queries'
-import { CanvasBuffer } from './renderer2d-resources'
+import type { AnyAtlas, AnyTexture } from '../texture'
+import { AssetStatus, AssetType, type CanvasAsset, type ImageAsset } from '../assets'
+import { createComponent, createQuery, createSystem, type EntityArgs, entryFrom, first, required, SystemType } from '../ecs/alt'
+import { Canvas } from '../resources'
+import { vec2D, type Vec2D } from '../vec'
+import { CanvasBuffer } from './renderer2d'
+
+export const Texture = createComponent<AnyTexture>({
+	id: 'texture',
+})
+
+type Path2DTextureValue = {
+	paint: (context: CanvasRenderingContext2D, path: Path2D) => void
+}
+
+export const Path2DTexture = createComponent<Path2DTextureValue>({
+	id: 'path2d-texture',
+})
+
+type TransformData = {
+	position: Vec2D
+	/**
+	 * Rotation in radians.
+	 */
+	angle: number
+	scale: Vec2D
+}
+
+export const Transform = createComponent<TransformData, Partial<TransformData>>({
+	id: 'transform',
+	create(args: Partial<TransformData>) {
+		const { position = vec2D(0, 0), angle = 0, scale = vec2D(1, 1) } = args
+		return {
+			position,
+			angle,
+			scale,
+		}
+	},
+})
+
+export type Prefab<TArgs> = {
+	id: string
+	create: (args: TArgs) => EntityArgs
+}
+
+export function createPrefab<TArgs>(args: Prefab<TArgs>): Prefab<TArgs> {
+	return { ...args }
+}
+
+type Camera2DArgs = {
+	id: string
+	position?: Vec2D
+	scale?: Vec2D
+	angle?: number
+}
+
+const Camera2D = createComponent({
+	id: 'camera-2d',
+})
+
+export const camera2D = createPrefab({
+	id: 'Camera 2D',
+	create: (args: Camera2DArgs) => {
+		const { id } = args
+		const entity = {
+			id,
+			components: [
+				entryFrom(Transform, args),
+				entryFrom(Camera2D, {}),
+			],
+		}
+
+		return entity
+	},
+})
+
+const render2dEntities = createQuery({
+	id: 'with-transform-and-texture',
+	params: {
+		transform: Transform,
+		texture: Texture,
+	},
+	filters: [
+		{
+			component: Path2DTexture,
+			type: 'without',
+		},
+	],
+})
+
+const render2dPath2dEntities = createQuery({
+	id: 'with-transform-and-path2d-texture',
+	params: {
+		transform: Transform,
+		texture2d: Path2DTexture,
+		texture: Texture,
+	},
+})
+
+const camera2DQuery = createQuery({
+	id: 'Camera 2D Query',
+	params: {
+		transform: Transform,
+		camera2D: Camera2D,
+	},
+})
 
 const render2dBeforeFrameSystem = createSystem({
 	id: 'renderer-2d-before-frame',
 	type: SystemType.BeforeFrame,
 	queries: {
-		camera2d: camera2DQuery.required().first(),
+		camera2d: first(required(camera2DQuery)),
 	},
 	fn(args) {
 		const { entities } = args
@@ -123,7 +221,7 @@ const render2dPath2dSystem = createSystem({
 
 const renderer2dSetupSystem = createSystem({
 	id: 'renderer-2d-setup',
-	type: SystemType.Setup,
+	type: SystemType.EnterScene,
 	fn() {
 		const canvas = Canvas.value
 		const { size, element } = canvas
@@ -153,7 +251,3 @@ export const renderer2d = {
 		render2dAfterFrameSystem,
 	],
 }
-
-export * from './renderer2d-components'
-export * from './renderer2d-queries'
-export * from './renderer2d-resources'

@@ -1,6 +1,7 @@
 {
 	"name": "@vyke/torao",
 	"version": "0.4.3",
+	"license": "MIT",
 	"exports": {
 		".": "./src/index.ts",
 		"./texture": "./src/texture.ts",

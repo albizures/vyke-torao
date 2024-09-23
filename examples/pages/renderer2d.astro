@@ -11,11 +11,6 @@
 </html>
 
 <script>
-import { Transform } from '../../src/components'
-import { AtlasType, createAtlas, createTexture } from '../../src/texture'
-import { createComponentTag } from '../../src/ecs'
-import { camera2D } from '../../src/prefabs'
-import { Path2DTexture, Texture, renderer2d } from '../../src/renderers/renderer2d'
 import {
 	AssetType,
 	createCanvas,
@@ -23,6 +18,11 @@ import {
 	createScene,
 	loadPath2D,
 } from '../../src'
+import { Transform } from '../../src/components'
+import { createComponentTag } from '../../src/ecs'
+import { camera2D } from '../../src/prefabs'
+import { Path2DTexture, renderer2d, Texture } from '../../src/renderers/renderer2d'
+import { AtlasType, createAtlas, createTexture } from '../../src/texture'
 import { textures } from '../textures'
 
 const Coin = createComponentTag('coin')
