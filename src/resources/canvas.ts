@@ -1,7 +1,7 @@
 import type { Canvas as CanvasValue } from '../canvas'
-import { createResource } from '../ecs'
+import { createResource, type Resource } from '../ecs'
 
-export const Canvas = createResource<CanvasValue>({
+export const Canvas: Resource<CanvasValue> = createResource<CanvasValue>({
 	id: 'canvas',
 	value: undefined as unknown as CanvasValue,
 })

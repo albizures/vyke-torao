@@ -1,89 +1,112 @@
 import type { Entity } from './entity'
-import type { AnyQuery } from './query'
-
-export const COMPONENTS = Symbol('components')
+import { type AnyQuery, getValuesFrom, type Query, type QueryParams, updateListeners } from './query'
 
 export type AnyComponent = Component<any, any>
+export type Instance = Record<string, any>
 
-export type ComponentInstance = Record<string, any>
-
-export type Component<TInstance extends ComponentInstance, TArgs> = {
+export type Component<TInstance extends Instance, TArgs> = {
 	id: string
 	create: (args: TArgs) => TInstance
-	entryFrom: (args: TArgs) => [Component<TInstance, TArgs>, TInstance]
-	is: (instance: unknown) => instance is TInstance
 	queries: Set<AnyQuery>
-	removeFrom: (entity: Entity) => void
-	getFrom: (entity: Entity) => TInstance | undefined
-	addTo: (entity: Entity, args: TArgs) => void
-	setIn: (entity: Entity, value: Partial<TInstance>) => void
 }
 
-type ComponentArgs<TInstance extends ComponentInstance, TArgs> = {
+type ComponentArgs<TInstance extends Instance, TArgs> = {
 	id: string
 	create?: (args: TArgs) => TInstance
 }
 
 export function createComponent<
-	TInstance extends ComponentInstance = Record<string, unknown>,
+	TInstance extends Instance = Record<string, unknown>,
 	TArgs = TInstance,
 >(args: ComponentArgs<TInstance, TArgs>): Component<TInstance, TArgs> {
 	const defaultCreate = (args: TArgs) => ({
 		...args,
 	}) as unknown as TInstance
 	const { id, create = defaultCreate } = args
-	const IS_INSTANCE = Symbol('isInstance')
-	const queries = new Set<AnyQuery>()
 
 	const component: Component<TInstance, TArgs> = {
 		id,
-		queries,
-		is(instance: unknown): instance is TInstance {
-			return (instance as any ?? {})[IS_INSTANCE] === true
-		},
-		create(args: TArgs): TInstance {
-			return {
-				[IS_INSTANCE]: true,
-				...create(args),
-			}
-		},
-		entryFrom(args: TArgs): [Component<TInstance, TArgs>, TInstance] {
-			return [
-				component,
-				{
-					[IS_INSTANCE]: true,
-					...create(args),
-				},
-			]
-		},
-		removeFrom(entity: Entity) {
-			entity[COMPONENTS].delete(component)
-			for (const query of queries) {
-				query.removeEntity(entity)
-			}
-		},
-		addTo(entity: Entity, args: TArgs) {
-			entity[COMPONENTS].set(component, component.create(args))
-			for (const query of queries) {
-				query.addEntity(entity)
-			}
-		},
-		getFrom(entity: Entity): TInstance | undefined {
-			return entity[COMPONENTS].get(component) as TInstance | undefined
-		},
-		setIn(entity: Entity, value: Partial<TInstance>) {
-			entity[COMPONENTS].set(component, {
-				...entity[COMPONENTS].get(component),
-				...value,
-			})
-
-			for (const query of queries) {
-				query.addEntity(entity)
-			}
-		},
+		queries: new Set<AnyQuery>(),
+		create,
 	}
 
 	return component
 }
 
-export type InferComponentInstance<TComponent> = TComponent extends Component<infer TInstance, any> ? TInstance : never
+export function entryFrom<TInstance extends Instance, TArgs>(
+	component: Component<TInstance, TArgs>,
+	args: TArgs,
+): [Component<TInstance, TArgs>, TInstance] {
+	const { create } = component
+	return [
+		component,
+		create(args),
+	]
+}
+
+export function addEntity<TParams extends QueryParams>(query: Query<TParams>, entity: Entity) {
+	const { results } = query
+	const result = getValuesFrom(query, entity)
+
+	if (result) {
+		results.set(entity, result)
+		// arrayResults = Array.from(results.values())
+	}
+	else {
+		results.delete(entity)
+	}
+
+	updateListeners(query)
+}
+
+export function removeEntity<TParams extends QueryParams>(query: Query<TParams>, entity: Entity) {
+	const { results } = query
+	if (!results.has(entity)) {
+		return
+	}
+
+	results.delete(entity)
+	// this could be optimized by batching the removals
+	// and recomputing the results only once
+	// same for addEntity
+	// arrayResults = Array.from(results.values())
+	updateListeners(query)
+}
+
+export function removeComponent(entity: Entity, component: AnyComponent) {
+	const { queries } = component
+	entity.components.delete(component)
+	for (const query of queries) {
+		removeEntity(query, entity)
+	}
+}
+
+export function addComponent<TInstance extends Instance, TArgs>(entity: Entity, component: Component<TInstance, TArgs>, args: TArgs) {
+	const { components } = entity
+	const { queries } = component
+
+	components.set(component, component.create(args))
+
+	for (const query of queries) {
+		addEntity(query, entity)
+	}
+}
+
+export function getComponent<TInstance extends Instance, TArgs>(entity: Entity, component: Component<TInstance, TArgs>): TInstance | undefined {
+	const { components } = entity
+	return components.get(component) as TInstance | undefined
+}
+
+export function setComponent<TInstance extends Instance, TArgs>(entity: Entity, component: Component<TInstance, TArgs>, value: Partial<TInstance>) {
+	const { components } = entity
+	const { queries } = component
+
+	components.set(component, {
+		...components.get(component),
+		...value,
+	})
+
+	for (const query of queries) {
+		addEntity(query, entity)
+	}
+}

@@ -1,6 +1,6 @@
 import type { Vec2D } from '../vec'
-import { createComponent } from '../ecs'
+import { type Component, createComponent } from '../ecs'
 
-export const Velocity = createComponent<Vec2D>({
+export const Velocity: Component<Vec2D, Vec2D> = createComponent<Vec2D>({
 	id: 'velocity',
 })

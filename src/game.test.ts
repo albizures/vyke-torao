@@ -1,7 +1,7 @@
 import type { Canvas } from './canvas'
 import { describe, expect, it, vi } from 'vitest'
 import { createGame, SceneStatus, start } from './alt'
-import { createEntity } from './ecs/alt'
+import { createEntity } from './ecs'
 import { createStepRunner } from './loop'
 
 const canvas: Canvas = {

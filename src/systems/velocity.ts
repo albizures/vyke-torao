@@ -1,8 +1,8 @@
-import { createSystem, SystemType } from '../ecs'
+import { createSystem, type System, SystemType } from '../ecs'
 import { withVelocityAndTransform } from '../queries'
 import { Loop } from '../resources'
 
-export const velocityAndTransformSystem = createSystem({
+export const velocityAndTransformSystem: System = createSystem({
 	id: 'velocity-and-position',
 	queries: {
 		velocityAndTransform: withVelocityAndTransform,

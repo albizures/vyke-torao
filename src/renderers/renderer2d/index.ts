@@ -1,7 +1,7 @@
 import type { AnyAtlas } from '../../texture'
 import type { Vec2D } from '../../vec'
 import { AssetStatus, AssetType, type CanvasAsset, type ImageAsset } from '../../assets'
-import { createSystem, SystemType } from '../../ecs'
+import { createSystem, first, required, type System, SystemType } from '../../ecs'
 import { camera2DQuery } from '../../prefabs'
 import { Canvas } from '../../resources'
 import { render2dEntities, render2dPath2dEntities } from './renderer2d-queries'
@@ -11,7 +11,7 @@ const render2dBeforeFrameSystem = createSystem({
 	id: 'renderer-2d-before-frame',
 	type: SystemType.BeforeFrame,
 	queries: {
-		camera2d: camera2DQuery.required().first(),
+		camera2d: first(required(camera2DQuery)),
 	},
 	fn(args) {
 		const { entities } = args
@@ -123,7 +123,7 @@ const render2dPath2dSystem = createSystem({
 
 const renderer2dSetupSystem = createSystem({
 	id: 'renderer-2d-setup',
-	type: SystemType.Setup,
+	type: SystemType.EnterScene,
 	fn() {
 		const canvas = Canvas.value
 		const { size, element } = canvas
@@ -144,7 +144,7 @@ const renderer2dSetupSystem = createSystem({
 	},
 })
 
-export const renderer2d = {
+export const renderer2d: { systems: Array<System> } = {
 	systems: [
 		renderer2dSetupSystem,
 		renderer2dSystem,

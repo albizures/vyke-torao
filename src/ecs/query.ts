@@ -1,249 +1,153 @@
-import type { AnyComponent, Component } from './component'
 import type { Entity } from './entity'
+import { type AnyComponent, type Component, getComponent } from './component'
 
-export const IS_NOT = Symbol('isNot')
-export const IS_REQUIRED = Symbol('isRequired')
-export const IS_FIRST = Symbol('isFirst')
+export type AnyQuery = Query<any>
 
-/**
- * A query that requires a component not to be present on an entity.
- */
-type QueryNot<TComponent extends AnyComponent> = {
-	[IS_NOT]: true
-	component: TComponent
-}
-/**
- * Creates a query that requires a component not to be present on an entity.
- */
-export function Not<TComponent extends AnyComponent>(component: TComponent): QueryNot<TComponent> {
-	return {
-		[IS_NOT]: true,
-		component,
-	}
-}
-
-function isQueryNot(value: object): value is QueryNot<AnyComponent> {
-	return IS_NOT in value
-}
-
-type QueryParams = Record<string, AnyComponent | QueryNot<AnyComponent>>
-
-type InferQueryResultValues<TParams extends QueryParams> = {
+export type InferValues<TParams extends QueryParams> = {
 	[TKey in keyof TParams]: TParams[TKey] extends Component<infer TInstance, any>
 		? TInstance
 		: never
 }
 
-type QueryResult<TResultValues> = {
+type QueryListener<TParams extends QueryParams> = (query: Query<TParams>) => void
+export type QueryParams = Record<string, AnyComponent>
+type QueryFilter = { component: AnyComponent } & ({ type: 'with' } | { type: 'without' })
+export type QueryResult<TResultValues> = {
 	entity: Entity
 	values: TResultValues
 }
 
-/**
- * A query that can be used to filter entities based on their components.
- */
-export type Query<TResultValues> = {
+export type Query<TParams extends QueryParams> = {
 	id: string
-	compute: (entries: Array<Entity>) => Array<QueryResult<TResultValues>>
-	use: () => Array<QueryResult<TResultValues>>
-	useFirst: () => QueryResult<TResultValues> | undefined
-	removeEntity: (entity: Entity) => void
-	addEntity: (entity: Entity) => void
-	required: () => RequiredQuery<TResultValues>
-	first: () => FirstQuery<TResultValues>
+	listeners: Set<QueryListener<TParams>>
+	params: TParams
+	with: Set<AnyComponent>
+	without: Set<AnyComponent>
+	results: Map<Entity, QueryResult<InferValues<TParams>>>
+	first?: boolean
+	required?: boolean
 }
-
-export type RequiredQuery<TResultValues> = Omit<Query<TResultValues>, 'first'> & {
-	[IS_REQUIRED]: true
-	first: () => RequiredFirstQuery<TResultValues>
-}
-
-export type FirstQuery<TResultValues> = Omit<Query<TResultValues>, 'required'> & {
-	[IS_FIRST]: true
-	required: () => RequiredFirstQuery<TResultValues>
-}
-
-export type RequiredFirstQuery<TResultValues> = FirstQuery<TResultValues> & RequiredQuery<TResultValues>
-
-export type AnyQuery = Query<any>
 
 type QueryArgs<TParams extends QueryParams> = {
 	id: string
 	params: TParams
+	filters?: Array<QueryFilter>
 }
 
-/**
- * Creates a query that can be used to filter entities based on their components.
- */
-export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): Query<InferQueryResultValues<TParams>> {
-	const { params, id } = args
-	const values = Object.entries(params)
-	const components = new Set<AnyComponent>()
-	const notComponents = new Set<AnyComponent>()
+export function createQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): Query<TParams> {
+	const { id, params, filters = [] } = args
 
-	for (const [,value] of values) {
-		if (isQueryNot(value)) {
-			notComponents.add(value.component)
-
-			if (components.has(value.component)) {
-				throw new Error(`Component "${value.component.id}" cannot be both required and excluded`)
-			}
-		}
-		else {
-			components.add(value)
-
-			if (notComponents.has(value)) {
-				throw new Error(`Component "${value.id}" cannot be both required and excluded`)
-			}
-		}
-	}
-
-	type ResultValue = InferQueryResultValues<TParams>
-
+	type ResultValue = InferValues<TParams>
 	const results = new Map<Entity, QueryResult<ResultValue>>()
-	let arrayResults: Array<QueryResult<ResultValue>> = []
 
-	const query: Query<InferQueryResultValues<TParams>> = {
+	const query: Query<TParams> = {
 		id,
-		compute,
-		use() {
-			return arrayResults
-		},
-		useFirst() {
-			return arrayResults[0]
-		},
-		removeEntity(entity) {
-			if (!results.has(entity)) {
-				return
-			}
-
-			results.delete(entity)
-			// this could be optimized by batching the removals
-			// and recomputing the results only once
-			// same for addEntity
-			arrayResults = Array.from(results.values())
-		},
-		addEntity(entity) {
-			const result = getResultFrom(entity)
-
-			if (result) {
-				results.set(entity, result)
-				arrayResults = Array.from(results.values())
-			}
-			else {
-				results.delete(entity)
-			}
-		},
-		required() {
-			return createRequiredQuery(args)
-		},
-		first() {
-			return createFirstQuery(args)
-		},
+		params,
+		listeners: new Set<QueryListener<TParams>>(),
+		results,
+		with: new Set([
+			...Object.values(params),
+			...filters.filter(isWith).map(({ component }) => component),
+		]),
+		without: new Set(filters.filter(isWithout).map(({ component }) => component)),
 	}
 
-	/**
-	 * Returns the result of the query for a given entity.
-	 * If the entity does not match the query, returns undefined.
-	 */
-	function getResultFrom(entity: Entity): QueryResult<ResultValue> | void {
-		let valid = true
-		for (const component of components) {
-			if (!entity.getComponent(component)) {
-				valid = false
-				component.queries.delete(query)
-				break
-			}
-			else {
-				component.queries.add(query)
-			}
-		}
-
-		for (const component of notComponents) {
-			if (entity.getComponent(component)) {
-				valid = false
-				break
-			}
-		}
-
-		if (valid) {
-			const result: QueryResult<Record<string, any>> = {
-				entity,
-				values: {},
-			}
-
-			for (const [key, value] of values) {
-				if (!isQueryNot(value)) {
-					result.values[key] = entity.getComponent(value)
-				}
-			}
-
-			return result as QueryResult<ResultValue>
-		}
-	}
-
-	function compute(entities: Array<Entity>) {
-		for (const entity of entities) {
-			const result = getResultFrom(entity)
-
-			if (result) {
-				results.set(entity, result)
-			}
-			else {
-				results.delete(entity)
-			}
-		}
-
-		arrayResults = Array.from(results.values())
-
-		return arrayResults
-	}
-
-	for (const component of components) {
+	for (const component of [...query.with, ...query.without]) {
 		component.queries.add(query)
 	}
 
 	return query
 }
 
-function createRequiredQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): RequiredQuery<InferQueryResultValues<TParams>> {
-	const query = createQuery(args)
-	return {
-		...query,
-		[IS_REQUIRED]: true,
-		first() {
-			return createRequiredFirstQuery(args)
-		},
+export function updateListeners<TParams extends QueryParams>(query: Query<TParams>) {
+	const { listeners } = query
+	for (const listener of listeners) {
+		listener(query)
 	}
 }
 
-function createFirstQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): FirstQuery<InferQueryResultValues<TParams>> {
-	const query = createQuery(args)
+export function compute<TParams extends QueryParams>(query: Query<TParams>, entities: Array<Entity>): Array<QueryResult<InferValues<TParams>>> {
+	const { results } = query
+	for (const entity of entities) {
+		const result = getValuesFrom(query, entity)
+
+		if (result) {
+			results.set(entity, result)
+		}
+		else {
+			results.delete(entity)
+		}
+	}
+
+	return Array.from(results.values())
+}
+
+function match(entity: Entity, query: AnyQuery) {
+	const { with: withComponents, without: withoutComponents } = query
+	for (const component of withComponents) {
+		if (!getComponent(entity, component)) {
+			return false
+		}
+	}
+
+	for (const component of withoutComponents) {
+		if (getComponent(entity, component)) {
+			return false
+		}
+	}
+
+	return true
+}
+
+/**
+ * Extracts the values from the entity only if it passes the filters
+ * If not it returns undefined
+ */
+export function getValuesFrom<TParams extends QueryParams>(query: Query<TParams>, entity: Entity): QueryResult<InferValues<TParams>> | undefined {
+	type ResultValue = InferValues<TParams>
+	const { params } = query
+
+	// let's get the values from valid entities
+	// and store them in the result
+	if (match(entity, query)) {
+		const values = Object.entries(params)
+		const result: QueryResult<Record<string, any>> = {
+			entity,
+			values: {},
+		}
+
+		for (const [key, value] of values) {
+			result.values[key] = getComponent(entity, value)
+		}
+
+		return result as QueryResult<ResultValue>
+	}
+
+	return undefined
+}
+
+function isWithout(filter: QueryFilter): boolean {
+	return filter.type === 'without'
+}
+
+function isWith(filter: QueryFilter): boolean {
+	return filter.type === 'with'
+}
+
+export type Required = { required: true }
+
+export function required<TQuery extends Query<any>>(query: TQuery): TQuery & Required {
 	return {
 		...query,
-		[IS_FIRST]: true,
-		required() {
-			return createRequiredFirstQuery(args)
-		},
+		required: true,
 	}
 }
 
-export function createRequiredFirstQuery<TParams extends QueryParams>(args: QueryArgs<TParams>): RequiredFirstQuery<InferQueryResultValues<TParams>> {
-	const query: RequiredFirstQuery<InferQueryResultValues<TParams>> = {
-		...createQuery(args),
-		[IS_FIRST]: true,
-		[IS_REQUIRED]: true,
-		required() {
-			return {
-				...query,
-			}
-		},
-		first() {
-			return {
-				...query,
-			}
-		},
-	}
+export type First = { first: true }
 
-	return query
+export function first<TQuery extends Query<any>>(query: TQuery): TQuery & First {
+	return {
+		...query,
+		first: true,
+	}
 }

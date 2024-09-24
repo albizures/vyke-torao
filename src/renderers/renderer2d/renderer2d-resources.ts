@@ -1,11 +1,11 @@
-import { createResource } from '../../ecs'
+import { createResource, type Resource } from '../../ecs'
 
 type CanvasBufferValue = {
 	context: CanvasRenderingContext2D
 	buffer: CanvasRenderingContext2D
 }
 
-export const CanvasBuffer = createResource<CanvasBufferValue>({
+export const CanvasBuffer: Resource<CanvasBufferValue> = createResource<CanvasBufferValue>({
 	id: 'canvas-buffer',
 	value: {
 		get context(): CanvasRenderingContext2D {

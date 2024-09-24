@@ -1,7 +1,7 @@
 import type { LoopValues } from '../loop'
-import { createResource } from '../ecs'
+import { createResource, type Resource } from '../ecs'
 
-export const Loop = createResource<LoopValues>({
+export const Loop: Resource<LoopValues> = createResource<LoopValues>({
 	id: 'loop',
 	value: undefined as unknown as LoopValues,
 })

@@ -11,7 +11,7 @@ import {
 	required,
 	type SystemFnArgs,
 	SystemType,
-} from './alt'
+} from './'
 
 const Position = createComponent({
 	id: 'position',

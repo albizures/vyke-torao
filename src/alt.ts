@@ -1,7 +1,6 @@
 import type { AnyAsset } from './assets'
 import type { Canvas as CanvasValue } from './canvas'
-import type { Resource } from './ecs'
-import { compute, createEntity, type Entity, type EntityArgs, type System, SystemType } from './ecs/alt'
+import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
 import { Canvas, Loop } from './resources'
 

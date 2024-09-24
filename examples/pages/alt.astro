@@ -12,9 +12,11 @@
 
 <script>
 import { AssetType, AtlasType, createAsset, createAtlas, createCanvas, createTexture, loadImage, loadPath2D } from '../../src'
-import { createGame, start } from '../../src/alt'
-import { createComponent, createEntity, entryFrom } from '../../src/ecs/alt'
-import { camera2D, Path2DTexture, renderer2d, Texture, Transform } from '../../src/renderers/alt'
+import { Transform } from '../../src/components'
+import { createComponent, createEntity, entryFrom } from '../../src/ecs'
+import { createGame, start } from '../../src/game'
+import { camera2D } from '../../src/prefabs'
+import { Path2DTexture, renderer2d, Texture } from '../../src/renderers/renderer2d'
 
 const Coin = createComponent({
 	id: 'coin',
@@ -94,9 +96,9 @@ const home = createScene('home', (context) => {
 		],
 	})
 
-	const camera = createEntity(camera2D.create({
+	const camera = camera2D.create({
 		id: 'camera',
-	}))
+	})
 
 	return {
 		entities: [square, coin, camera],
