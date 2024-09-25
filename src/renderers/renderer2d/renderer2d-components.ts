@@ -1,4 +1,4 @@
-import type { AnyTexture } from '../../texture'
+import type { Texture as AnyTexture } from '../../texture'
 import { type Component, createComponent } from '../../ecs'
 
 export const Texture: Component<AnyTexture, AnyTexture> = createComponent<AnyTexture>({

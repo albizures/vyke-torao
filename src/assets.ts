@@ -1,7 +1,6 @@
-import type { Simplify } from 'type-fest'
 import type { Loader } from './loader'
-import type { Rectangle } from './shapes/Rectangle'
-import { definePlaceholder, type Placeholder, PlaceholderType } from './placeholders'
+import type { AnyAtlas } from './texture'
+import { definePlaceholder, type Placeholder } from './placeholders'
 import { rootSola } from './sola'
 
 const sola = rootSola.withTag('assets')
@@ -24,197 +23,125 @@ export enum AssetStatus {
 	Error = 3,
 }
 
-type BaseAsset = {
-	id: string
-	type: AssetType
-	url: string
-	load: () => Promise<BaseAsset>
-	status: AssetStatus
-	fallback: (args: Rectangle) => Placeholder
+export class Asset {
+	status = AssetStatus.Created
+	fallback: (atlas: AnyAtlas) => Placeholder = definePlaceholder()
+	constructor(public id: string, public type: AssetType) {}
 }
 
-export type ImageAsset = Simplify<BaseAsset & {
-	type: AssetType.Image
-	use: () => HTMLImageElement
-}>
-export type AudioAsset = Simplify<BaseAsset & {
-	type: AssetType.Audio
-	use: () => HTMLAudioElement
-}>
-export type VideoAsset = Simplify<BaseAsset & {
-	type: AssetType.Video
-	use: () => HTMLVideoElement
-}>
-export type JSONAsset = Simplify<BaseAsset & {
-	type: AssetType.JSON
-	use: () => unknown
-}>
-export type TextAsset = Simplify<BaseAsset & {
-	type: AssetType.Text
-	use: () => string
-}>
-
-export type BinaryAsset = Simplify<BaseAsset & {
-	type: AssetType.Binary
-	use: () => ArrayBuffer
-}>
-export type CanvasAsset = Simplify<BaseAsset & {
-	type: AssetType.Canvas
-	use: () => HTMLCanvasElement
-}>
-
-export type Path2DAsset = Simplify<BaseAsset & {
-	type: AssetType.Path2D
-	use: () => Path2D
-}>
-
-export type AnyAsset =
-	| ImageAsset
-	| AudioAsset
-	| VideoAsset
-	| JSONAsset
-	| TextAsset
-	| BinaryAsset
-	| CanvasAsset
-	| Path2DAsset
-
-function createBaseAsset<TType extends AssetType>(url: string, type: TType) {
-	return {
-		status: AssetStatus.Created,
-		type,
-		url,
-		use() {
-			throw new Error('Asset not loaded')
-		},
+export class ImageAsset extends Asset {
+	value?: HTMLImageElement
+	constructor(id: string, public loader: Loader<HTMLImageElement>) {
+		super(id, AssetType.Image)
 	}
 }
 
-export type Asset<TValue, TType extends AssetType> = {
-	id: string
-	type: TType
-	url: string
-	load: () => Promise<Asset<TValue, TType>>
-	status: AssetStatus
-	use: () => TValue
-	fallback: (args: Rectangle) => Placeholder
+export class AudioAsset extends Asset {
+	value?: HTMLAudioElement
+	constructor(id: string, public loader: Loader<HTMLAudioElement>) {
+		super(id, AssetType.Audio)
+	}
 }
 
-export type AssetArgs<TValue, TType extends AssetType> = {
-	id: string
-	type: TType
-	loader: Loader<TValue>
+export class VideoAsset extends Asset {
+	value?: HTMLVideoElement
+	constructor(id: string, public loader: Loader<HTMLVideoElement>) {
+		super(id, AssetType.Video)
+	}
 }
 
-export function createAsset<TValue, TType extends AssetType>(args: AssetArgs<TValue, TType>): Asset<TValue, TType> {
-	const { id, type, loader } = args
-	const base = createBaseAsset(id, type)
+export class JSONAsset extends Asset {
+	value?: unknown
+	constructor(id: string, public loader: Loader<unknown>) {
+		super(id, AssetType.JSON)
+	}
+}
 
-	const asset: Asset<TValue, TType> = {
-		...base,
-		id,
-		fallback: definePlaceholder(PlaceholderType.Rectangle),
-		async load() {
-			// futher calls to load will return the same promise
-			asset.load = () => Promise.resolve(asset)
-			sola.info(`Loading asset: ${id}`)
+export class TextAsset extends Asset {
+	value?: string
+	constructor(id: string, public loader: Loader<string>) {
+		super(id, AssetType.Text)
+	}
+}
 
-			asset.status = AssetStatus.Loading
+export class BinaryAsset extends Asset {
+	value?: ArrayBuffer
+	constructor(id: string, public loader: Loader<ArrayBuffer>) {
+		super(id, AssetType.Binary)
+	}
+}
 
-			try {
-				const value = await loader()
+export class CanvasAsset extends Asset {
+	value?: HTMLCanvasElement
+	constructor(id: string, public loader: Loader<HTMLCanvasElement>) {
+		super(id, AssetType.Canvas)
+	}
+}
 
-				asset.status = AssetStatus.Loaded
-				asset.use = () => value
-			}
-			catch {
-				asset.status = AssetStatus.Error
-			}
+export class Path2DAsset extends Asset {
+	value?: Path2D
+	constructor(id: string, public loader: Loader<Path2D>) {
+		super(id, AssetType.Path2D)
+	}
+}
 
-			return asset
-		},
+export type AnyAsset<TType extends AssetType> = Assets[TType]
+
+type Assets = {
+	[AssetType.Audio]: AudioAsset
+	[AssetType.Image]: ImageAsset
+	[AssetType.Video]: VideoAsset
+	[AssetType.JSON]: JSONAsset
+	[AssetType.Text]: TextAsset
+	[AssetType.Binary]: BinaryAsset
+	[AssetType.Canvas]: CanvasAsset
+	[AssetType.Path2D]: Path2DAsset
+}
+
+type AssetArgs<TType extends AssetType> = {
+	id: string
+	type: TType
+	loader: Loader<NonNullable<Assets[TType]['value']>>
+}
+
+export async function loadAsset<TAsset extends AnyAsset<AssetType>>(asset: TAsset): Promise<TAsset> {
+	if (asset.status === AssetStatus.Loaded) {
+		return asset
+	}
+
+	asset.status = AssetStatus.Loading
+
+	try {
+		sola.info('Loading asset:', asset.id)
+		asset.value = await asset.loader()
+		asset.status = AssetStatus.Loaded
+	}
+	catch {
+		asset.status = AssetStatus.Error
 	}
 
 	return asset
 }
 
-// export function createAudioAsset(url: string): AudioAsset {
-// 	return {
-// 		...createBaseAsset(url, AssetType.Audio),
-// 		load() {
-// 			const audio = new Audio(url)
-// 			audio.addEventListener('canplaythrough', () => {
-// 				sola.log(`Loaded audio: ${url}`)
-// 			})
-// 		},
-// 	}
-// }
+const byType = {
+	[AssetType.Image]: (id: string, loader: Loader<HTMLImageElement>) => new ImageAsset(id, loader),
+	[AssetType.Audio]: (id: string, loader: Loader<HTMLAudioElement>) => new AudioAsset(id, loader),
+	[AssetType.Video]: (id: string, loader: Loader<HTMLVideoElement>) => new VideoAsset(id, loader),
+	[AssetType.JSON]: (id: string, loader: Loader<unknown>) => new JSONAsset(id, loader),
+	[AssetType.Text]: (id: string, loader: Loader<string>) => new TextAsset(id, loader),
+	[AssetType.Binary]: (id: string, loader: Loader<ArrayBuffer>) => new BinaryAsset(id, loader),
+	[AssetType.Canvas]: (id: string, loader: Loader<HTMLCanvasElement>) => new CanvasAsset(id, loader),
+	[AssetType.Path2D]: (id: string, loader: Loader<Path2D>) => new Path2DAsset(id, loader),
+}
 
-// export function createVideoAsset(url: string): VideoAsset {
-// 	return {
-// 		...createBaseAsset(url, AssetType.Video),
-// 		load() {
-// 			const video = document.createElement('video')
-// 			video.src = url
-// 			video.addEventListener('canplaythrough', () => {
-// 				sola.log(`Loaded video: ${url}`)
-// 			})
-// 		},
-// 	}
-// }
+export function createAsset<TAssetType extends AssetType>(args: AssetArgs<TAssetType>): AnyAsset<TAssetType> {
+	const { id, type } = args
 
-// export function createJSONAsset(url: string): JSONAsset {
-// 	return {
-// 		...createBaseAsset(url, AssetType.JSON),
-// 		load() {
-// 			fetch(url)
-// 				.then((response) => response.json())
-// 				.then((data) => {
-// 					sola.log(`Loaded JSON: ${url}`, data)
-// 				})
-// 		},
-// 	}
-// }
+	const create = byType[type]
+	if (create) {
+		const { loader } = args
+		return create(id, loader as any) as AnyAsset<TAssetType>
+	}
 
-// export function createTextAsset(url: string): TextAsset {
-// 	return {
-// 		...createBaseAsset(url, AssetType.Text),
-// 		load() {
-// 			fetch(url)
-// 				.then((response) => response.text())
-// 				.then((text) => {
-// 					sola.log(`Loaded text: ${url}`, text)
-// 				})
-// 		},
-// 	}
-// }
-
-// export function createBinaryAsset(url: string): BinaryAsset {
-// 	return {
-// 		...createBaseAsset(url, AssetType.Binary),
-// 		load() {
-// 			fetch(url)
-// 				.then((response) => response.arrayBuffer())
-// 				.then((buffer) => {
-// 					sola.log(`Loaded binary: ${url}`, buffer)
-// 				})
-// 		},
-// 	}
-// }
-
-// export function createCanvasAsset(url: string): CanvasAsset {
-// 	return {
-// 		...createBaseAsset(url, AssetType.Canvas),
-// 		load() {
-// 			const canvas = document.createElement('canvas')
-// 			const context = canvas.getContext('2d')!
-// 			const image = new Image()
-// 			image.src = url
-// 			image.onload = () => {
-// 				canvas.width = image.width
-// 				canvas.height = image.height
-// 				context.drawImage(image, 0, 0)
-// 				sola.log(`Loaded canvas: ${url}`)
-// 			}
-// 		},
-// 	}
-// }
+	throw new Error(`Invalid asset type: ${type}`)
+}

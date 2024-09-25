@@ -1,8 +1,9 @@
-import type { AnyAsset } from './assets'
 import type { Canvas as CanvasValue } from './canvas'
+import { type AnyAsset, type AssetType, loadAsset } from './assets'
 import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
 import { Canvas, Loop } from './resources'
+import { map, set } from './types'
 
 type SystemIterator = Iterable<System>
 
@@ -84,12 +85,12 @@ type SceneBuilder<TAssets extends Assets> = (context: SceneContext<TAssets>) => 
 /**
  * A scene is a collection of entities and systems.
  */
-export type Scene<TAssets extends Assets> = {
+type Scene<TAssets extends Assets> = {
 	id: string
 	status: SceneStatus
 	builder: SceneBuilder<TAssets>
 	entities: Set<Entity>
-	assets: Set<AnyAsset>
+	assets: Set<AnyAsset<AssetType>>
 	resources: Set<Resource<unknown>>
 	systems: SystemBox
 }
@@ -111,7 +112,7 @@ async function buildScene<TAssets extends Assets>(scene: Scene<TAssets>, game: G
 			}
 
 			scene.assets.add(asset)
-			asset.load()
+			loadAsset(asset)
 			return asset
 		},
 	})
@@ -149,25 +150,17 @@ function registerEntities<TAssets extends Assets>(scene: Scene<TAssets>, startup
 	}
 }
 
-function set<TItem>(values?: Iterable<TItem>): Set<TItem> {
-	return new Set<TItem>(values)
-}
-
-function map<TKeys, TValues>(entries?: Array<[TKeys, TValues]>): Map<TKeys, TValues> {
-	return new Map<TKeys, TValues>(entries)
-}
-
 // #endregion
 
 // #region Game
-export type Game<TAssets extends Assets> = {
+type Game<TAssets extends Assets> = {
 	canvas: CanvasValue
 	scenes: Map<string, Scene<TAssets>>
 	currentScene?: Scene<TAssets>
 	assets: TAssets
 }
 
-type Assets = Record<string, AnyAsset>
+type Assets = Record<string, AnyAsset<AssetType>>
 
 type GameArgs<TAssets extends Assets> = {
 	canvas: CanvasValue
@@ -193,7 +186,7 @@ export function createGame<TAssets extends Assets>(args: GameArgs<TAssets>): Gre
 			status: SceneStatus.Idle,
 			builder,
 			entities: set<Entity>(),
-			assets: set<AnyAsset>(),
+			assets: set<AnyAsset<AssetType>>(),
 			resources: set<Resource<unknown>>(),
 			systems: createSystemBox(),
 		}

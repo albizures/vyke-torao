@@ -1,6 +1,6 @@
 import type { AnyAtlas } from '../../texture'
 import type { Vec2D } from '../../vec'
-import { AssetStatus, AssetType, type CanvasAsset, type ImageAsset } from '../../assets'
+import { AssetStatus, CanvasAsset, ImageAsset, loadAsset, Path2DAsset } from '../../assets'
 import { createSystem, first, required, type System, SystemType } from '../../ecs'
 import { camera2DQuery } from '../../prefabs'
 import { Canvas } from '../../resources'
@@ -59,7 +59,7 @@ const renderer2dSystem = createSystem({
 			const { asset, atlas } = texture
 			const { position, scale, angle } = transform
 
-			if (asset.type === AssetType.Image || asset.type === AssetType.Canvas) {
+			if (asset instanceof ImageAsset || asset instanceof CanvasAsset) {
 				const image = getImage(asset, atlas)
 				buffer.save()
 				buffer.rotate(angle)
@@ -77,13 +77,13 @@ const renderer2dSystem = createSystem({
 })
 
 function getImage(asset: ImageAsset | CanvasAsset, atlas: AnyAtlas): HTMLCanvasElement | HTMLImageElement {
-	if (asset.status === AssetStatus.Loaded) {
-		return asset.use()
+	if (asset.value) {
+		return asset.value
 	}
 
-	asset.load()
+	loadAsset(asset)
 
-	return asset.fallback(atlas.region).canvas
+	return asset.fallback(atlas).canvas
 }
 
 const render2dPath2dSystem = createSystem({
@@ -103,10 +103,10 @@ const render2dPath2dSystem = createSystem({
 			const { asset } = texture
 			const { position, scale, angle } = transform
 
-			if (asset.type !== AssetType.Path2D) {
-				throw new Error('Path2D asset expected')
+			if (!(asset instanceof Path2DAsset)) {
+				throw new TypeError('Path2D asset expected')
 			}
-			if (asset.status === AssetStatus.Error) {
+			if (asset.status === AssetStatus.Error || !asset.value) {
 				throw new Error('Path2D asset is in error state')
 			}
 
@@ -115,7 +115,7 @@ const render2dPath2dSystem = createSystem({
 			buffer.rotate(angle)
 			buffer.scale(scale.x, scale.y)
 
-			texture2d.paint(buffer, asset.use())
+			texture2d.paint(buffer, asset.value)
 			buffer.restore()
 		}
 	},

@@ -2,7 +2,7 @@ export type LoopValues = {
 	deltaTime: number
 	fps: number
 }
-export type LoopFns = {
+type LoopFns = {
 	beforeFrame: (args: LoopValues) => void
 	afterFrame: (args: LoopValues) => void
 	fixedUpdate: (args: LoopValues) => void
@@ -14,7 +14,7 @@ type FrameArgs = LoopFns & {
 	timestamp: number
 }
 
-export type Loop = {
+type Loop = {
 	readonly tickRate: number
 	frame: (args: FrameArgs) => void
 }
