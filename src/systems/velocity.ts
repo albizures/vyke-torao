@@ -1,6 +1,6 @@
 import { createSystem, type System, SystemType } from '../ecs'
 import { withVelocityAndTransform } from '../queries'
-import { Loop } from '../resources'
+import { LoopRes } from '../resources'
 
 export const velocityAndTransformSystem: System = createSystem({
 	id: 'velocity-and-position',
@@ -11,7 +11,7 @@ export const velocityAndTransformSystem: System = createSystem({
 	fn(args) {
 		const { entities } = args
 		const { velocityAndTransform } = entities
-		const { deltaTime } = Loop.value
+		const { deltaTime } = LoopRes.value
 
 		for (const entity of velocityAndTransform) {
 			const { transform, velocity } = entity.values

@@ -3,9 +3,9 @@ import type { Vec2D } from '../../vec'
 import { AssetStatus, CanvasAsset, ImageAsset, loadAsset, Path2DAsset } from '../../assets'
 import { createSystem, first, required, type System, SystemType } from '../../ecs'
 import { camera2DQuery } from '../../prefabs'
-import { Canvas } from '../../resources'
+import { CanvasRes } from '../../resources'
 import { render2dEntities, render2dPath2dEntities } from './renderer2d-queries'
-import { CanvasBuffer } from './renderer2d-resources'
+import { CanvasBufferRes } from './renderer2d-resources'
 
 const render2dBeforeFrameSystem = createSystem({
 	id: 'renderer-2d-before-frame',
@@ -16,7 +16,7 @@ const render2dBeforeFrameSystem = createSystem({
 	fn(args) {
 		const { entities } = args
 		const { camera2d } = entities
-		const { buffer, context } = CanvasBuffer.mutable()
+		const { buffer, context } = CanvasBufferRes.mutable()
 
 		buffer.clearRect(0, 0, context.canvas.width, context.canvas.height)
 
@@ -34,7 +34,7 @@ const render2dAfterFrameSystem = createSystem({
 	id: 'renderer-2d-after-frame',
 	type: SystemType.AfterFrame,
 	fn() {
-		const { buffer, context } = CanvasBuffer.mutable()
+		const { buffer, context } = CanvasBufferRes.mutable()
 
 		buffer.restore()
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height)
@@ -52,7 +52,7 @@ const renderer2dSystem = createSystem({
 		const { entities } = args
 		const { entitiesToRender } = entities
 
-		const { buffer } = CanvasBuffer.mutable()
+		const { buffer } = CanvasBufferRes.mutable()
 
 		for (const entity of entitiesToRender) {
 			const { transform, texture } = entity.values
@@ -95,7 +95,7 @@ const render2dPath2dSystem = createSystem({
 	fn(args) {
 		const { entities } = args
 		const { entitiesToRender } = entities
-		const { buffer } = CanvasBuffer.mutable()
+		const { buffer } = CanvasBufferRes.mutable()
 
 		for (const entity of entitiesToRender) {
 			const { transform, texture, texture2d } = entity.values
@@ -125,7 +125,7 @@ const renderer2dSetupSystem = createSystem({
 	id: 'renderer-2d-setup',
 	type: SystemType.EnterScene,
 	fn() {
-		const canvas = Canvas.value
+		const canvas = CanvasRes.value
 		const { size, element } = canvas
 
 		const context = element.getContext('2d')!
@@ -140,7 +140,7 @@ const renderer2dSetupSystem = createSystem({
 
 		setSize(size)
 
-		CanvasBuffer.set({ buffer, context })
+		CanvasBufferRes.set({ buffer, context })
 	},
 })
 

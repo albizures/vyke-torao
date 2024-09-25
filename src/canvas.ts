@@ -1,16 +1,18 @@
 import type { Vec2D } from './vec'
-import { canvasRect } from './resources'
+import { CanvasRectRes } from './resources'
 import { vec2D } from './vec'
 
 type ResizeListener = (size: Vec2D) => void
 
-export type Canvas = {
-	onResize: (listener: ResizeListener) => () => void
-	element: HTMLCanvasElement
-	readonly size: Vec2D
+export class Canvas {
+	constructor(
+		public element: HTMLCanvasElement,
+		public onResize: (listener: ResizeListener) => () => void,
+		public size: Vec2D,
+	) {}
 }
 
-type CanvasArgs = {
+export type CanvasArgs = {
 	element: HTMLCanvasElement
 } & ({
 	resizeMode: 'fill'
@@ -32,7 +34,7 @@ export function createCanvas(args: CanvasArgs): Canvas {
 		const rect = element.getBoundingClientRect()
 		const size = vec2D(rect.width, rect.height)
 
-		canvasRect.set({
+		CanvasRectRes.set({
 			size,
 			position: vec2D(rect.left, rect.top),
 			halfSize: vec2D.divideScalar(size, 2),
@@ -58,11 +60,9 @@ export function createCanvas(args: CanvasArgs): Canvas {
 		})
 	}
 
-	return {
-		onResize,
+	return new Canvas(
 		element,
-		get size() {
-			return canvasRect.value.size
-		},
-	}
+		onResize,
+		CanvasRectRes.value.size,
+	)
 }

@@ -7,7 +7,7 @@ type CanvasRect = {
 	halfSize: Vec2D
 }
 
-export const canvasRect: Resource<CanvasRect> = createResource({
+export const CanvasRectRes: Resource<CanvasRect> = createResource({
 	id: 'canvas-rect',
 	value: {
 		size: vec2D(0, 0),

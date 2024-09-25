@@ -1,9 +1,9 @@
-import type { Canvas as CanvasValue } from './canvas'
 import { type AnyAsset, type AssetType, loadAsset } from './assets'
+import { Canvas, type CanvasArgs, createCanvas } from './canvas'
 import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
-import { Canvas, Loop } from './resources'
-import { map, set } from './types'
+import { CanvasRes, LoopRes } from './resources'
+import { is, map, set } from './types'
 
 type SystemIterator = Iterable<System>
 
@@ -154,7 +154,7 @@ function registerEntities<TAssets extends Assets>(scene: Scene<TAssets>, startup
 
 // #region Game
 type Game<TAssets extends Assets> = {
-	canvas: CanvasValue
+	canvas: Canvas
 	scenes: Map<string, Scene<TAssets>>
 	currentScene?: Scene<TAssets>
 	assets: TAssets
@@ -163,7 +163,7 @@ type Game<TAssets extends Assets> = {
 type Assets = Record<string, AnyAsset<AssetType>>
 
 type GameArgs<TAssets extends Assets> = {
-	canvas: CanvasValue
+	canvas: Canvas | CanvasArgs
 	assets: TAssets
 }
 
@@ -197,7 +197,7 @@ export function createGame<TAssets extends Assets>(args: GameArgs<TAssets>): Gre
 	}
 
 	const game: Game<TAssets> = {
-		canvas,
+		canvas: is(canvas, Canvas) ? canvas : createCanvas(canvas),
 		scenes,
 		assets,
 	}
@@ -215,7 +215,7 @@ export async function start<TAssets extends Assets>(
 ) {
 	const { canvas } = game
 
-	Canvas.set(canvas)
+	CanvasRes.set(canvas)
 
 	await buildScene(scene, game)
 
@@ -260,7 +260,7 @@ async function startScene<TAssets extends Assets>(scene: Scene<TAssets>, runner:
 	}
 
 	function beforeFrame(args: LoopValues) {
-		Loop.set(args)
+		LoopRes.set(args)
 		for (const system of systems.beforeFrame) {
 			system.run(runArgs)
 		}
@@ -285,7 +285,7 @@ async function startScene<TAssets extends Assets>(scene: Scene<TAssets>, runner:
 	}
 
 	function fixedUpdate(args: LoopValues) {
-		Loop.set(args)
+		LoopRes.set(args)
 		for (const system of systems.fixedUpdate) {
 			system.run(runArgs)
 		}

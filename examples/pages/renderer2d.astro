@@ -11,7 +11,7 @@
 </html>
 
 <script>
-import { AssetType, AtlasType, createAsset, createCanvas, createTexture, loadImage, loadPath2D } from '../../src'
+import { AssetType, AtlasType, createAsset, createTexture, loadImage, loadPath2D } from '../../src'
 import { Transform } from '../../src/components'
 import { createComponent, createEntity, entryFrom } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
@@ -26,10 +26,10 @@ const Square = createComponent({
 })
 
 const { game, createScene } = createGame({
-	canvas: createCanvas({
+	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
-	}),
+	},
 	assets: {
 		coin: createAsset({
 			id: 'coin',

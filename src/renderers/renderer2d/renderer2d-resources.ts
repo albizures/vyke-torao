@@ -5,7 +5,7 @@ type CanvasBufferValue = {
 	buffer: CanvasRenderingContext2D
 }
 
-export const CanvasBuffer: Resource<CanvasBufferValue> = createResource<CanvasBufferValue>({
+export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource<CanvasBufferValue>({
 	id: 'canvas-buffer',
 	value: {
 		get context(): CanvasRenderingContext2D {

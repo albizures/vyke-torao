@@ -1,16 +1,16 @@
-import type { Canvas } from './canvas'
 import { describe, expect, it, vi } from 'vitest'
+import { Canvas } from './canvas'
 import { createEntity } from './ecs'
 import { createGame, SceneStatus, start } from './game'
 import { createStepRunner } from './loop'
 
-const canvas: Canvas = {
-	element: {} as unknown as HTMLCanvasElement,
-	size: { x: 100, y: 100 },
-	onResize: () => {
+const canvas: Canvas = new Canvas(
+	{} as unknown as HTMLCanvasElement,
+	() => {
 		return () => {}
 	},
-}
+	{ x: 100, y: 100 },
+)
 
 describe('createGame', () => {
 	it('should create create a game', () => {
