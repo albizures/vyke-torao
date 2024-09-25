@@ -11,7 +11,7 @@
 </html>
 
 <script>
-import { AssetType, AtlasType, createAsset, createTexture, loadImage, loadPath2D } from '../../src'
+import { AssetType, AtlasType, createTexture, loadImage, loadPath2D } from '../../src'
 import { Transform } from '../../src/components'
 import { createComponent, createEntity, entryFrom } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
@@ -31,18 +31,18 @@ const { game, createScene } = createGame({
 		resizeMode: 'fill',
 	},
 	assets: {
-		coin: createAsset({
+		coin: {
 			id: 'coin',
 			type: AssetType.Image,
 			loader: loadImage('/assets/images/coin.png'),
-		}),
-		rect: createAsset({
+		},
+		rect: {
 			id: 'rect',
 			type: AssetType.Path2D,
 			loader: loadPath2D((path) => {
 				path.rect(0, 0, 32, 32)
 			}),
-		}),
+		},
 	},
 })
 

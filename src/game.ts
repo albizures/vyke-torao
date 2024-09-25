@@ -1,4 +1,4 @@
-import { type AnyAsset, type AssetType, loadAsset } from './assets'
+import { type AnyAsset, type AssetArgs, type AssetType, createAsset, loadAsset } from './assets'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
 import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
@@ -160,20 +160,33 @@ type Game<TAssets extends Assets> = {
 	assets: TAssets
 }
 
+type AssetsArgs = Record<string, AssetArgs<AssetType>>
 type Assets = Record<string, AnyAsset<AssetType>>
 
-type GameArgs<TAssets extends Assets> = {
+type GameArgs<TAssetsArgs extends AssetsArgs> = {
 	canvas: Canvas | CanvasArgs
-	assets: TAssets
+	assets: TAssetsArgs
 }
 
-type GreateGameResult<TAssets extends Assets> = {
+type CreateGameResult<TAssets extends Assets> = {
 	game: Game<TAssets>
 	createScene: (id: string, builder: SceneBuilder<TAssets>) => Scene<TAssets>
 }
 
-export function createGame<TAssets extends Assets>(args: GameArgs<TAssets>): GreateGameResult<TAssets> {
-	const { canvas, assets } = args
+type FromArgs<TAssetsArgs extends AssetsArgs> = {
+	[TKey in keyof TAssetsArgs]: TAssetsArgs[TKey] extends AssetArgs<infer TType> ? AnyAsset<TType> : never
+}
+
+export function createGame<TAssetsArgs extends AssetsArgs>(args: GameArgs<TAssetsArgs>): CreateGameResult<FromArgs<TAssetsArgs>> {
+	const { canvas } = args
+
+	type TAssets = FromArgs<TAssetsArgs>
+
+	const assets = Object.fromEntries(
+		Object.entries(args.assets).map(([id, asset]) => {
+			return [id, createAsset(asset)]
+		}),
+	) as TAssets
 
 	const scenes = map<string, Scene<TAssets>>()
 

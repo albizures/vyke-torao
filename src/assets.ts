@@ -98,7 +98,7 @@ type Assets = {
 	[AssetType.Path2D]: Path2DAsset
 }
 
-type AssetArgs<TType extends AssetType> = {
+export type AssetArgs<TType extends AssetType> = {
 	id: string
 	type: TType
 	loader: Loader<NonNullable<Assets[TType]['value']>>

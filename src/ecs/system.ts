@@ -66,9 +66,9 @@ export function createSystem<TQueries extends Queries>(args: SystemArgs<TQueries
 				const value = query.first ? values[0] : values
 
 				if (query.required) {
-					const isFullfilled = (Array.isArray(value) && value.length !== 0) || value !== undefined
+					const isFulfilled = (Array.isArray(value) && value.length !== 0) || value !== undefined
 
-					if (!isFullfilled) {
+					if (!isFulfilled) {
 						return
 					}
 				}
