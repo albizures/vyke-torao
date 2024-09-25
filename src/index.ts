@@ -1,7 +1,7 @@
 export { AssetType, createAsset } from './assets'
 export * from './canvas'
 export * from './ecs'
-export { createGame } from './game'
+export * from './game'
 export * from './loader'
 export * from './prefab'
 export * from './texture'

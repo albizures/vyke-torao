@@ -2,7 +2,7 @@ import type { SetOptional } from 'type-fest'
 import type { Loader } from './loader'
 import type { Region2d } from './region'
 import type { Vec2D } from './vec'
-import { type AnyAsset, Asset, type AssetType, type CanvasAsset, createAsset, type ImageAsset, type Path2DAsset } from './assets'
+import { Asset, type AssetType, type CanvasAsset, createAsset, type ImageAsset, type Path2DAsset } from './assets'
 import { is } from './types'
 
 export enum AtlasType {
@@ -77,7 +77,7 @@ export class Texture {
 	constructor(public asset: CanvasAsset | ImageAsset | Path2DAsset, public atlas: AnyAtlas) {}
 }
 
-type TextureArgs = {
+export type TextureArgs = {
 	asset: ImageAsset | CanvasAsset | Path2DAsset | {
 		id: string
 		type: AssetType.Image

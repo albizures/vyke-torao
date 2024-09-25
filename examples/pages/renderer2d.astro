@@ -11,12 +11,12 @@
 </html>
 
 <script>
-import { AssetType, AtlasType, createTexture, loadImage, loadPath2D } from '../../src'
 import { Transform } from '../../src/components'
 import { createComponent, createEntity, entryFrom } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { camera2D } from '../../src/prefabs'
 import { Path2DTexture, renderer2d, Texture } from '../../src/renderers/renderer2d'
+import { assets, atlas } from '../definitions'
 
 const Coin = createComponent({
 	id: 'coin',
@@ -30,34 +30,23 @@ const { game, createScene } = createGame({
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
 	},
-	assets: {
-		coin: {
-			id: 'coin',
-			type: AssetType.Image,
-			loader: loadImage('/assets/images/coin.png'),
-		},
-		rect: {
-			id: 'rect',
-			type: AssetType.Path2D,
-			loader: loadPath2D((path) => {
-				path.rect(0, 0, 32, 32)
-			}),
-		},
+	assets,
+	textures(assets) {
+		return {
+			coin: {
+				asset: assets.coin,
+				atlas: atlas.single32x32,
+			},
+			rect: {
+				asset: assets.rect,
+				atlas: atlas.single32x32,
+			},
+		}
 	},
 })
 
 const home = createScene('home', (context) => {
-	const { assets } = context
-	const rect = createTexture({
-		asset: assets.rect,
-		atlas: {
-			type: AtlasType.Single,
-			region: {
-				width: 32,
-				height: 32,
-			},
-		},
-	})
+	const { textures } = context
 
 	const square = createEntity({
 		id: 'square',
@@ -66,7 +55,7 @@ const home = createScene('home', (context) => {
 			entryFrom(Transform, {
 				position: { x: 10, y: 10 },
 			}),
-			entryFrom(Texture, rect),
+			entryFrom(Texture, textures.rect),
 			entryFrom(Path2DTexture, {
 				paint(context, path) {
 					// context.fillStyle = 'red'
@@ -83,16 +72,7 @@ const home = createScene('home', (context) => {
 			entryFrom(Transform, {
 				position: { x: 50, y: 10 },
 			}),
-			entryFrom(Texture, createTexture({
-				asset: assets.coin,
-				atlas: {
-					type: AtlasType.Single,
-					region: {
-						width: 32,
-						height: 32,
-					},
-				},
-			})),
+			entryFrom(Texture, textures.coin),
 		],
 	})
 

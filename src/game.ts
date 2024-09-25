@@ -1,3 +1,4 @@
+import type { Texture, TextureArgs } from './texture'
 import { type AnyAsset, type AssetArgs, type AssetType, createAsset, loadAsset } from './assets'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
 import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
@@ -76,26 +77,27 @@ type StartupValues = {
 	entities?: Array<Entity>
 }
 
-type SceneContext<TAssets extends Assets> = {
+type SceneContext<TAssets extends Assets, TTextures extends Textures> = {
 	assets: TAssets
+	textures: TTextures
 }
 
-type SceneBuilder<TAssets extends Assets> = (context: SceneContext<TAssets>) => StartupValues
+type SceneBuilder<TAssets extends Assets, TTextures extends Textures> = (context: SceneContext<TAssets, TTextures>) => StartupValues
 
 /**
  * A scene is a collection of entities and systems.
  */
-type Scene<TAssets extends Assets> = {
+type Scene<TAssets extends Assets, TTextures extends Textures> = {
 	id: string
 	status: SceneStatus
-	builder: SceneBuilder<TAssets>
+	builder: SceneBuilder<TAssets, TTextures>
 	entities: Set<Entity>
 	assets: Set<AnyAsset<AssetType>>
 	resources: Set<Resource<unknown>>
 	systems: SystemBox
 }
 
-async function buildScene<TAssets extends Assets>(scene: Scene<TAssets>, game: Game<TAssets>) {
+async function buildScene<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, game: Game<TAssets, TTextures>) {
 	const { builder } = scene
 
 	if (scene.status !== SceneStatus.Idle) {
@@ -117,7 +119,20 @@ async function buildScene<TAssets extends Assets>(scene: Scene<TAssets>, game: G
 		},
 	})
 
-	const startup = builder({ assets })
+	const textures = new Proxy(game.textures, {
+		get(target, prop) {
+			const texture = target[prop as string]
+			if (!texture) {
+				throw new Error(`Texture not found: ${String(prop)}`)
+			}
+
+			scene.assets.add(texture.asset)
+			loadAsset(texture.asset)
+			return texture
+		},
+	})
+
+	const startup = builder({ assets, textures })
 
 	registerSystems(scene, startup)
 	registerEntities(scene, startup)
@@ -127,7 +142,7 @@ async function buildScene<TAssets extends Assets>(scene: Scene<TAssets>, game: G
 	return scene
 }
 
-function registerSystems<TAssets extends Assets>(scene: Scene<TAssets>, startup: StartupValues) {
+function registerSystems<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, startup: StartupValues) {
 	const { systems } = scene
 
 	for (const system of (startup.systems ?? [])) {
@@ -135,7 +150,7 @@ function registerSystems<TAssets extends Assets>(scene: Scene<TAssets>, startup:
 	}
 }
 
-function registerEntities<TAssets extends Assets>(scene: Scene<TAssets>, startup: StartupValues) {
+function registerEntities<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, startup: StartupValues) {
 	const { systems } = scene
 	const entities = startup.entities ?? []
 
@@ -153,48 +168,66 @@ function registerEntities<TAssets extends Assets>(scene: Scene<TAssets>, startup
 // #endregion
 
 // #region Game
-type Game<TAssets extends Assets> = {
+type Game<TAssets extends Assets, TTextures extends Textures> = {
 	canvas: Canvas
-	scenes: Map<string, Scene<TAssets>>
-	currentScene?: Scene<TAssets>
+	textures: TTextures
+	scenes: Map<string, Scene<TAssets, TTextures>>
+	currentScene?: Scene<TAssets, TTextures>
 	assets: TAssets
 }
 
-type AssetsArgs = Record<string, AssetArgs<AssetType>>
+export type AssetsArgs = Record<string, AssetArgs<AssetType>>
 type Assets = Record<string, AnyAsset<AssetType>>
 
-type GameArgs<TAssetsArgs extends AssetsArgs> = {
+type TexturesArgs = Record<string, TextureArgs>
+type Textures = Record<string, Texture>
+
+type GameArgs<TAssetsArgs extends AssetsArgs, TTexturesArgs extends TexturesArgs> = {
 	canvas: Canvas | CanvasArgs
-	assets: TAssetsArgs
+	assets?: TAssetsArgs
+	textures?: (assets: AssetsFromArgs<TAssetsArgs>) => TTexturesArgs
 }
 
-type CreateGameResult<TAssets extends Assets> = {
-	game: Game<TAssets>
-	createScene: (id: string, builder: SceneBuilder<TAssets>) => Scene<TAssets>
+type CreateGameResult<TAssets extends Assets, TTextures extends Textures> = {
+	game: Game<TAssets, TTextures>
+	createScene: (id: string, builder: SceneBuilder<TAssets, TTextures>) => Scene<TAssets, TTextures>
 }
 
-type FromArgs<TAssetsArgs extends AssetsArgs> = {
+type AssetsFromArgs<TAssetsArgs extends AssetsArgs> = {
 	[TKey in keyof TAssetsArgs]: TAssetsArgs[TKey] extends AssetArgs<infer TType> ? AnyAsset<TType> : never
 }
+type TexturesFromArgs<TTexturesArgs extends TexturesArgs> = {
+	[TKey in keyof TTexturesArgs]: TTexturesArgs[TKey] extends TextureArgs ? Texture : never
+}
 
-export function createGame<TAssetsArgs extends AssetsArgs>(args: GameArgs<TAssetsArgs>): CreateGameResult<FromArgs<TAssetsArgs>> {
-	const { canvas } = args
+export function createGame<TAssetsArgs extends AssetsArgs, TTexturesArgs extends TexturesArgs>(
+	args: GameArgs<TAssetsArgs, TTexturesArgs>,
+): CreateGameResult<AssetsFromArgs<TAssetsArgs>, TexturesFromArgs<TTexturesArgs>> {
+	const { canvas, assets: assetArgs, textures: createTextures } = args
 
-	type TAssets = FromArgs<TAssetsArgs>
+	type TAssets = AssetsFromArgs<TAssetsArgs>
+	type TTextures = TexturesFromArgs<TTexturesArgs>
 
 	const assets = Object.fromEntries(
-		Object.entries(args.assets).map(([id, asset]) => {
+		Object.entries(assetArgs ?? {}).map(([id, asset]) => {
 			return [id, createAsset(asset)]
 		}),
 	) as TAssets
 
-	const scenes = map<string, Scene<TAssets>>()
+	const textureArgs: TTexturesArgs = createTextures ? createTextures(assets) : {} as TTexturesArgs
+	const textures = Object.fromEntries(
+		Object.entries(textureArgs).map(([id, texture]) => {
+			return [id, texture]
+		}),
+	) as TTextures
+
+	const scenes = map<string, Scene<TAssets, TTextures>>()
 
 	/**
 	 * Creates a scene to be used in the game.
 	 */
-	function createScene(id: string, builder: SceneBuilder<TAssets>): Scene<TAssets> {
-		const scene: Scene<TAssets> = {
+	function createScene(id: string, builder: SceneBuilder<TAssets, TTextures>): Scene<TAssets, TTextures> {
+		const scene: Scene<TAssets, TTextures> = {
 			id,
 			status: SceneStatus.Idle,
 			builder,
@@ -209,10 +242,11 @@ export function createGame<TAssetsArgs extends AssetsArgs>(args: GameArgs<TAsset
 		return scene
 	}
 
-	const game: Game<TAssets> = {
+	const game: Game<TAssets, TTextures> = {
 		canvas: is(canvas, Canvas) ? canvas : createCanvas(canvas),
 		scenes,
 		assets,
+		textures,
 	}
 
 	return {
@@ -221,9 +255,9 @@ export function createGame<TAssetsArgs extends AssetsArgs>(args: GameArgs<TAsset
 	}
 }
 
-export async function start<TAssets extends Assets>(
-	game: Game<TAssets>,
-	scene: Scene<TAssets>,
+export async function start<TAssets extends Assets, TTextures extends Textures>(
+	game: Game<TAssets, TTextures>,
+	scene: Scene<TAssets, TTextures>,
 	runner: Runner = createRequestAnimationFrameRunner(),
 ) {
 	const { canvas } = game
@@ -237,7 +271,7 @@ export async function start<TAssets extends Assets>(
 	startScene(scene, runner)
 }
 
-async function startScene<TAssets extends Assets>(scene: Scene<TAssets>, runner: Runner) {
+async function startScene<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, runner: Runner) {
 	if (scene.status === SceneStatus.Running) {
 		return
 	}
