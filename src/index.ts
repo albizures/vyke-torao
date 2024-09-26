@@ -1,5 +1,6 @@
 export { AssetType, createAsset } from './assets'
 export * from './canvas'
+export * from './definitions'
 export * from './ecs'
 export * from './game'
 export * from './loader'

@@ -1,5 +1,5 @@
-import type { Texture, TextureArgs } from './texture'
-import { type AnyAsset, type AssetArgs, type AssetType, createAsset, loadAsset } from './assets'
+import type { Texture } from './texture'
+import { type AnyAsset, type AssetType, loadAsset } from './assets'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
 import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
@@ -176,16 +176,13 @@ type Game<TAssets extends Assets, TTextures extends Textures> = {
 	assets: TAssets
 }
 
-export type AssetsArgs = Record<string, AssetArgs<AssetType>>
-type Assets = Record<string, AnyAsset<AssetType>>
+export type Assets = Record<string, AnyAsset<AssetType>>
+export type Textures = Record<string, Texture>
 
-type TexturesArgs = Record<string, TextureArgs>
-type Textures = Record<string, Texture>
-
-type GameArgs<TAssetsArgs extends AssetsArgs, TTexturesArgs extends TexturesArgs> = {
+type GameArgs<TAssets extends Assets, TTextures extends Textures> = {
 	canvas: Canvas | CanvasArgs
-	assets?: TAssetsArgs
-	textures?: (assets: AssetsFromArgs<TAssetsArgs>) => TTexturesArgs
+	assets?: TAssets
+	textures?: TTextures
 }
 
 type CreateGameResult<TAssets extends Assets, TTextures extends Textures> = {
@@ -193,33 +190,10 @@ type CreateGameResult<TAssets extends Assets, TTextures extends Textures> = {
 	createScene: (id: string, builder: SceneBuilder<TAssets, TTextures>) => Scene<TAssets, TTextures>
 }
 
-type AssetsFromArgs<TAssetsArgs extends AssetsArgs> = {
-	[TKey in keyof TAssetsArgs]: TAssetsArgs[TKey] extends AssetArgs<infer TType> ? AnyAsset<TType> : never
-}
-type TexturesFromArgs<TTexturesArgs extends TexturesArgs> = {
-	[TKey in keyof TTexturesArgs]: TTexturesArgs[TKey] extends TextureArgs ? Texture : never
-}
-
-export function createGame<TAssetsArgs extends AssetsArgs, TTexturesArgs extends TexturesArgs>(
-	args: GameArgs<TAssetsArgs, TTexturesArgs>,
-): CreateGameResult<AssetsFromArgs<TAssetsArgs>, TexturesFromArgs<TTexturesArgs>> {
-	const { canvas, assets: assetArgs, textures: createTextures } = args
-
-	type TAssets = AssetsFromArgs<TAssetsArgs>
-	type TTextures = TexturesFromArgs<TTexturesArgs>
-
-	const assets = Object.fromEntries(
-		Object.entries(assetArgs ?? {}).map(([id, asset]) => {
-			return [id, createAsset(asset)]
-		}),
-	) as TAssets
-
-	const textureArgs: TTexturesArgs = createTextures ? createTextures(assets) : {} as TTexturesArgs
-	const textures = Object.fromEntries(
-		Object.entries(textureArgs).map(([id, texture]) => {
-			return [id, texture]
-		}),
-	) as TTextures
+export function createGame<TAssets extends Assets, TTextures extends Textures>(
+	args: GameArgs<TAssets, TTextures>,
+): CreateGameResult<TAssets, TTextures> {
+	const { canvas, assets = {} as TAssets, textures = {} as TTextures } = args
 
 	const scenes = map<string, Scene<TAssets, TTextures>>()
 

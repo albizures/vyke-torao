@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>snake</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 100vh;
+				background-color: #f0f0f0;
+				overflow: hidden;
+			}
+			canvas {
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+  </head>
+  <body>
+    <canvas style="border: 1px solid black"></canvas>
+  </body>
+</html>
+
+<script>
+import type { Vec2D } from '../../src/vec'
+import { Transform, Velocity } from '../../src/components'
+import { createComponent, createEntity, createQuery, createSystem, type Entity, entryFrom, first, getComponent, required, SystemType } from '../../src/ecs'
+import { createGame, start } from '../../src/game'
+import { camera2D } from '../../src/prefabs'
+import { Path2DTexture, renderer2d, Texture } from '../../src/renderers/renderer2d'
+import { assets, textures } from '../definitions'
+
+const INITIAL_SIZE = 4
+const GRID_SIZE = 10
+const VELOCITY = 2
+
+type BorderBehaviorValue = {
+	type: 'wrap' | 'die'
+}
+
+const BorderBehavior = createComponent<BorderBehaviorValue>({
+	id: 'border-behavior',
+})
+
+type GridValue = {
+	size: Vec2D
+}
+
+const Grid = createComponent<GridValue>({
+	id: 'grid',
+})
+
+type HeadValue = {
+	position: Vec2D
+}
+
+const Head = createComponent<HeadValue>({
+	id: 'head',
+})
+
+enum DirectionType {
+	Up = 0,
+	Down = 1,
+	Left = 2,
+	Right = 3,
+}
+
+type DirectionValue = {
+	dir: DirectionType
+}
+
+const PrevPosition = createComponent<Vec2D>({
+	id: 'prevPosition',
+})
+
+const Direction = createComponent<DirectionValue>({
+	id: 'direction',
+})
+
+type TailValue = {
+	position: Vec2D
+	direction: DirectionType
+	follow: Entity
+}
+
+const Tail = createComponent<TailValue>({
+	id: 'tail',
+})
+
+const { game, createScene } = createGame({
+	canvas: {
+		element: document.querySelector('canvas')!,
+		resizeMode: 'fill',
+	},
+	assets,
+	textures,
+})
+
+const selectHeads = createQuery({
+	id: 'withDirection',
+	params: {
+		direction: Direction,
+		velocity: Velocity,
+		transform: Transform,
+		head: Head,
+		borderBehavior: BorderBehavior,
+		prevPosition: PrevPosition,
+	},
+})
+
+const selectTail = createQuery({
+	id: 'selectTails',
+	params: {
+		tail: Tail,
+		transform: Transform,
+		prevPosition: PrevPosition,
+	},
+})
+
+const selectGrid = createQuery({
+	id: 'selectGrid',
+	params: {
+		grid: Grid,
+		transform: Transform,
+	},
+})
+
+const move = createSystem({
+	id: 'move',
+	type: SystemType.FixedUpdate,
+	queries: {
+		heads: selectHeads,
+	},
+	fn(args) {
+		const { entities } = args
+		const { heads } = entities
+
+		for (const item of heads) {
+			const { direction, velocity, head } = item.values
+
+			switch (direction.dir) {
+				case DirectionType.Up:
+					head.position.y -= velocity.y
+					break
+				case DirectionType.Down:
+					head.position.y += velocity.y
+					break
+				case DirectionType.Left:
+					head.position.x -= velocity.x
+					break
+				case DirectionType.Right:
+					head.position.x += velocity.x
+					break
+			}
+		}
+	},
+})
+
+const snapToGrid = createSystem({
+	id: 'snap-to-grid',
+	type: SystemType.FixedUpdate,
+	queries: {
+		heads: selectHeads,
+		grid: first(required(selectGrid)),
+	},
+	fn(args) {
+		const { entities } = args
+		const { heads, grid } = entities
+
+		const offset = grid.values.transform.position
+
+		for (const item of heads) {
+			const { transform, head, prevPosition } = item.values
+			const position = transform.position
+
+			const inGridX = head.position.x + offset.x
+			const inGridY = head.position.y + offset.y
+
+			const x = Math.round(inGridX / GRID_SIZE) * GRID_SIZE
+			const y = Math.round(inGridY / GRID_SIZE) * GRID_SIZE
+
+			if (x !== position.x || y !== position.y) {
+				prevPosition.x = position.x
+				prevPosition.y = position.y
+				position.x = x
+				position.y = y
+			}
+		}
+	},
+})
+
+const borderBehavior = createSystem({
+	id: 'border-behavior',
+	type: SystemType.FixedUpdate,
+	queries: {
+		heads: selectHeads,
+		grid: first(required(selectGrid)),
+	},
+	fn(args) {
+		const { entities } = args
+		const { heads, grid } = entities
+		const { grid: gridValues } = grid.values
+
+		const canvasSize = {
+			x: gridValues.size.x * GRID_SIZE,
+			y: gridValues.size.y * GRID_SIZE,
+		}
+
+		for (const item of heads) {
+			const { borderBehavior, head } = item.values
+			const { position } = head
+
+			if (borderBehavior.type === 'die') {
+				if (position.x < 0 || position.x > canvasSize.x || position.y < 0 || position.y > canvasSize.y) {
+					// console.log('die')
+				}
+
+				continue
+			}
+
+			if (position.x <= 0) {
+				position.x = canvasSize.x - GRID_SIZE
+			}
+			else if (position.x > canvasSize.x - GRID_SIZE) {
+				position.x = 0
+			}
+
+			if (position.y <= 0) {
+				position.y = canvasSize.y - GRID_SIZE
+			}
+			else if (position.y > canvasSize.y - GRID_SIZE) {
+				position.y = 0
+			}
+		}
+	},
+})
+
+const followSystem = createSystem({
+	id: 'follow',
+	type: SystemType.FixedUpdate,
+	queries: {
+		tail: selectTail,
+	},
+	fn(args) {
+		const { entities } = args
+		const { tail } = entities
+
+		for (const item of tail) {
+			const { tail: tailValues, transform, prevPosition } = item.values
+			const { follow } = tailValues
+
+			const followPrevPosition = getComponent(follow, PrevPosition)!
+			const position = transform.position
+
+			if (followPrevPosition.x !== position.x || followPrevPosition.y !== position.y) {
+				prevPosition.x = position.x
+				prevPosition.y = position.y
+				position.x = followPrevPosition!.x
+				position.y = followPrevPosition!.y
+			}
+		}
+	},
+})
+
+const home = createScene('home', (context) => {
+	const { textures } = context
+
+	const gridPath2d = new Path2D()
+	gridPath2d.rect(0, 0, 20 * GRID_SIZE, 20 * GRID_SIZE)
+	const grid = createEntity({
+		id: 'grid',
+		components: [
+			entryFrom(Grid, { size: { x: 20, y: 20 } }),
+			entryFrom(Transform, {
+				position: { x: 10, y: 10 },
+			}),
+			entryFrom(Texture, textures.rect10x10),
+			entryFrom(Path2DTexture, {
+				paint(context, _path) {
+					context.strokeStyle = 'red'
+
+					context.stroke(gridPath2d)
+				},
+			}),
+		],
+	})
+
+	const startX = 80
+
+	const head = createEntity({
+		id: 'head',
+		components: [
+			entryFrom(Head, { position: { x: startX, y: 20 } }),
+			entryFrom(BorderBehavior, { type: 'wrap' }),
+			entryFrom(Velocity, { x: VELOCITY, y: VELOCITY }),
+			entryFrom(Transform, {
+				position: { x: startX + GRID_SIZE, y: 30 },
+			}),
+			entryFrom(PrevPosition, { x: startX, y: 30 }),
+			entryFrom(Direction, { dir: DirectionType.Right }),
+			entryFrom(Texture, textures.rect10x10),
+			entryFrom(Path2DTexture, {
+				paint(context, path) {
+					context.strokeStyle = 'red'
+					context.stroke(path)
+				},
+			}),
+		],
+	})
+
+	let follow: Entity = head
+	const tailItem: Array<Entity> = []
+	for (let index = 0; index < INITIAL_SIZE; index++) {
+		const tail = createEntity({
+			id: `tail-${index}`,
+			components: [
+				entryFrom(Tail, {
+					follow,
+					position: {
+						x: startX - ((index + 1) * GRID_SIZE) + GRID_SIZE,
+						y: 20,
+					},
+					direction: DirectionType.Right,
+				}),
+				entryFrom(Transform, {
+					position: {
+						x: startX - (index * GRID_SIZE),
+						y: 30,
+					},
+				}),
+				entryFrom(PrevPosition, { x: startX - ((index - 1) * GRID_SIZE), y: 30 }),
+				entryFrom(Texture, textures.rect10x10),
+				entryFrom(Path2DTexture, {
+					paint(context, _path) {
+						context.fillStyle = 'green'
+						context.stroke(_path)
+					},
+				}),
+			],
+		})
+		tailItem.push(tail)
+		follow = tail
+	}
+
+	const camera = camera2D.create({
+		id: 'camera',
+	})
+
+	return {
+		entities: [head,
+			...tailItem,
+			camera, grid],
+		systems: [
+			...renderer2d.systems,
+			snapToGrid,
+			followSystem,
+			move,
+			borderBehavior,
+
+		],
+	}
+})
+
+document.addEventListener('keydown', (event) => {
+	for (const head of selectHeads.results.values()) {
+		const { direction } = head.values
+		const { dir } = direction
+		switch (event.key) {
+			case 'ArrowUp':
+				if (dir !== DirectionType.Down) {
+					direction.dir = DirectionType.Up
+				}
+				break
+			case 'ArrowDown':
+				if (dir !== DirectionType.Up) {
+					direction.dir = DirectionType.Down
+				}
+				break
+			case 'ArrowLeft':
+				if (dir !== DirectionType.Right) {
+					direction.dir = DirectionType.Left
+				}
+				break
+			case 'ArrowRight':
+				if (dir !== DirectionType.Left) {
+					direction.dir = DirectionType.Right
+				}
+				break
+		}
+	}
+})
+
+start(game, home)
+</script>

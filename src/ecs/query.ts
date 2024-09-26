@@ -11,7 +11,17 @@ export type InferValues<TParams extends QueryParams> = {
 
 type QueryListener<TParams extends QueryParams> = (query: Query<TParams>) => void
 export type QueryParams = Record<string, AnyComponent>
+
 type QueryFilter = { component: AnyComponent } & ({ type: 'with' } | { type: 'without' })
+
+export function With(component: AnyComponent): QueryFilter {
+	return { type: 'with', component }
+}
+
+export function Without(component: AnyComponent): QueryFilter {
+	return { type: 'without', component }
+}
+
 export type QueryResult<TResultValues> = {
 	entity: Entity
 	values: TResultValues

@@ -1,7 +1,7 @@
-import { type AssetsArgs, AtlasType, loadImage, loadPath2D } from '../src'
+import { AtlasType, defineAssets, defineTextures, loadImage, loadPath2D } from '../src'
 import { AssetType } from '../src/assets'
 
-export const assets = {
+export const assets = defineAssets({
 	coin: {
 		id: 'coin',
 		type: AssetType.Image,
@@ -11,12 +11,12 @@ export const assets = {
 		id: 'rect',
 		type: AssetType.Path2D,
 		loader: loadPath2D((path) => {
-			path.rect(0, 0, 32, 32)
+			path.rect(0, 0, 10, 10)
 		}),
 	},
-} as const satisfies AssetsArgs
+})
 
-export const atlas = {
+const atlas = {
 	single32x32: {
 		type: AtlasType.Single,
 		region: {
@@ -24,4 +24,24 @@ export const atlas = {
 			height: 32,
 		},
 	},
+	single10x10: {
+		type: AtlasType.Single,
+		region: {
+			width: 10,
+			height: 10,
+		},
+	},
 } as const
+
+export const textures = defineTextures(assets, (assets) => {
+	return {
+		coin: {
+			asset: assets.coin,
+			atlas: atlas.single32x32,
+		},
+		rect10x10: {
+			asset: assets.rect,
+			atlas: atlas.single10x10,
+		},
+	}
+})

@@ -57,7 +57,7 @@ export type AtlasArgs<TType extends AtlasType> = TType extends AtlasType.Single 
 export function createAtlas(args: AtlasArgs<AtlasType> | AnyAtlas): AnyAtlas {
 	const { type, region } = args
 
-	if (args instanceof Atlas) {
+	if (is(args, Atlas)) {
 		return args
 	}
 
@@ -95,7 +95,7 @@ export type TextureArgs = {
 }
 
 export function createTexture(args: TextureArgs): Texture {
-	if (args instanceof Texture) {
+	if (is(args, Texture)) {
 		return args
 	}
 

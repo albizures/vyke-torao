@@ -4,6 +4,7 @@ import { AssetStatus, CanvasAsset, ImageAsset, loadAsset, Path2DAsset } from '..
 import { createSystem, first, required, type System, SystemType } from '../../ecs'
 import { camera2DQuery } from '../../prefabs'
 import { CanvasRes } from '../../resources'
+import { is } from '../../types'
 import { render2dEntities, render2dPath2dEntities } from './renderer2d-queries'
 import { CanvasBufferRes } from './renderer2d-resources'
 
@@ -59,7 +60,7 @@ const renderer2dSystem = createSystem({
 			const { asset, atlas } = texture
 			const { position, scale, angle } = transform
 
-			if (asset instanceof ImageAsset || asset instanceof CanvasAsset) {
+			if (is(asset, ImageAsset) || is(asset, CanvasAsset)) {
 				const image = getImage(asset, atlas)
 				buffer.save()
 				buffer.rotate(angle)
@@ -103,7 +104,7 @@ const render2dPath2dSystem = createSystem({
 			const { asset } = texture
 			const { position, scale, angle } = transform
 
-			if (!(asset instanceof Path2DAsset)) {
+			if (!is(asset, Path2DAsset)) {
 				throw new TypeError('Path2D asset expected')
 			}
 			if (asset.status === AssetStatus.Error || !asset.value) {
@@ -121,7 +122,7 @@ const render2dPath2dSystem = createSystem({
 	},
 })
 
-const renderer2dSetupSystem = createSystem({
+const renderer2dEnterSceneSystem = createSystem({
 	id: 'renderer-2d-setup',
 	type: SystemType.EnterScene,
 	fn() {
@@ -134,6 +135,8 @@ const renderer2dSetupSystem = createSystem({
 		function setSize(size: Vec2D) {
 			context.canvas.width = size.x
 			context.canvas.height = size.y
+			buffer.canvas.width = size.x
+			buffer.canvas.height = size.y
 		}
 
 		canvas.onResize(setSize)
@@ -146,7 +149,7 @@ const renderer2dSetupSystem = createSystem({
 
 export const renderer2d: { systems: Array<System> } = {
 	systems: [
-		renderer2dSetupSystem,
+		renderer2dEnterSceneSystem,
 		renderer2dSystem,
 		render2dBeforeFrameSystem,
 		render2dPath2dSystem,

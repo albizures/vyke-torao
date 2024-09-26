@@ -16,7 +16,7 @@ import { createComponent, createEntity, entryFrom } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { camera2D } from '../../src/prefabs'
 import { Path2DTexture, renderer2d, Texture } from '../../src/renderers/renderer2d'
-import { assets, atlas } from '../definitions'
+import { assets, textures } from '../definitions'
 
 const Coin = createComponent({
 	id: 'coin',
@@ -31,18 +31,7 @@ const { game, createScene } = createGame({
 		resizeMode: 'fill',
 	},
 	assets,
-	textures(assets) {
-		return {
-			coin: {
-				asset: assets.coin,
-				atlas: atlas.single32x32,
-			},
-			rect: {
-				asset: assets.rect,
-				atlas: atlas.single32x32,
-			},
-		}
-	},
+	textures,
 })
 
 const home = createScene('home', (context) => {
