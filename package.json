@@ -51,8 +51,8 @@
 			"require": "./dist/queries/index.cjs"
 		},
 		"./renderers/renderer2d": {
-			"import": "./dist/renderers/renderer2d/index.mjs",
-			"require": "./dist/renderers/renderer2d/index.cjs"
+			"import": "./dist/renderers/renderer2d.mjs",
+			"require": "./dist/renderers/renderer2d.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

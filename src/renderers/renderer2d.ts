@@ -1,12 +1,77 @@
-import type { AnyAtlas } from '../../texture'
-import type { Vec2D } from '../../vec'
-import { AssetStatus, CanvasAsset, ImageAsset, loadAsset, Path2DAsset } from '../../assets'
-import { createSystem, first, required, type System, SystemType } from '../../ecs'
-import { camera2DQuery } from '../../prefabs'
-import { CanvasRes } from '../../resources'
-import { is } from '../../types'
-import { render2dEntities, render2dPath2dEntities } from './renderer2d-queries'
-import { CanvasBufferRes } from './renderer2d-resources'
+import type { AnyAtlas, Texture as AnyTexture } from '../texture'
+import type { Vec2D } from '../vec'
+import { AssetStatus, CanvasAsset, ImageAsset, loadAsset, Path2DAsset } from '../assets'
+import { Transform } from '../components'
+import { type Component,
+	createComponent,
+	createQuery,
+	createResource,
+	createSystem,
+	first,
+	type Query,
+	required,
+	type Resource,
+	type System, SystemType,
+} from '../ecs'
+import { camera2DQuery } from '../prefabs'
+import { CanvasRes } from '../resources'
+import { is } from '../types'
+
+type CanvasBufferValue = {
+	context: CanvasRenderingContext2D
+	buffer: CanvasRenderingContext2D
+}
+
+export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource<CanvasBufferValue>({
+	id: 'canvas-buffer',
+	value: {
+		get context(): CanvasRenderingContext2D {
+			throw new Error('Trying to access invalid canvas buffer context')
+		},
+		get buffer(): CanvasRenderingContext2D {
+			throw new Error('Trying to access invalid canvas buffer')
+		},
+	},
+})
+
+export const Texture: Component<AnyTexture, AnyTexture> = createComponent<AnyTexture>({
+	id: 'texture',
+})
+
+type Path2DTextureValue = {
+	paint: (context: CanvasRenderingContext2D, path: Path2D) => void
+}
+
+export const Path2DTexture: Component<Path2DTextureValue, Path2DTextureValue> = createComponent<Path2DTextureValue>({
+	id: 'path2d-texture',
+})
+
+const render2dEntities: Query<{
+	transform: typeof Transform
+	texture: typeof Texture
+}> = createQuery({
+	id: 'with-transform-and-texture',
+	params: {
+		transform: Transform,
+		texture: Texture,
+	},
+	filters: [
+		{ component: Path2DTexture, type: 'without' },
+	],
+})
+
+const render2dPath2dEntities: Query<{
+	transform: typeof Transform
+	texture2d: typeof Path2DTexture
+	texture: typeof Texture
+}> = createQuery({
+	id: 'with-transform-and-path2d-texture',
+	params: {
+		transform: Transform,
+		texture2d: Path2DTexture,
+		texture: Texture,
+	},
+})
 
 const render2dBeforeFrameSystem = createSystem({
 	id: 'renderer-2d-before-frame',
@@ -156,7 +221,3 @@ export const renderer2d: { systems: Array<System> } = {
 		render2dAfterFrameSystem,
 	],
 }
-
-export * from './renderer2d-components'
-export * from './renderer2d-queries'
-export * from './renderer2d-resources'
