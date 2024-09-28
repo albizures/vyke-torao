@@ -1,4 +1,4 @@
-import { AtlasType, defineAssets, defineTextures, loadImage, loadPath2D } from '../src'
+import { AtlasType, defineAssets, defineAtlas, defineTextures, loadCanvasContext, loadImage } from '../src'
 import { AssetType } from '../src/assets'
 
 export const assets = defineAssets({
@@ -7,16 +7,19 @@ export const assets = defineAssets({
 		type: AssetType.Image,
 		loader: loadImage('/assets/images/coin.png'),
 	},
-	rect: {
-		id: 'rect',
-		type: AssetType.Path2D,
-		loader: loadPath2D((path) => {
-			path.rect(0, 0, 10, 10)
-		}),
+	grid: {
+		id: 'grid',
+		type: AssetType.Canvas,
+		loader: loadCanvasContext(document.createElement('canvas')),
+	},
+	square: {
+		id: 'square',
+		type: AssetType.Canvas,
+		loader: loadCanvasContext(document.createElement('canvas')),
 	},
 })
 
-const atlas = {
+const atlas = defineAtlas({
 	single32x32: {
 		type: AtlasType.Single,
 		region: {
@@ -31,17 +34,13 @@ const atlas = {
 			height: 10,
 		},
 	},
-} as const
+})
 
 export const textures = defineTextures(assets, (assets) => {
 	return {
 		coin: {
 			asset: assets.coin,
 			atlas: atlas.single32x32,
-		},
-		rect10x10: {
-			asset: assets.rect,
-			atlas: atlas.single10x10,
 		},
 	}
 })

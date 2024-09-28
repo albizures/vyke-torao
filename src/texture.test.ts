@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AssetType, ImageAsset } from './assets'
+import { Asset, AssetType } from './assets'
 import { loadImage } from './loader'
 import { AtlasType, createTexture, SingleAtlas } from './texture'
 
@@ -18,7 +18,7 @@ describe('texture', () => {
 		})
 
 		expect(texture).toEqual({
-			asset: expect.any(ImageAsset),
+			asset: expect.any(Asset),
 			atlas: expect.any(SingleAtlas),
 		})
 	})

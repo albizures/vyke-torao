@@ -28,15 +28,17 @@
 
 <script>
 import type { Vec2D } from '../../src/vec'
+import { AtlasType, createTexture } from '../../src'
 import { Transform, Velocity } from '../../src/components'
 import { createComponent, createEntity, createQuery, createSystem, type Entity, entryFrom, first, getComponent, required, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { camera2D } from '../../src/prefabs'
-import { Path2DTexture, renderer2d, Texture } from '../../src/renderers/renderer2d'
+import { renderer2d, Texture } from '../../src/renderers/renderer2d'
 import { assets, textures } from '../definitions'
 
 const INITIAL_SIZE = 4
-const GRID_SIZE = 10
+const GRID_SIZE = 20
+const CELL_SIZE = 10
 const VELOCITY = 2
 
 type BorderBehaviorValue = {
@@ -181,8 +183,8 @@ const snapToGrid = createSystem({
 			const inGridX = head.position.x + offset.x
 			const inGridY = head.position.y + offset.y
 
-			const x = Math.round(inGridX / GRID_SIZE) * GRID_SIZE
-			const y = Math.round(inGridY / GRID_SIZE) * GRID_SIZE
+			const x = Math.round(inGridX / CELL_SIZE) * CELL_SIZE
+			const y = Math.round(inGridY / CELL_SIZE) * CELL_SIZE
 
 			if (x !== position.x || y !== position.y) {
 				prevPosition.x = position.x
@@ -224,16 +226,16 @@ const borderBehavior = createSystem({
 			}
 
 			if (position.x <= 0) {
-				position.x = canvasSize.x - GRID_SIZE
+				position.x = canvasSize.x - CELL_SIZE
 			}
-			else if (position.x > canvasSize.x - GRID_SIZE) {
+			else if (position.x > canvasSize.x - CELL_SIZE) {
 				position.x = 0
 			}
 
 			if (position.y <= 0) {
-				position.y = canvasSize.y - GRID_SIZE
+				position.y = canvasSize.y - CELL_SIZE
 			}
-			else if (position.y > canvasSize.y - GRID_SIZE) {
+			else if (position.y > canvasSize.y - CELL_SIZE) {
 				position.y = 0
 			}
 		}
@@ -267,26 +269,59 @@ const followSystem = createSystem({
 	},
 })
 
-const home = createScene('home', (context) => {
-	const { textures } = context
+const home = createScene('home', () => {
+	const strokeSize = 2
+	const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
+	const gridTexture = createTexture({
+		asset: assets.grid,
+		atlas: {
+			type: AtlasType.Single,
+			region: {
+				width: gridSize,
+				height: gridSize,
+			},
+		},
+	})
 
-	const gridPath2d = new Path2D()
-	gridPath2d.rect(0, 0, 20 * GRID_SIZE, 20 * GRID_SIZE)
+	assets.grid.loader.onLoad((context) => {
+		const { canvas } = context
+
+		canvas.width = gridSize
+		canvas.height = gridSize
+
+		context.strokeStyle = 'red'
+		context.strokeRect(1, 1, gridSize - strokeSize, gridSize - strokeSize)
+	})
+
+	const squareTexture = createTexture({
+		asset: assets.square,
+		atlas: {
+			type: AtlasType.Single,
+			region: {
+				width: CELL_SIZE,
+				height: CELL_SIZE,
+			},
+		},
+	})
+
+	assets.square.loader.onLoad((context) => {
+		const { canvas } = context
+
+		canvas.width = CELL_SIZE
+		canvas.height = CELL_SIZE
+
+		context.fillStyle = 'green'
+		context.fillRect(0, 0, CELL_SIZE, CELL_SIZE)
+	})
+
 	const grid = createEntity({
 		id: 'grid',
 		components: [
-			entryFrom(Grid, { size: { x: 20, y: 20 } }),
+			entryFrom(Grid, { size: { x: CELL_SIZE, y: CELL_SIZE } }),
 			entryFrom(Transform, {
-				position: { x: 10, y: 10 },
+				position: { x: 20, y: 20 },
 			}),
-			entryFrom(Texture, textures.rect10x10),
-			entryFrom(Path2DTexture, {
-				paint(context, _path) {
-					context.strokeStyle = 'red'
-
-					context.stroke(gridPath2d)
-				},
-			}),
+			entryFrom(Texture, gridTexture),
 		],
 	})
 
@@ -299,17 +334,11 @@ const home = createScene('home', (context) => {
 			entryFrom(BorderBehavior, { type: 'wrap' }),
 			entryFrom(Velocity, { x: VELOCITY, y: VELOCITY }),
 			entryFrom(Transform, {
-				position: { x: startX + GRID_SIZE, y: 30 },
+				position: { x: startX + CELL_SIZE, y: 30 },
 			}),
 			entryFrom(PrevPosition, { x: startX, y: 30 }),
 			entryFrom(Direction, { dir: DirectionType.Right }),
-			entryFrom(Texture, textures.rect10x10),
-			entryFrom(Path2DTexture, {
-				paint(context, path) {
-					context.strokeStyle = 'red'
-					context.stroke(path)
-				},
-			}),
+			entryFrom(Texture, squareTexture),
 		],
 	})
 
@@ -322,25 +351,25 @@ const home = createScene('home', (context) => {
 				entryFrom(Tail, {
 					follow,
 					position: {
-						x: startX - ((index + 1) * GRID_SIZE) + GRID_SIZE,
+						x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
 						y: 20,
 					},
 					direction: DirectionType.Right,
 				}),
 				entryFrom(Transform, {
 					position: {
-						x: startX - (index * GRID_SIZE),
+						x: startX - (index * CELL_SIZE),
 						y: 30,
 					},
 				}),
-				entryFrom(PrevPosition, { x: startX - ((index - 1) * GRID_SIZE), y: 30 }),
-				entryFrom(Texture, textures.rect10x10),
-				entryFrom(Path2DTexture, {
-					paint(context, _path) {
-						context.fillStyle = 'green'
-						context.stroke(_path)
-					},
-				}),
+				entryFrom(PrevPosition, { x: startX - ((index - 1) * CELL_SIZE), y: 30 }),
+				entryFrom(Texture, squareTexture),
+				// entryFrom(Path2DTexture, {
+				// 	paint(context, _path) {
+				// 		context.fillStyle = 'green'
+				// 		context.stroke(_path)
+				// 	},
+				// }),
 			],
 		})
 		tailItem.push(tail)

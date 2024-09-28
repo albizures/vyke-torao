@@ -2,12 +2,44 @@ import { rootSola } from './sola'
 
 const sola = rootSola.withTag('loader')
 
-export type Loader<TValue> =
+type LoaderFn<TValue> =
 	| (() => Promise<TValue>)
 	| (() => TValue)
 
+export class Loader<TValue> {
+	cache?: TValue
+	listeners: Array<(value: TValue) => void> = []
+	constructor(public fn: LoaderFn<TValue>) {}
+
+	async load(): Promise<TValue> {
+		if (this.cache) {
+			return this.cache
+		}
+
+		const value = await this.fn()
+		this.cache = value
+
+		for (const listener of this.listeners) {
+			listener(value)
+		}
+
+		this.listeners = []
+
+		return value
+	}
+
+	onLoad(listener: (value: TValue) => void) {
+		if (this.cache) {
+			listener(this.cache)
+		}
+		else {
+			this.listeners.push(listener)
+		}
+	}
+}
+
 export function loadImage(url: string): Loader<HTMLImageElement> {
-	return () => new Promise((resolve, reject) => {
+	return new Loader(() => new Promise((resolve, reject) => {
 		const image = document.createElement('img')
 
 		image.onload = () => {
@@ -21,11 +53,11 @@ export function loadImage(url: string): Loader<HTMLImageElement> {
 		}
 
 		image.src = url
-	})
+	}))
 }
 
 export function loadCanvasContext(canvas: HTMLCanvasElement): Loader<CanvasRenderingContext2D> {
-	return async () => {
+	return new Loader(async () => {
 		const context = canvas.getContext('2d')
 		if (context) {
 			return context
@@ -33,13 +65,5 @@ export function loadCanvasContext(canvas: HTMLCanvasElement): Loader<CanvasRende
 		else {
 			throw new Error('Failed to get 2d context')
 		}
-	}
-}
-
-export function loadPath2D(builder: (path: Path2D) => void): Loader<Path2D> {
-	return () => {
-		const path = new Path2D()
-		builder(path)
-		return path
-	}
+	})
 }

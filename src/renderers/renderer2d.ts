@@ -1,6 +1,5 @@
-import type { AnyAtlas, Texture as AnyTexture } from '../texture'
 import type { Vec2D } from '../vec'
-import { AssetStatus, CanvasAsset, ImageAsset, loadAsset, Path2DAsset } from '../assets'
+import { loadAsset } from '../assets'
 import { Transform } from '../components'
 import { type Component,
 	createComponent,
@@ -15,6 +14,7 @@ import { type Component,
 } from '../ecs'
 import { camera2DQuery } from '../prefabs'
 import { CanvasRes } from '../resources'
+import { type AnyAtlas, type Texture as AnyTexture, isTextureAssetType, type TextureAssets } from '../texture'
 import { is } from '../types'
 
 type CanvasBufferValue = {
@@ -38,14 +38,6 @@ export const Texture: Component<AnyTexture, AnyTexture> = createComponent<AnyTex
 	id: 'texture',
 })
 
-type Path2DTextureValue = {
-	paint: (context: CanvasRenderingContext2D, path: Path2D) => void
-}
-
-export const Path2DTexture: Component<Path2DTextureValue, Path2DTextureValue> = createComponent<Path2DTextureValue>({
-	id: 'path2d-texture',
-})
-
 const render2dEntities: Query<{
 	transform: typeof Transform
 	texture: typeof Texture
@@ -53,22 +45,6 @@ const render2dEntities: Query<{
 	id: 'with-transform-and-texture',
 	params: {
 		transform: Transform,
-		texture: Texture,
-	},
-	filters: [
-		{ component: Path2DTexture, type: 'without' },
-	],
-})
-
-const render2dPath2dEntities: Query<{
-	transform: typeof Transform
-	texture2d: typeof Path2DTexture
-	texture: typeof Texture
-}> = createQuery({
-	id: 'with-transform-and-path2d-texture',
-	params: {
-		transform: Transform,
-		texture2d: Path2DTexture,
 		texture: Texture,
 	},
 })
@@ -125,7 +101,7 @@ const renderer2dSystem = createSystem({
 			const { asset, atlas } = texture
 			const { position, scale, angle } = transform
 
-			if (is(asset, ImageAsset) || is(asset, CanvasAsset)) {
+			if (isTextureAssetType(asset)) {
 				const image = getImage(asset, atlas)
 				buffer.save()
 				buffer.rotate(angle)
@@ -142,8 +118,11 @@ const renderer2dSystem = createSystem({
 	},
 })
 
-function getImage(asset: ImageAsset | CanvasAsset, atlas: AnyAtlas): HTMLCanvasElement | HTMLImageElement {
+function getImage(asset: TextureAssets, atlas: AnyAtlas): HTMLCanvasElement | HTMLImageElement {
 	if (asset.value) {
+		if (is(asset.value, CanvasRenderingContext2D)) {
+			return asset.value.canvas
+		}
 		return asset.value
 	}
 
@@ -151,41 +130,6 @@ function getImage(asset: ImageAsset | CanvasAsset, atlas: AnyAtlas): HTMLCanvasE
 
 	return asset.fallback(atlas).canvas
 }
-
-const render2dPath2dSystem = createSystem({
-	id: 'renderer-2d-path2d',
-	type: SystemType.Render,
-	queries: {
-		entitiesToRender: render2dPath2dEntities,
-	},
-	fn(args) {
-		const { entities } = args
-		const { entitiesToRender } = entities
-		const { buffer } = CanvasBufferRes.mutable()
-
-		for (const entity of entitiesToRender) {
-			const { transform, texture, texture2d } = entity.values
-
-			const { asset } = texture
-			const { position, scale, angle } = transform
-
-			if (!is(asset, Path2DAsset)) {
-				throw new TypeError('Path2D asset expected')
-			}
-			if (asset.status === AssetStatus.Error || !asset.value) {
-				throw new Error('Path2D asset is in error state')
-			}
-
-			buffer.save()
-			buffer.translate(position.x, position.y)
-			buffer.rotate(angle)
-			buffer.scale(scale.x, scale.y)
-
-			texture2d.paint(buffer, asset.value)
-			buffer.restore()
-		}
-	},
-})
 
 const renderer2dEnterSceneSystem = createSystem({
 	id: 'renderer-2d-setup',
@@ -217,7 +161,6 @@ export const renderer2d: { systems: Array<System> } = {
 		renderer2dEnterSceneSystem,
 		renderer2dSystem,
 		render2dBeforeFrameSystem,
-		render2dPath2dSystem,
 		render2dAfterFrameSystem,
 	],
 }

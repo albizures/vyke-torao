@@ -1,5 +1,5 @@
 import type { Texture } from './texture'
-import { type AnyAsset, type AssetType, loadAsset } from './assets'
+import { type AnyAsset, loadAsset } from './assets'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
 import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
@@ -92,7 +92,7 @@ type Scene<TAssets extends Assets, TTextures extends Textures> = {
 	status: SceneStatus
 	builder: SceneBuilder<TAssets, TTextures>
 	entities: Set<Entity>
-	assets: Set<AnyAsset<AssetType>>
+	assets: Set<AnyAsset>
 	resources: Set<Resource<unknown>>
 	systems: SystemBox
 }
@@ -176,7 +176,7 @@ type Game<TAssets extends Assets, TTextures extends Textures> = {
 	assets: TAssets
 }
 
-export type Assets = Record<string, AnyAsset<AssetType>>
+export type Assets = Record<string, AnyAsset>
 export type Textures = Record<string, Texture>
 
 type GameArgs<TAssets extends Assets, TTextures extends Textures> = {
@@ -206,7 +206,7 @@ export function createGame<TAssets extends Assets, TTextures extends Textures>(
 			status: SceneStatus.Idle,
 			builder,
 			entities: set<Entity>(),
-			assets: set<AnyAsset<AssetType>>(),
+			assets: set<AnyAsset>(),
 			resources: set<Resource<unknown>>(),
 			systems: createSystemBox(),
 		}

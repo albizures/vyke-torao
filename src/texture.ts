@@ -1,8 +1,7 @@
 import type { SetOptional } from 'type-fest'
-import type { Loader } from './loader'
 import type { Region2d } from './region'
 import type { Vec2D } from './vec'
-import { Asset, type AssetType, type CanvasAsset, createAsset, type ImageAsset, type Path2DAsset } from './assets'
+import { Asset, type AssetArgs, AssetType, createAsset } from './assets'
 import { is } from './types'
 
 export enum AtlasType {
@@ -10,7 +9,7 @@ export enum AtlasType {
 	Multiple,
 }
 
-class Atlas {
+export class Atlas {
 	region: Region2d
 	constructor(public type: AtlasType, rawRegion: SetOptional<Region2d, 'x' | 'y'>) {
 		const { x = 0, y = 0 } = rawRegion
@@ -73,24 +72,24 @@ export function createAtlas(args: AtlasArgs<AtlasType> | AnyAtlas): AnyAtlas {
 	throw new Error('Invalid atlas type:', type)
 }
 
+const textureAssetTypes = [AssetType.Canvas, AssetType.Image] as const
+
+type TextureAssetTypes = typeof textureAssetTypes[number]
+
+export type TextureAssets = {
+	[K in TextureAssetTypes]: Asset<K>
+}[TextureAssetTypes]
+
+export function isTextureAssetType(asset: unknown): asset is TextureAssetTypes {
+	return is(asset, Asset) && textureAssetTypes.includes(asset.type as TextureAssetTypes)
+}
+
 export class Texture {
-	constructor(public asset: CanvasAsset | ImageAsset | Path2DAsset, public atlas: AnyAtlas) {}
+	constructor(public asset: TextureAssets, public atlas: AnyAtlas) {}
 }
 
 export type TextureArgs = {
-	asset: ImageAsset | CanvasAsset | Path2DAsset | {
-		id: string
-		type: AssetType.Image
-		loader: Loader<HTMLImageElement>
-	} | {
-		id: string
-		type: AssetType.Canvas
-		loader: Loader<HTMLCanvasElement>
-	} | {
-		id: string
-		type: AssetType.Path2D
-		loader: Loader<Path2D>
-	}
+	asset: TextureAssets | AssetArgs<TextureAssetTypes>
 	atlas: AtlasArgs<AtlasType> | AnyAtlas
 }
 
@@ -101,8 +100,10 @@ export function createTexture(args: TextureArgs): Texture {
 
 	const { asset, atlas } = args
 
+	const finalAsset = asset instanceof Asset ? asset : createAsset(asset) as TextureAssets
+
 	return new Texture(
-		is(asset, Asset) ? asset : createAsset(asset),
+		finalAsset,
 		createAtlas(atlas),
 	)
 }

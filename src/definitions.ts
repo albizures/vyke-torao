@@ -1,11 +1,13 @@
 import type { Assets } from './game'
-import { type AnyAsset, type AssetArgs, type AssetType, createAsset } from './assets'
-import { createTexture, type Texture, type TextureArgs } from './texture'
+import { type Asset, type AssetArgs, type AssetType, createAsset } from './assets'
+import { type AnyAtlas, type AtlasArgs, type AtlasType, createAtlas, createTexture, type Texture, type TextureArgs } from './texture'
 
 type AssetsArgs = Record<string, AssetArgs<AssetType>>
 
-type AssetsFromArgs<TAssetsArgs extends AssetsArgs> = {
-	[TKey in keyof TAssetsArgs]: TAssetsArgs[TKey] extends AssetArgs<infer TType> ? AnyAsset<TType> : never
+export type AssetsFromArgs<TAssetsArgs extends AssetsArgs> = {
+	[TKey in keyof TAssetsArgs]: TAssetsArgs[TKey]['type'] extends AssetType
+		? Asset<TAssetsArgs[TKey]['type']>
+		: never
 }
 
 export function defineAssets<TAssetsArgs extends AssetsArgs>(assets: TAssetsArgs): AssetsFromArgs<TAssetsArgs> {
@@ -35,4 +37,17 @@ export function defineTextures<
 	})
 
 	return Object.fromEntries(entries) as TTextures
+}
+
+type AtlasArgRecord = Record<string, AtlasArgs<AtlasType>>
+type AtlasFromArgs<TAtlasArgs extends AtlasArgRecord> = {
+	[TKey in keyof TAtlasArgs]: AnyAtlas
+}
+
+export function defineAtlas<TAtlasArgs extends AtlasArgRecord>(atlases: TAtlasArgs): AtlasFromArgs<TAtlasArgs> {
+	type TAtlas = AtlasFromArgs<TAtlasArgs>
+	const entries: Array<[string, AnyAtlas]> = Object.entries(atlases ?? {}).map(([id, atlas]) => {
+		return [id, createAtlas(atlas)]
+	})
+	return Object.fromEntries(entries) as TAtlas
 }
