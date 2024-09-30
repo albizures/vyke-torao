@@ -348,10 +348,6 @@ const home = createScene('home', (context) => {
 	}
 })
 
-home.world.registerQuery(allHeads)
-home.world.registerQuery(allTails)
-home.world.registerQuery(allGrids)
-
 document.addEventListener('keydown', (event) => {
 	for (const head of home.world.select(allHeads)) {
 		const { direction } = head

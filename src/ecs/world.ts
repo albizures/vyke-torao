@@ -172,19 +172,25 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		entities.clear()
 	}
 
+	function registerQuery(query: Query<TEntity>) {
+		for (const component of [...query.with, ...query.without]) {
+			const queries = getQueries(component)
+			queries.add(query)
+		}
+
+		queries.set(query, createEntityBox())
+		compute(query)
+	}
+
 	return {
 		spawn,
 		despawn,
-		registerQuery(query: Query<TEntity>) {
-			for (const component of [...query.with, ...query.without]) {
-				const queries = getQueries(component)
-				queries.add(query)
+		registerQuery,
+		select<TSelect extends keyof TEntity>(query: Query<TEntity>) {
+			if (!queries.has(query)) {
+				registerQuery(query)
 			}
 
-			queries.set(query, createEntityBox())
-			compute(query)
-		},
-		select<TSelect extends keyof TEntity>(query: Query<TEntity>) {
 			const result = queries.get(query as AnyQuery) || createEntityBox()
 			return result as unknown as EntityBox<SelectedValues<TEntity, TSelect>>
 		},
