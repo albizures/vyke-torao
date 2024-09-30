@@ -1,4 +1,4 @@
 export * from './query'
 export * from './resource'
 export * from './system'
-export * from './world'
+export { createEntityBox, createWorld, type World } from './world'

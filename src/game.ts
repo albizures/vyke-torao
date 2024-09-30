@@ -1,7 +1,8 @@
+import type { Entity, Spawn } from './ecs/world'
 import type { Texture } from './texture'
 import { type AnyAsset, loadAsset } from './assets'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
-import { createWorld, type Entity, type Resource, type Spawn, type System, SystemType, type World } from './ecs'
+import { createWorld, type Query, type Resource, type System, SystemType, type World } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
 import { CanvasRes, LoopRes } from './resources'
 import { is, map, set } from './types'
@@ -72,8 +73,16 @@ export enum SceneStatus {
 	Running = 3,
 }
 
+export type Register = <TEntity extends Entity>(args: Query<TEntity>) => void
+
+export type Plugin = {
+	queries: (register: Register) => void
+	systems: Array<System<any>>
+}
+
 type StartupValues<TEntity extends Entity> = {
 	systems?: Array<System<TEntity>>
+	plugins?: Array<Plugin>
 }
 
 export type SceneContext<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
@@ -138,19 +147,34 @@ async function buildScene<TEntity extends Entity, TAssets extends Assets, TTextu
 
 	const startup = builder({ assets, textures, spawn: scene.world.spawn })
 
-	registerSystems(scene, startup)
+	registerSystems(scene, startup.systems)
+	for (const plugin of startup.plugins ?? []) {
+		registerPlugin(scene, plugin)
+	}
 
 	scene.status = SceneStatus.Ready
 
 	return scene
 }
 
-function registerSystems<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(scene: Scene<TEntity, TAssets, TTextures>, startup: StartupValues<TEntity>) {
+function registerSystems<
+	TEntity extends Entity,
+	TAssets extends Assets,
+	TTextures extends Textures,
+>(scene: Scene<TEntity, TAssets, TTextures>, initSystems: Array<System<TEntity>> = []) {
 	const { systems } = scene
 
-	for (const system of (startup.systems ?? [])) {
+	for (const system of initSystems) {
 		systems.add(system)
 	}
+}
+
+function registerPlugin<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(scene: Scene<TEntity, TAssets, TTextures>, plugin: Plugin) {
+	const { queries, systems } = plugin
+
+	queries(scene.world.registerQuery)
+
+	registerSystems(scene, systems)
 }
 
 // #endregion

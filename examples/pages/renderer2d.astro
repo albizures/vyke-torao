@@ -85,8 +85,8 @@ const home = createScene('home', (context) => {
 	spawn('camera', createCamera2d({}))
 
 	return {
-		systems: [
-			...renderer2d.systems,
+		plugins: [
+			renderer2d,
 		],
 	}
 })

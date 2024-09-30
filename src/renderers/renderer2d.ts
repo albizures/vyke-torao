@@ -1,11 +1,12 @@
 import type { WithTransform2D } from '../components'
+import type { Entity } from '../ecs/world'
+import type { Plugin } from '../game'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
 import {
 	createQuery,
 	createResource,
 	createSystem,
-	type Entity,
 	type Query,
 	type Resource,
 	type System,
@@ -145,20 +146,16 @@ const renderer2dEnterSceneSystem: System<Entity2D> = createSystem({
 	},
 })
 
-type Renderer2D = {
-	systems: Array<System<WithCamera2D> | System<any> | System<Entity2D>>
-	queries: (register: <TEntity extends Entity>(args: Query<TEntity>) => void) => void
-}
+type Register = <TEntity extends Entity>(args: Query<TEntity>) => void
 
-export const renderer2d: Renderer2D = {
+export const renderer2d: Plugin = {
 	systems: [
 		renderer2dEnterSceneSystem,
 		renderer2dSystem,
 		render2dBeforeFrameSystem,
 		render2dAfterFrameSystem,
 	],
-
-	queries: (register: <TEntity extends Entity>(args: Query<TEntity>) => void) => {
+	queries: (register: Register) => {
 		register(render2dEntities)
 		register(camera2DQuery)
 	},

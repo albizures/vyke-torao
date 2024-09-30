@@ -342,14 +342,15 @@ const home = createScene('home', (context) => {
 			borderBehavior,
 
 		],
+		plugins: [
+			renderer2d,
+		],
 	}
 })
 
 home.world.registerQuery(allHeads)
 home.world.registerQuery(allTails)
 home.world.registerQuery(allGrids)
-
-renderer2d.queries(home.world.registerQuery)
 
 document.addEventListener('keydown', (event) => {
 	for (const head of home.world.select(allHeads)) {
