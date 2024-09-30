@@ -29,14 +29,14 @@
 <script>
 import type { Vec2D } from '../../src/vec'
 import { AtlasType, createTexture } from '../../src'
-import { createTransform2D, type MaybeWithTransform2D, type MaybeWithVelocity2D } from '../../src/components'
+import { createTransform2D, type WithTransform2D, type WithVelocity2D } from '../../src/components'
 import { createQuery, createSystem, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
-import { createCamera2d, type MaybeWithCamera2D } from '../../src/prefabs'
-import { type MaybeWithTexture2d, renderer2d } from '../../src/renderers/renderer2d'
+import { createCamera2d, type WithCamera2D } from '../../src/prefabs'
+import { renderer2d, type WithTexture2d } from '../../src/renderers/renderer2d'
 import { assets, textures } from '../definitions'
 
-type MyEntity = MaybeWithTransform2D & MaybeWithTexture2d & MaybeWithVelocity2D & MaybeWithCamera2D & {
+type MyEntity = WithTransform2D & WithTexture2d & WithVelocity2D & WithCamera2D & {
 	borderBehavior?: BorderBehaviorValue
 	grid?: GridValue
 	head?: HeadValue
@@ -349,7 +349,7 @@ home.world.registerQuery(allHeads)
 home.world.registerQuery(allTails)
 home.world.registerQuery(allGrids)
 
-renderer2d.queries.forEach((query) => home.world.registerQuery(query))
+renderer2d.queries(home.world.registerQuery)
 
 document.addEventListener('keydown', (event) => {
 	for (const head of home.world.select(allHeads)) {

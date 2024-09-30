@@ -17,13 +17,13 @@
 
 <script>
 import { AtlasType, createTexture } from '../../src'
-import { createTransform2D, type MaybeWithTransform2D, type MaybeWithVelocity2D } from '../../src/components'
+import { createTransform2D, type WithTransform2D, type WithVelocity2D } from '../../src/components'
 import { createGame, start } from '../../src/game'
-import { createCamera2d, type MaybeWithCamera2D } from '../../src/prefabs'
-import { type MaybeWithTexture2d, renderer2d } from '../../src/renderers/renderer2d'
+import { createCamera2d, type WithCamera2D } from '../../src/prefabs'
+import { renderer2d, type WithTexture2d } from '../../src/renderers/renderer2d'
 import { assets, textures } from '../definitions'
 
-type MyEntity = MaybeWithTransform2D & MaybeWithVelocity2D & MaybeWithCamera2D & MaybeWithTexture2d & {
+type MyEntity = WithTransform2D & WithVelocity2D & WithCamera2D & WithTexture2d & {
 	coin?: true
 	square?: true
 }
@@ -90,6 +90,8 @@ const home = createScene('home', (context) => {
 		],
 	}
 })
+
+renderer2d.queries(home.world.registerQuery)
 
 start(game, home)
 </script>

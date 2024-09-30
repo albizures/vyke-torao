@@ -1,3 +1,4 @@
+import type { Simplify } from 'type-fest'
 import type { AnyQuery, Query } from './query'
 import { map, set } from '../types'
 
@@ -7,7 +8,7 @@ export type Entity = Record<Component, any>
 type SelectedValues<
 	TEntity extends Entity,
 	TSelect extends keyof TEntity,
-> = Required<Pick<TEntity, TSelect>>
+> = Simplify<Required<Pick<TEntity, TSelect>>>
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
 

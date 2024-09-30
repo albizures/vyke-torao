@@ -1,16 +1,17 @@
-import type { MaybeWithTransform2D } from '../components'
+import type { WithTransform2D } from '../components'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
 import {
 	createQuery,
 	createResource,
 	createSystem,
+	type Entity,
 	type Query,
 	type Resource,
 	type System,
 	SystemType,
 } from '../ecs'
-import { camera2DQuery, type MaybeWithCamera2D } from '../prefabs'
+import { camera2DQuery, type WithCamera2D } from '../prefabs'
 import { CanvasRes } from '../resources'
 import { type AnyAtlas, type Texture as AnyTexture, isTextureAssetType, type TextureAssets } from '../texture'
 import { is } from '../types'
@@ -20,7 +21,7 @@ type CanvasBufferValue = {
 	buffer: CanvasRenderingContext2D
 }
 
-export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource<CanvasBufferValue>({
+export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
 	id: 'canvas-buffer',
 	value: {
 		get context(): CanvasRenderingContext2D {
@@ -32,22 +33,18 @@ export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource<Canva
 	},
 })
 
-type Entity2D = MaybeWithTransform2D & MaybeWithTexture2d
-
-type WithTexture2d = {
-	texture2D: AnyTexture
+export type WithTexture2d = {
+	texture2D?: AnyTexture
 }
 
-export type MaybeWithTexture2d = Partial<WithTexture2d>
+type Entity2D = WithTransform2D & WithTexture2d
 
-const render2dEntities: Query<Entity2D> = createQuery<Entity2D>({
+const render2dEntities: Query<Required<Entity2D>> = createQuery({
 	id: 'with-transform-and-texture',
 	with: ['transform2D', 'texture2D'],
 })
 
-type MaybeWithCamera2DAndTransform = MaybeWithCamera2D & MaybeWithTransform2D
-
-const render2dBeforeFrameSystem: System<MaybeWithCamera2DAndTransform> = createSystem<MaybeWithCamera2DAndTransform>({
+const render2dBeforeFrameSystem: System<WithCamera2D> = createSystem({
 	id: 'renderer-2d-before-frame',
 	type: SystemType.BeforeFrame,
 	fn(args) {
@@ -69,7 +66,7 @@ const render2dBeforeFrameSystem: System<MaybeWithCamera2DAndTransform> = createS
 	},
 })
 
-const render2dAfterFrameSystem: System<any> = createSystem<any>({
+const render2dAfterFrameSystem: System<any> = createSystem({
 	id: 'renderer-2d-after-frame',
 	type: SystemType.AfterFrame,
 	fn() {
@@ -81,7 +78,7 @@ const render2dAfterFrameSystem: System<any> = createSystem<any>({
 	},
 })
 
-const renderer2dSystem: System<Entity2D> = createSystem<Entity2D>({
+const renderer2dSystem: System<Entity2D> = createSystem({
 	id: 'renderer-2d',
 	type: SystemType.Render,
 	fn(args) {
@@ -123,7 +120,7 @@ function getImage(asset: TextureAssets, atlas: AnyAtlas): HTMLCanvasElement | HT
 	return asset.fallback(atlas).canvas
 }
 
-const renderer2dEnterSceneSystem: System<Entity2D> = createSystem<Entity2D>({
+const renderer2dEnterSceneSystem: System<Entity2D> = createSystem({
 	id: 'renderer-2d-setup',
 	type: SystemType.EnterScene,
 	fn() {
@@ -148,15 +145,21 @@ const renderer2dEnterSceneSystem: System<Entity2D> = createSystem<Entity2D>({
 	},
 })
 
-export const renderer2d = {
+type Renderer2D = {
+	systems: Array<System<WithCamera2D> | System<any> | System<Entity2D>>
+	queries: (register: <TEntity extends Entity>(args: Query<TEntity>) => void) => void
+}
+
+export const renderer2d: Renderer2D = {
 	systems: [
 		renderer2dEnterSceneSystem,
 		renderer2dSystem,
 		render2dBeforeFrameSystem,
 		render2dAfterFrameSystem,
 	],
-	queries: [
-		render2dEntities,
-		camera2DQuery,
-	],
+
+	queries: (register: <TEntity extends Entity>(args: Query<TEntity>) => void) => {
+		register(render2dEntities)
+		register(camera2DQuery)
+	},
 }
