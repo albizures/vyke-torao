@@ -1,36 +1,19 @@
-import type { Entity, EntityArgs } from './entity'
-import type { AnyQuery, First, InferValues, Query, QueryResult } from './query'
+import type { Entity, Select, Spawn } from './world'
 
-type InferSystemValue<TQuery> = TQuery extends Query<infer TParams>
-	? TQuery extends First
-		? QueryResult<NonNullable<InferValues<TParams>>>
-		: Array<QueryResult<InferValues<TParams>>>
-	: never
-
-type InferSystemValues<TQueries extends Queries> = {
-	[TKey in keyof TQueries]: InferSystemValue<TQueries[TKey]>
-}
-
-export type SystemFnArgs<TValues> = {
-	entities: TValues
-	spawn: (args: EntityArgs) => Entity
-}
-
-type RunArgs = {
-	spawn: (args: EntityArgs) => Entity
+type RunArgs<TEntity extends Entity> = {
+	spawn: Spawn<TEntity>
+	select: Select<Entity>
+	getEntity: (id: string) => TEntity | undefined
 }
 
 /**
  * A system is a function that updates the state of the game.
  */
-export type System = {
+export type System<TEntity extends Entity> = {
 	id: string
-	queries: Array<AnyQuery>
-	run: (args: RunArgs) => void
+	run: (args: RunArgs<TEntity>) => void
 	type: SystemType
 }
-
-type Queries = Record<string, AnyQuery>
 
 export enum SystemType {
 	FixedUpdate = 0,
@@ -41,45 +24,43 @@ export enum SystemType {
 	AfterFrame = 5,
 }
 
-type SystemFn<TEntities> = (args: SystemFnArgs<TEntities>) => void
-
-type SystemArgs<TQueries extends Queries> = {
-	id: string
-	queries?: TQueries
-	type: SystemType
-	fn: SystemFn<InferSystemValues<TQueries>>
+export type SystemFnArgs<TEntity extends Entity> = {
+	spawn: Spawn<TEntity>
+	select: Select<TEntity>
+	getEntity: (id: string) => TEntity | undefined
 }
 
-export function createSystem<TQueries extends Queries>(args: SystemArgs<TQueries>): System {
-	const { id, queries, fn, type } = args
+type SystemFn<TEntity extends Entity> = (args: SystemFnArgs<TEntity>) => void
+
+type SystemArgs<TEntity extends Entity> = {
+	id: string
+	type: SystemType
+	onlyWhen?: (args: SystemFnArgs<TEntity>) => boolean
+	fn: SystemFn<TEntity>
+}
+
+function alwaysTrue() {
+	return true
+}
+
+export function createSystem<TEntity extends Entity>(args: SystemArgs<TEntity>): System<TEntity> {
+	const { id, fn, type, onlyWhen = alwaysTrue } = args
 
 	return {
 		id,
 		type,
-		queries: Object.values(queries ?? {}),
-		run(args: RunArgs) {
-			const entities = {} as Partial<InferSystemValues<TQueries>>
-
-			for (const key in queries) {
-				const query = queries[key]!
-				const values = [...query.results.values()]
-				const value = query.first ? values[0] : values
-
-				if (query.required) {
-					const isFulfilled = (Array.isArray(value) && value.length !== 0) || value !== undefined
-
-					if (!isFulfilled) {
-						return
-					}
-				}
-
-				entities[key] = value as InferSystemValues<TQueries>[keyof TQueries]
+		run(args: RunArgs<TEntity>) {
+			const runArgs = {
+				...args,
 			}
 
-			fn({
-				entities: entities as InferSystemValues<TQueries>,
-				...args,
-			})
+			const shouldRun = onlyWhen(runArgs)
+
+			if (!shouldRun) {
+				return
+			}
+
+			fn(runArgs)
 		},
 	}
 }

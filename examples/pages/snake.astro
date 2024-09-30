@@ -29,12 +29,21 @@
 <script>
 import type { Vec2D } from '../../src/vec'
 import { AtlasType, createTexture } from '../../src'
-import { Transform, Velocity } from '../../src/components'
-import { createComponent, createEntity, createQuery, createSystem, type Entity, entryFrom, first, getComponent, required, SystemType } from '../../src/ecs'
+import { createTransform2D, type MaybeWithTransform2D, type MaybeWithVelocity2D } from '../../src/components'
+import { createQuery, createSystem, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
-import { camera2D } from '../../src/prefabs'
-import { renderer2d, Texture } from '../../src/renderers/renderer2d'
+import { createCamera2d, type MaybeWithCamera2D } from '../../src/prefabs'
+import { type MaybeWithTexture2d, renderer2d } from '../../src/renderers/renderer2d'
 import { assets, textures } from '../definitions'
+
+type MyEntity = MaybeWithTransform2D & MaybeWithTexture2d & MaybeWithVelocity2D & MaybeWithCamera2D & {
+	borderBehavior?: BorderBehaviorValue
+	grid?: GridValue
+	head?: HeadValue
+	direction?: DirectionValue
+	prevPosition?: Vec2D
+	tail?: TailValue
+}
 
 const INITIAL_SIZE = 4
 const GRID_SIZE = 20
@@ -45,25 +54,13 @@ type BorderBehaviorValue = {
 	type: 'wrap' | 'die'
 }
 
-const BorderBehavior = createComponent<BorderBehaviorValue>({
-	id: 'border-behavior',
-})
-
 type GridValue = {
 	size: Vec2D
 }
 
-const Grid = createComponent<GridValue>({
-	id: 'grid',
-})
-
 type HeadValue = {
 	position: Vec2D
 }
-
-const Head = createComponent<HeadValue>({
-	id: 'head',
-})
 
 enum DirectionType {
 	Up = 0,
@@ -76,25 +73,17 @@ type DirectionValue = {
 	dir: DirectionType
 }
 
-const PrevPosition = createComponent<Vec2D>({
-	id: 'prevPosition',
-})
-
-const Direction = createComponent<DirectionValue>({
-	id: 'direction',
-})
-
 type TailValue = {
 	position: Vec2D
 	direction: DirectionType
-	follow: Entity
+	follow: string
 }
 
-const Tail = createComponent<TailValue>({
-	id: 'tail',
-})
-
-const { game, createScene } = createGame({
+const { game, createScene } = createGame<
+	MyEntity,
+	typeof assets,
+	typeof textures
+>({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
@@ -103,82 +92,59 @@ const { game, createScene } = createGame({
 	textures,
 })
 
-const selectHeads = createQuery({
-	id: 'withDirection',
-	params: {
-		direction: Direction,
-		velocity: Velocity,
-		transform: Transform,
-		head: Head,
-		borderBehavior: BorderBehavior,
-		prevPosition: PrevPosition,
-	},
+const allHeads = createQuery<MyEntity>({
+	id: 'all-heads',
+	with: ['head', 'transform2D', 'borderBehavior', 'prevPosition', 'velocity2D'],
 })
 
-const selectTail = createQuery({
-	id: 'selectTails',
-	params: {
-		tail: Tail,
-		transform: Transform,
-		prevPosition: PrevPosition,
-	},
+const allTails = createQuery<MyEntity>({
+	id: 'all-tails',
+	with: ['tail', 'transform2D', 'prevPosition'],
 })
 
-const selectGrid = createQuery({
-	id: 'selectGrid',
-	params: {
-		grid: Grid,
-		transform: Transform,
-	},
+const allGrids = createQuery<MyEntity>({
+	id: 'all-grids',
+	with: ['grid', 'transform2D'],
 })
 
-const move = createSystem({
+const move = createSystem<MyEntity>({
 	id: 'move',
 	type: SystemType.FixedUpdate,
-	queries: {
-		heads: selectHeads,
-	},
 	fn(args) {
-		const { entities } = args
-		const { heads } = entities
+		const { select } = args
 
-		for (const item of heads) {
-			const { direction, velocity, head } = item.values
+		for (const item of select(allHeads)) {
+			const { direction, velocity2D, head } = item
 
 			switch (direction.dir) {
 				case DirectionType.Up:
-					head.position.y -= velocity.y
+					head.position.y -= velocity2D.y
 					break
 				case DirectionType.Down:
-					head.position.y += velocity.y
+					head.position.y += velocity2D.y
 					break
 				case DirectionType.Left:
-					head.position.x -= velocity.x
+					head.position.x -= velocity2D.x
 					break
 				case DirectionType.Right:
-					head.position.x += velocity.x
+					head.position.x += velocity2D.x
 					break
 			}
 		}
 	},
 })
 
-const snapToGrid = createSystem({
+const snapToGrid = createSystem<MyEntity>({
 	id: 'snap-to-grid',
 	type: SystemType.FixedUpdate,
-	queries: {
-		heads: selectHeads,
-		grid: first(required(selectGrid)),
-	},
 	fn(args) {
-		const { entities } = args
-		const { heads, grid } = entities
+		const { select } = args
 
-		const offset = grid.values.transform.position
+		const offset = select(allGrids).first()!.transform2D.position
 
-		for (const item of heads) {
-			const { transform, head, prevPosition } = item.values
-			const position = transform.position
+		for (const item of select(allHeads)) {
+			const { transform2D, head, prevPosition } = item
+			const position = transform2D.position
 
 			const inGridX = head.position.x + offset.x
 			const inGridY = head.position.y + offset.y
@@ -196,25 +162,20 @@ const snapToGrid = createSystem({
 	},
 })
 
-const borderBehavior = createSystem({
+const borderBehavior = createSystem<MyEntity>({
 	id: 'border-behavior',
 	type: SystemType.FixedUpdate,
-	queries: {
-		heads: selectHeads,
-		grid: first(required(selectGrid)),
-	},
 	fn(args) {
-		const { entities } = args
-		const { heads, grid } = entities
-		const { grid: gridValues } = grid.values
+		const { select } = args
+		const { grid: gridValues } = select(allGrids).first()!
 
 		const canvasSize = {
 			x: gridValues.size.x * GRID_SIZE,
 			y: gridValues.size.y * GRID_SIZE,
 		}
 
-		for (const item of heads) {
-			const { borderBehavior, head } = item.values
+		for (const item of select(allHeads)) {
+			const { borderBehavior, head } = item
 			const { position } = head
 
 			if (borderBehavior.type === 'die') {
@@ -242,24 +203,20 @@ const borderBehavior = createSystem({
 	},
 })
 
-const followSystem = createSystem({
+const followSystem = createSystem<MyEntity>({
 	id: 'follow',
 	type: SystemType.FixedUpdate,
-	queries: {
-		tail: selectTail,
-	},
 	fn(args) {
-		const { entities } = args
-		const { tail } = entities
+		const { select, getEntity } = args
 
-		for (const item of tail) {
-			const { tail: tailValues, transform, prevPosition } = item.values
+		for (const item of select(allTails)) {
+			const { tail: tailValues, transform2D, prevPosition } = item
 			const { follow } = tailValues
 
-			const followPrevPosition = getComponent(follow, PrevPosition)!
-			const position = transform.position
+			const followPrevPosition = getEntity(follow)?.prevPosition
+			const position = transform2D.position
 
-			if (followPrevPosition.x !== position.x || followPrevPosition.y !== position.y) {
+			if (followPrevPosition && (followPrevPosition.x !== position.x || followPrevPosition.y !== position.y)) {
 				prevPosition.x = position.x
 				prevPosition.y = position.y
 				position.x = followPrevPosition!.x
@@ -269,7 +226,8 @@ const followSystem = createSystem({
 	},
 })
 
-const home = createScene('home', () => {
+const home = createScene('home', (context) => {
+	const { spawn } = context
 	const strokeSize = 2
 	const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
 	const gridTexture = createTexture({
@@ -314,76 +272,68 @@ const home = createScene('home', () => {
 		context.fillRect(0, 0, CELL_SIZE, CELL_SIZE)
 	})
 
-	const grid = createEntity({
-		id: 'grid',
-		components: [
-			entryFrom(Grid, { size: { x: CELL_SIZE, y: CELL_SIZE } }),
-			entryFrom(Transform, {
-				position: { x: 20, y: 20 },
-			}),
-			entryFrom(Texture, gridTexture),
-		],
+	spawn('grid', {
+		grid: {
+			size: { x: CELL_SIZE, y: CELL_SIZE },
+		},
+		transform2D: createTransform2D({
+			position: { x: 20, y: 20 },
+		}),
+		texture2D: gridTexture,
 	})
 
 	const startX = 80
 
-	const head = createEntity({
-		id: 'head',
-		components: [
-			entryFrom(Head, { position: { x: startX, y: 20 } }),
-			entryFrom(BorderBehavior, { type: 'wrap' }),
-			entryFrom(Velocity, { x: VELOCITY, y: VELOCITY }),
-			entryFrom(Transform, {
-				position: { x: startX + CELL_SIZE, y: 30 },
-			}),
-			entryFrom(PrevPosition, { x: startX, y: 30 }),
-			entryFrom(Direction, { dir: DirectionType.Right }),
-			entryFrom(Texture, squareTexture),
-		],
+	spawn('head', {
+		head: {
+			position: { x: startX, y: 20 },
+		},
+		borderBehavior: {
+			type: 'wrap',
+		},
+		velocity2D: {
+			x: VELOCITY,
+			y: VELOCITY,
+		},
+		transform2D: createTransform2D({
+			position: { x: startX + CELL_SIZE, y: 30 },
+		}),
+		prevPosition: { x: startX, y: 30 },
+		direction: { dir: DirectionType.Right },
+		texture2D: squareTexture,
 	})
 
-	let follow: Entity = head
-	const tailItem: Array<Entity> = []
+	let follow = 'head'
+
 	for (let index = 0; index < INITIAL_SIZE; index++) {
-		const tail = createEntity({
-			id: `tail-${index}`,
-			components: [
-				entryFrom(Tail, {
-					follow,
-					position: {
-						x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
-						y: 20,
-					},
-					direction: DirectionType.Right,
-				}),
-				entryFrom(Transform, {
-					position: {
-						x: startX - (index * CELL_SIZE),
-						y: 30,
-					},
-				}),
-				entryFrom(PrevPosition, { x: startX - ((index - 1) * CELL_SIZE), y: 30 }),
-				entryFrom(Texture, squareTexture),
-				// entryFrom(Path2DTexture, {
-				// 	paint(context, _path) {
-				// 		context.fillStyle = 'green'
-				// 		context.stroke(_path)
-				// 	},
-				// }),
-			],
+		const currentId = `tail-${index}`
+		spawn(currentId, {
+			tail: {
+				position: {
+					x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
+					y: 20,
+				},
+				direction: DirectionType.Right,
+				follow,
+			},
+			transform2D: createTransform2D({
+				position: {
+					x: startX - (index * CELL_SIZE),
+					y: 30,
+				},
+			}),
+			prevPosition: {
+				x: startX - ((index - 1) * CELL_SIZE),
+				y: 30,
+			},
+			texture2D: squareTexture,
 		})
-		tailItem.push(tail)
-		follow = tail
+		follow = currentId
 	}
 
-	const camera = camera2D.create({
-		id: 'camera',
-	})
+	spawn('camera', createCamera2d())
 
 	return {
-		entities: [head,
-			...tailItem,
-			camera, grid],
 		systems: [
 			...renderer2d.systems,
 			snapToGrid,
@@ -395,9 +345,15 @@ const home = createScene('home', () => {
 	}
 })
 
+home.world.registerQuery(allHeads)
+home.world.registerQuery(allTails)
+home.world.registerQuery(allGrids)
+
+renderer2d.queries.forEach((query) => home.world.registerQuery(query))
+
 document.addEventListener('keydown', (event) => {
-	for (const head of selectHeads.results.values()) {
-		const { direction } = head.values
+	for (const head of home.world.select(allHeads)) {
+		const { direction } = head
 		const { dir } = direction
 		switch (event.key) {
 			case 'ArrowUp':

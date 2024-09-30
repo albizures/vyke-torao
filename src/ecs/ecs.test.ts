@@ -1,176 +1,203 @@
-import { describe, expect, it, vi } from 'vitest'
-import {
-	compute,
-	createComponent,
-	createEntity,
-	createQuery,
-	createSystem,
-	type Entity,
-	entryFrom,
-	first,
-	required,
-	type SystemFnArgs,
-	SystemType,
-} from './'
+import { assertType, beforeEach, describe, expect, it } from 'vitest'
+import {	createQuery, createWorld } from './'
 
-const Position = createComponent({
-	id: 'position',
-	create(args: { x: number, y: number }) {
-		return args
-	},
+type Position = { position: { x: number, y: number } }
+type Player = { player: true }
+type Enemy = { enemy: 'boss' | 'minion' }
+
+type Components = Partial<Position & Player & Enemy>
+
+const world = createWorld<Components>()
+const { spawn, despawn, reset, update, select, registerQuery } = world
+
+const allPlayers = createQuery<Position & Player>({
+	id: 'query-test',
+	with: ['position', 'player'],
 })
 
-const Enemy = createComponent({
-	id: 'enemy',
-	create() {
-		return {}
-	},
+const allEnemies = createQuery<Position & Enemy>({
+	id: 'query-test',
+	with: ['position', 'enemy'],
 })
 
-function createTest() {
-	const player = createEntity({
-		id: 'player',
-		components: [
-			entryFrom(Position, { x: 0, y: 0 }),
-		],
+registerQuery(allPlayers)
+registerQuery(allEnemies)
+
+beforeEach(() => {
+	reset()
+})
+
+describe('spawn', () => {
+	it('should create an entity', () => {
+		const entity = spawn('test', {})
+
+		expect(entity).toEqual(expect.objectContaining({ }))
 	})
 
-	const enemies = [
-		createEntity({
-			id: 'enemy 1',
-			components: [
-				entryFrom(Position, { x: 0, y: 0 }),
-				entryFrom(Enemy, {}),
-			],
-		}),
-		createEntity({
-			id: 'enemy 2',
-			components: [
-				entryFrom(Position, { x: 0, y: 0 }),
-				entryFrom(Enemy, {}),
-			],
-		}),
-	]
+	it('should add entity to world', () => {
+		const entity = spawn('test', {})
 
-	type Values = {
-		player: {
-			entity: Entity
-			values: { position: { x: number, y: number } }
-		}
-		enemies: Array<{
-			entity: Entity
-			values: { position: { x: number, y: number } }
-		}>
-	}
-	const fn = vi.fn((args: SystemFnArgs<Values>) => {
-		args.spawn({ id: 'test', components: [] })
-	})
-	const system = createSystem({
-		id: 'follow-player',
-		type: SystemType.Update,
-		queries: {
-			player: first(required(createQuery({
-				id: 'query-test',
-				params: {
-					position: Position,
-				},
-			}))),
-			enemies: required(createQuery({
-				id: 'query-test',
-				params: {
-					position: Position,
-					enemy: Enemy,
-				},
-			})),
-		},
-		fn,
-	})
-
-	const runArgs = {
-		spawn: vi.fn(),
-	}
-
-	return {
-		player,
-		runArgs,
-		enemies,
-		fn,
-		system,
-	}
-}
-
-describe('when no entities are given', () => {
-	it('should not run', () => {
-		const { system, fn: update, runArgs } = createTest()
-		system.run(runArgs)
-
-		expect(update).not.toHaveBeenCalled()
+		expect(world.entities).toContain(entity)
 	})
 })
 
-describe('when entities match', () => {
-	it('should run', () => {
-		const { system, fn: update, player, enemies, runArgs } = createTest()
+describe('despawn', () => {
+	it('should remove entity from world', () => {
+		const entity = spawn('test', {})
 
-		for (const query of system.queries) {
-			compute(query, [player, ...enemies])
+		despawn(entity)
+
+		expect(world.entities).not.toContain(entity)
+	})
+})
+
+describe('querying', () => {
+	it('should return entities with all components', () => {
+		const player = spawn('player', { position: { x: 20, y: 20 }, player: true })
+		const enemis = [
+			spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' }),
+			spawn('enemy-2', { position: { x: 10, y: 10 }, enemy: 'minion' }),
+		]
+
+		for (const item of select(allEnemies)) {
+			assertType<{
+				position: { x: number, y: number }
+				enemy: 'boss' | 'minion'
+			}>(item)
+			expect(enemis).include(item)
+			expect(item.enemy).toStrictEqual(expect.stringMatching(/boss|minion/))
 		}
 
-		system.run(runArgs)
+		for (const entity of select(allPlayers)) {
+			assertType<{
+				position: { x: number, y: number }
+				player: true
+			}>(entity)
+			expect(entity.position).toEqual({ x: 20, y: 20 })
+			expect(entity.player).toBe(true)
+		}
 
-		expect(update).toHaveBeenCalledTimes(1)
-		expect(update).toHaveBeenCalledWith(expect.objectContaining({
-			entities: expect.objectContaining({
-				player: expect.objectContaining({
-					entity: player,
-					values: expect.objectContaining({
-						position: expect.objectContaining({ x: 0, y: 0 }),
-					}),
-				}),
-				enemies: expect.arrayContaining([
-					expect.objectContaining({
-						entity: expect.any(Object),
-						values: expect.objectContaining({
-							position: expect.objectContaining({ x: 0, y: 0 }),
-						}),
-					}),
-				]),
-			}),
-		}))
+		expect(allEnemies).not.toContain(player)
 	})
-})
 
-describe('when not queries are given', () => {
-	it('should run', () => {
-		const fn = vi.fn()
+	describe('when entity is despawned', () => {
+		it('should update query results', () => {
+			const player = spawn('player', { position: { x: 20, y: 20 }, player: true })
+			const enemy = spawn('enemy', { position: { x: 0, y: 0 }, enemy: 'boss' })
 
-		const system = createSystem({
-			id: 'follow-player',
-			type: SystemType.Update,
-			fn,
+			const allPlayerEntities = select(allPlayers)
+			const allEnemiesEntities = select(allEnemies)
+
+			expect(allPlayerEntities).toContain(player)
+			expect(allEnemiesEntities).toContain(enemy)
+
+			despawn(player)
+
+			expect(allPlayerEntities).not.toContain(player)
+			expect(allEnemiesEntities).toContain(enemy)
+		})
+	})
+
+	describe('when entity is updated', () => {
+		it('should update query results', () => {
+			const player = spawn('player', { player: true })
+			const enemy = spawn('enemy', { position: { x: 0, y: 0 }, enemy: 'boss' })
+
+			const allPlayerEntities = select(allPlayers)
+			const allEnemiesEntities = select(allEnemies)
+
+			expect(allPlayerEntities).not.toContain(player)
+			expect(allEnemiesEntities).toContain(enemy)
+
+			update(player, 'position', { x: 10, y: 10 })
+
+			expect(allPlayerEntities).toContain(player)
+			expect(allEnemiesEntities).toContain(enemy)
+		})
+	})
+
+	describe('when a where clause is given', () => {
+		it('should filter entities', () => {
+			const bossEnemy = spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' })
+			const minionEnemy = spawn('enemy-2', { position: { x: 0, y: 0 }, enemy: 'minion' })
+
+			const onlyBosses = createQuery<Components>({
+				id: 'only-bosses',
+				with: ['enemy'],
+				where: (values) => values.enemy === 'boss',
+			})
+
+			registerQuery(onlyBosses)
+
+			const onlyBossesEntities = select(onlyBosses)
+
+			expect(onlyBossesEntities).toContain(bossEnemy)
+			expect(onlyBossesEntities).not.toContain(minionEnemy)
+			expect(onlyBossesEntities.size()).toBe(1)
 		})
 
-		system.run({
-			spawn: vi.fn(),
+		describe('when entity is updated', () => {
+			it('should update query results', () => {
+				const player = spawn('player', { position: { x: 20, y: 20 }, player: true })
+				const bossEnemy = spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' })
+				const minionEnemy = spawn('enemy-2', { position: { x: 0, y: 0 }, enemy: 'minion' })
+
+				const farAwayEntities = createQuery<Position>({
+					id: 'far-way-entities',
+					with: ['position'],
+					where: (values) => values.position.x > 10,
+				})
+
+				const onlyBosses = createQuery<Components>({
+					id: 'only-bosses',
+					with: ['enemy'],
+					where: (values) => values.enemy === 'boss',
+				})
+
+				registerQuery(farAwayEntities)
+				registerQuery(onlyBosses)
+
+				const farAwayEntitiesEntities = select(farAwayEntities)
+				const onlyBossesEntities = select(onlyBosses)
+
+				expect(farAwayEntitiesEntities.size()).toBe(1)
+				expect(farAwayEntitiesEntities).toContain(player)
+
+				expect(onlyBossesEntities.size()).toBe(1)
+				expect(onlyBossesEntities).toContain(bossEnemy)
+
+				update(player, 'position', { x: 5, y: 5 })
+				update(minionEnemy, 'enemy', 'boss')
+
+				expect(farAwayEntitiesEntities.size()).toBe(0)
+
+				expect(onlyBossesEntities).toContain(bossEnemy)
+				expect(onlyBossesEntities).toContain(minionEnemy)
+				expect(onlyBossesEntities.size()).toBe(2)
+			})
+
+			describe('when deep property is updated', () => {
+				it('should NOT update query results', () => {
+					const player = spawn('player', { position: { x: 20, y: 20 }, player: true })
+
+					const farAwayEntities = createQuery<Position>({
+						id: 'far-way-entities',
+						with: ['position'],
+						where: (values) => values.position.x > 10,
+					})
+
+					registerQuery(farAwayEntities)
+
+					const farAwayEntitiesEntities = select(farAwayEntities)
+
+					expect(farAwayEntitiesEntities.size()).toBe(1)
+
+					player.position!.x = 5
+
+					expect(farAwayEntitiesEntities).toContain(player)
+					expect(farAwayEntitiesEntities.size()).toBe(1)
+				})
+			})
 		})
-
-		expect(system.queries).toHaveLength(0)
-		expect(fn).toHaveBeenCalledTimes(1)
-		expect(fn).toHaveBeenCalledWith(expect.objectContaining({
-			entities: {},
-		}))
 	})
-})
-
-it('should provide a spawn function', () => {
-	const { system, runArgs, player, enemies } = createTest()
-
-	for (const query of system.queries) {
-		compute(query, [player, ...enemies])
-	}
-
-	system.run(runArgs)
-
-	expect(runArgs.spawn).toHaveBeenCalledTimes(1)
-	expect(runArgs.spawn).toHaveBeenCalledWith(expect.any(Object))
 })

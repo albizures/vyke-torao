@@ -1,43 +1,43 @@
 import type { Texture } from './texture'
 import { type AnyAsset, loadAsset } from './assets'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
-import { compute, createEntity, type Entity, type EntityArgs, type Resource, type System, SystemType } from './ecs'
+import { createWorld, type Entity, type Resource, type Spawn, type System, SystemType, type World } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
 import { CanvasRes, LoopRes } from './resources'
 import { is, map, set } from './types'
 
-type SystemIterator = Iterable<System>
+type SystemIterator<TEntity extends Entity> = Iterable<System<TEntity>>
 
-type SystemBox = {
-	all: SystemIterator
-	fixedUpdate: SystemIterator
-	update: SystemIterator
-	render: SystemIterator
-	enterScene: SystemIterator
-	beforeFrame: SystemIterator
-	afterFrame: SystemIterator
-	add: (system: System) => void
-	remove: (system: System) => void
+type SystemBox<TEntity extends Entity> = {
+	all: SystemIterator<TEntity>
+	fixedUpdate: SystemIterator<TEntity>
+	update: SystemIterator<TEntity>
+	render: SystemIterator<TEntity>
+	enterScene: SystemIterator<TEntity>
+	beforeFrame: SystemIterator<TEntity>
+	afterFrame: SystemIterator<TEntity>
+	add: (system: System<TEntity>) => void
+	remove: (system: System<TEntity>) => void
 	size: () => number
 }
 
-function createSystemBox(): SystemBox {
-	const allSystems = set<System>()
+function createSystemBox<TEntity extends Entity>(): SystemBox<TEntity> {
+	const allSystems = set<System<TEntity>>()
 	const byType = {
-		[SystemType.FixedUpdate]: set<System>(),
-		[SystemType.Update]: set<System>(),
-		[SystemType.Render]: set<System>(),
-		[SystemType.EnterScene]: set<System>(),
-		[SystemType.BeforeFrame]: set<System>(),
-		[SystemType.AfterFrame]: set<System>(),
+		[SystemType.FixedUpdate]: set<System<TEntity>>(),
+		[SystemType.Update]: set<System<TEntity>>(),
+		[SystemType.Render]: set<System<TEntity>>(),
+		[SystemType.EnterScene]: set<System<TEntity>>(),
+		[SystemType.BeforeFrame]: set<System<TEntity>>(),
+		[SystemType.AfterFrame]: set<System<TEntity>>(),
 	}
 
-	function add(system: System) {
+	function add(system: System<TEntity>) {
 		allSystems.add(system)
 		byType[system.type].add(system)
 	}
 
-	function remove(system: System) {
+	function remove(system: System<TEntity>) {
 		allSystems.delete(system)
 		byType[system.type].delete(system)
 	}
@@ -72,32 +72,36 @@ export enum SceneStatus {
 	Running = 3,
 }
 
-type StartupValues = {
-	systems?: Array<System>
-	entities?: Array<Entity>
+type StartupValues<TEntity extends Entity> = {
+	systems?: Array<System<TEntity>>
 }
 
-type SceneContext<TAssets extends Assets, TTextures extends Textures> = {
+export type SceneContext<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
 	assets: TAssets
 	textures: TTextures
+	spawn: Spawn<TEntity>
 }
 
-type SceneBuilder<TAssets extends Assets, TTextures extends Textures> = (context: SceneContext<TAssets, TTextures>) => StartupValues
+type SceneBuilder<
+	TEntity extends Entity,
+	TAssets extends Assets,
+	TTextures extends Textures,
+> = (context: SceneContext<TEntity, TAssets, TTextures>) => StartupValues<TEntity>
 
 /**
  * A scene is a collection of entities and systems.
  */
-type Scene<TAssets extends Assets, TTextures extends Textures> = {
+type Scene<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
 	id: string
 	status: SceneStatus
-	builder: SceneBuilder<TAssets, TTextures>
-	entities: Set<Entity>
+	builder: SceneBuilder<TEntity, TAssets, TTextures>
 	assets: Set<AnyAsset>
 	resources: Set<Resource<unknown>>
-	systems: SystemBox
+	systems: SystemBox<TEntity>
+	world: World<TEntity>
 }
 
-async function buildScene<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, game: Game<TAssets, TTextures>) {
+async function buildScene<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(scene: Scene<TEntity, TAssets, TTextures>, game: Game<TEntity, TAssets, TTextures>) {
 	const { builder } = scene
 
 	if (scene.status !== SceneStatus.Idle) {
@@ -132,17 +136,16 @@ async function buildScene<TAssets extends Assets, TTextures extends Textures>(sc
 		},
 	})
 
-	const startup = builder({ assets, textures })
+	const startup = builder({ assets, textures, spawn: scene.world.spawn })
 
 	registerSystems(scene, startup)
-	registerEntities(scene, startup)
 
 	scene.status = SceneStatus.Ready
 
 	return scene
 }
 
-function registerSystems<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, startup: StartupValues) {
+function registerSystems<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(scene: Scene<TEntity, TAssets, TTextures>, startup: StartupValues<TEntity>) {
 	const { systems } = scene
 
 	for (const system of (startup.systems ?? [])) {
@@ -150,29 +153,14 @@ function registerSystems<TAssets extends Assets, TTextures extends Textures>(sce
 	}
 }
 
-function registerEntities<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, startup: StartupValues) {
-	const { systems } = scene
-	const entities = startup.entities ?? []
-
-	for (const system of systems.all) {
-		for (const query of system.queries) {
-			compute(query, entities)
-		}
-	}
-
-	for (const entity of entities) {
-		scene.entities.add(entity)
-	}
-}
-
 // #endregion
 
 // #region Game
-type Game<TAssets extends Assets, TTextures extends Textures> = {
+type Game<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
 	canvas: Canvas
 	textures: TTextures
-	scenes: Map<string, Scene<TAssets, TTextures>>
-	currentScene?: Scene<TAssets, TTextures>
+	scenes: Map<string, Scene<TEntity, TAssets, TTextures>>
+	currentScene?: Scene<TEntity, TAssets, TTextures>
 	assets: TAssets
 }
 
@@ -185,30 +173,31 @@ type GameArgs<TAssets extends Assets, TTextures extends Textures> = {
 	textures?: TTextures
 }
 
-type CreateGameResult<TAssets extends Assets, TTextures extends Textures> = {
-	game: Game<TAssets, TTextures>
-	createScene: (id: string, builder: SceneBuilder<TAssets, TTextures>) => Scene<TAssets, TTextures>
+type CreateGameResult<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
+	game: Game<TEntity, TAssets, TTextures>
+	createScene: (id: string, builder: SceneBuilder<TEntity, TAssets, TTextures>) => Scene<TEntity, TAssets, TTextures>
 }
 
-export function createGame<TAssets extends Assets, TTextures extends Textures>(
+export function createGame<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(
 	args: GameArgs<TAssets, TTextures>,
-): CreateGameResult<TAssets, TTextures> {
+): CreateGameResult<TEntity, TAssets, TTextures> {
 	const { canvas, assets = {} as TAssets, textures = {} as TTextures } = args
 
-	const scenes = map<string, Scene<TAssets, TTextures>>()
+	const scenes = map<string, Scene<TEntity, TAssets, TTextures>>()
+	const world = createWorld<TEntity>()
 
 	/**
 	 * Creates a scene to be used in the game.
 	 */
-	function createScene(id: string, builder: SceneBuilder<TAssets, TTextures>): Scene<TAssets, TTextures> {
-		const scene: Scene<TAssets, TTextures> = {
+	function createScene(id: string, builder: SceneBuilder<TEntity, TAssets, TTextures>): Scene<TEntity, TAssets, TTextures> {
+		const scene: Scene<TEntity, TAssets, TTextures> = {
 			id,
 			status: SceneStatus.Idle,
 			builder,
-			entities: set<Entity>(),
 			assets: set<AnyAsset>(),
 			resources: set<Resource<unknown>>(),
 			systems: createSystemBox(),
+			world,
 		}
 
 		scenes.set(id, scene)
@@ -216,7 +205,7 @@ export function createGame<TAssets extends Assets, TTextures extends Textures>(
 		return scene
 	}
 
-	const game: Game<TAssets, TTextures> = {
+	const game: Game<TEntity, TAssets, TTextures> = {
 		canvas: is(canvas, Canvas) ? canvas : createCanvas(canvas),
 		scenes,
 		assets,
@@ -229,9 +218,9 @@ export function createGame<TAssets extends Assets, TTextures extends Textures>(
 	}
 }
 
-export async function start<TAssets extends Assets, TTextures extends Textures>(
-	game: Game<TAssets, TTextures>,
-	scene: Scene<TAssets, TTextures>,
+export async function start<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(
+	game: Game<TEntity, TAssets, TTextures>,
+	scene: Scene<TEntity, TAssets, TTextures>,
 	runner: Runner = createRequestAnimationFrameRunner(),
 ) {
 	const { canvas } = game
@@ -245,7 +234,11 @@ export async function start<TAssets extends Assets, TTextures extends Textures>(
 	startScene(scene, runner)
 }
 
-async function startScene<TAssets extends Assets, TTextures extends Textures>(scene: Scene<TAssets, TTextures>, runner: Runner) {
+async function startScene<
+	TEntity extends Entity,
+	TAssets extends Assets,
+	TTextures extends Textures,
+>(scene: Scene<TEntity, TAssets, TTextures>, runner: Runner) {
 	if (scene.status === SceneStatus.Running) {
 		return
 	}
@@ -257,7 +250,9 @@ async function startScene<TAssets extends Assets, TTextures extends Textures>(sc
 	const { systems } = scene
 
 	const runArgs = {
-		spawn,
+		spawn: scene.world.spawn,
+		select: scene.world.select,
+		getEntity: scene.world.entities.getById,
 	}
 
 	for (const system of systems.enterScene) {
@@ -273,12 +268,6 @@ async function startScene<TAssets extends Assets, TTextures extends Textures>(sc
 	})
 
 	scene.status = SceneStatus.Running
-
-	function spawn(args: EntityArgs) {
-		const entity = createEntity(args)
-		scene.entities.add(entity)
-		return entity
-	}
 
 	function beforeFrame(args: LoopValues) {
 		LoopRes.set(args)

@@ -1,13 +1,7 @@
-import { Transform, Velocity } from '../components'
+import type { MaybeWithTransform2D, MaybeWithVelocity2D } from '../components'
 import { createQuery, type Query } from '../ecs'
 
-export const withVelocityAndTransform: Query<{
-	velocity: typeof Velocity
-	transform: typeof Transform
-}> = createQuery({
+export const withVelocity2DAndTransform2D: Query<MaybeWithTransform2D & MaybeWithVelocity2D> = createQuery({
 	id: 'with-velocity-and-position',
-	params: {
-		velocity: Velocity,
-		transform: Transform,
-	},
+	with: ['transform2D', 'velocity2D'],
 })

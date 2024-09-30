@@ -1,6 +1,4 @@
-export * from './component'
-export * from './entity'
 export * from './query'
 export * from './resource'
 export * from './system'
-export * from './tag'
+export * from './world'

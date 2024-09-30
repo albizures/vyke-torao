@@ -17,21 +17,18 @@
 
 <script>
 import { AtlasType, createTexture } from '../../src'
-import { Transform } from '../../src/components'
-import { createComponent, createEntity, entryFrom } from '../../src/ecs'
+import { createTransform2D, type MaybeWithTransform2D, type MaybeWithVelocity2D } from '../../src/components'
 import { createGame, start } from '../../src/game'
-import { camera2D } from '../../src/prefabs'
-import { renderer2d, Texture } from '../../src/renderers/renderer2d'
+import { createCamera2d, type MaybeWithCamera2D } from '../../src/prefabs'
+import { type MaybeWithTexture2d, renderer2d } from '../../src/renderers/renderer2d'
 import { assets, textures } from '../definitions'
 
-const Coin = createComponent({
-	id: 'coin',
-})
-const Square = createComponent({
-	id: 'square',
-})
+type MyEntity = MaybeWithTransform2D & MaybeWithVelocity2D & MaybeWithCamera2D & MaybeWithTexture2d & {
+	coin?: true
+	square?: true
+}
 
-const { game, createScene } = createGame({
+const { game, createScene } = createGame<MyEntity, typeof assets, typeof textures>({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
@@ -41,7 +38,7 @@ const { game, createScene } = createGame({
 })
 
 const home = createScene('home', (context) => {
-	const { textures, assets } = context
+	const { textures, assets, spawn } = context
 
 	const size = 30
 	assets.square.loader.onLoad((context) => {
@@ -67,34 +64,27 @@ const home = createScene('home', (context) => {
 		asset: assets.square,
 	})
 
-	const square = createEntity({
-		id: 'square',
-		components: [
-			entryFrom(Square, {}),
-			entryFrom(Transform, {
-				position: { x: 10, y: 10 },
-			}),
-			entryFrom(Texture, squareTexture),
-		],
+	spawn('square', {
+		square: true,
+		transform2D: createTransform2D({
+			position: { x: 10, y: 10 },
+
+		}),
+		texture2D: squareTexture,
 	})
 
-	const coin = createEntity({
-		id: 'coin',
-		components: [
-			entryFrom(Coin, {}),
-			entryFrom(Transform, {
-				position: { x: 50, y: 10 },
-			}),
-			entryFrom(Texture, textures.coin),
-		],
+	spawn('coin', {
+		coin: true,
+		transform2D: createTransform2D({
+			position: { x: 50, y: 10 },
+		}),
+		texture2D: textures.coin,
+
 	})
 
-	const camera = camera2D.create({
-		id: 'camera',
-	})
+	spawn('camera', createCamera2d({}))
 
 	return {
-		entities: [square, coin, camera],
 		systems: [
 			...renderer2d.systems,
 		],

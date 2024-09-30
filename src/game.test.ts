@@ -1,8 +1,10 @@
+import type { Entity } from './ecs'
 import { describe, expect, it, vi } from 'vitest'
 import { Canvas } from './canvas'
-import { createEntity } from './ecs'
-import { createGame, SceneStatus, start } from './game'
+import { type Assets, createGame, type SceneContext, SceneStatus, start, type Textures } from './game'
 import { createStepRunner } from './loop'
+
+type MyEntity = Entity
 
 const canvas: Canvas = new Canvas(
 	{} as unknown as HTMLCanvasElement,
@@ -14,7 +16,7 @@ const canvas: Canvas = new Canvas(
 
 describe('createGame', () => {
 	it('should create create a game', () => {
-		const { game, createScene } = createGame({
+		const { game, createScene } = createGame<MyEntity, Assets, Textures>({
 			canvas,
 			assets: {},
 		})
@@ -61,21 +63,18 @@ describe('start', () => {
 	it('should build the scene', async () => {
 		const runner = createStepRunner()
 
-		const { game, createScene } = createGame({
+		const { game, createScene } = createGame<MyEntity, Assets, Textures>({
 			canvas,
 			assets: {},
 		})
 
-		const entity = createEntity({
-			id: 'player',
-			components: [],
-		})
+		let entity: MyEntity
+		const builder = vi.fn((context: SceneContext<MyEntity, Assets, Textures>) => {
+			const { spawn } = context
+			entity = spawn('player', {})
 
-		const builder = vi.fn(() => {
 			return {
-				entities: [
-					entity,
-				],
+				systems: [],
 			}
 		})
 
@@ -85,6 +84,6 @@ describe('start', () => {
 
 		expect(builder).toHaveBeenCalled()
 		expect(scene.status).toBe(SceneStatus.Running)
-		expect(scene.entities).includes(entity)
+		expect(scene.world.entities.has(entity!)).toBe(true)
 	})
 })
