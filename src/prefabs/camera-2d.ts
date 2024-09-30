@@ -1,11 +1,11 @@
 import { createTransform2D, type Transform2D, type WithTransform2D } from '../components'
-import { createQuery, type Query } from '../ecs'
+import { defineQuery, type Query } from '../ecs'
 
 export type WithCamera2D = WithTransform2D & {
 	camera2D?: true
 }
 
-export const camera2DQuery: Query<Required<WithCamera2D>> = createQuery<Required<WithCamera2D>>({
+export const camera2DQuery: Query<Required<WithCamera2D>> = defineQuery<Required<WithCamera2D>>({
 	id: 'camera-2d',
 	with: ['camera2D', 'transform2D'],
 })

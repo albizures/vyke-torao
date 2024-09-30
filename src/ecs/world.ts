@@ -1,11 +1,11 @@
 import type { Simplify } from 'type-fest'
-import type { AnyQuery, Query } from './query'
 import { map, set } from '../types'
+import { type AnyQuery, defineQuery, type Query, type QueryArgs } from './query'
 
 export type Component = string | number | symbol
 export type Entity = Record<Component, any>
 
-type SelectedValues<
+type QueryEntity<
 	TEntity extends Entity,
 	TSelect extends keyof TEntity,
 > = Simplify<Required<Pick<TEntity, TSelect>>>
@@ -18,7 +18,7 @@ type UpdateArgs<TEntity extends Entity, TComponent extends keyof TEntity> =
 	| [entity: TEntity, updater: UpdateFn<TEntity>]
 
 export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
-export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => EntityBox<SelectedValues<TEntity, keyof TExpectedEntity>>
+export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => EntityBox<QueryEntity<TEntity, keyof TExpectedEntity>>
 export type World<TEntity extends Entity> = {
 	spawn: Spawn<TEntity>
 	despawn: (entity: TEntity) => void
@@ -28,11 +28,12 @@ export type World<TEntity extends Entity> = {
 	entities: EntityBox<TEntity>
 	update: <TComponent extends keyof TEntity>(...args: UpdateArgs<TEntity, TComponent>) => void
 	remove: (entity: TEntity, component: keyof TEntity) => void
+	createQuery: <TComponents extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TComponents>>) => Query<QueryEntity<TEntity, TComponents>>
 }
 
 export function createWorld<TEntity extends Entity>(): World<TEntity> {
 	type TComponent = keyof TEntity
-	type TQuery = Query<TEntity>
+	type TQuery = Query<Required<TEntity>>
 	const entities = createEntityBox<TEntity>()
 	const components = map<TComponent, Set<TQuery>>()
 	const queries = map<TQuery, EntityBox<TEntity>>()
@@ -83,7 +84,7 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		return components.get(component)!
 	}
 
-	function compute(query: Query<TEntity>) {
+	function compute(query: Query<Required<TEntity>>) {
 		const entitiesEntities = queries.get(query as AnyQuery)!
 		for (const [id, entity] of entities.byId) {
 			if (match(entity, query)) {
@@ -172,7 +173,7 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		entities.clear()
 	}
 
-	function registerQuery(query: Query<TEntity>) {
+	function registerQuery(query: Query<Required<TEntity>>) {
 		for (const component of [...query.with, ...query.without]) {
 			const queries = getQueries(component)
 			queries.add(query)
@@ -182,18 +183,29 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		compute(query)
 	}
 
+	function createQuery<TComponents extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TComponents>>): Query<QueryEntity<TEntity, TComponents>> {
+		const query = defineQuery(args)
+
+		registerQuery(query)
+
+		return query
+	}
+
+	function select<TSelect extends keyof TEntity>(query: Query<TEntity>) {
+		if (!queries.has(query)) {
+			registerQuery(query)
+		}
+
+		const result = queries.get(query as AnyQuery) || createEntityBox()
+		return result as unknown as EntityBox<QueryEntity<TEntity, TSelect>>
+	}
+
 	return {
 		spawn,
 		despawn,
 		registerQuery,
-		select<TSelect extends keyof TEntity>(query: Query<TEntity>) {
-			if (!queries.has(query)) {
-				registerQuery(query)
-			}
-
-			const result = queries.get(query as AnyQuery) || createEntityBox()
-			return result as unknown as EntityBox<SelectedValues<TEntity, TSelect>>
-		},
+		select,
+		createQuery,
 		reset,
 		entities,
 		update,
@@ -290,7 +302,7 @@ export function createEntityBox<TEntity>(): EntityBox<TEntity> {
 	}
 }
 
-function match<TEntity extends Entity>(entity: TEntity, query: Query<TEntity>) {
+function match<TEntity extends Entity>(entity: TEntity, query: Query<Required<TEntity>>) {
 	const { with: withComponents, without: withoutComponents, where } = query
 	for (const component of withComponents) {
 		if (!(component in entity)) {
@@ -304,5 +316,5 @@ function match<TEntity extends Entity>(entity: TEntity, query: Query<TEntity>) {
 		}
 	}
 
-	return !where || where(entity)
+	return !where || where(entity as Required<TEntity>)
 }

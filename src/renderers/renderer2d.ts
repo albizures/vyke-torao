@@ -4,9 +4,9 @@ import type { Plugin } from '../game'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
 import {
-	createQuery,
 	createResource,
 	createSystem,
+	defineQuery,
 	type Query,
 	type Resource,
 	type System,
@@ -40,7 +40,7 @@ export type WithTexture2d = {
 
 type Entity2D = WithTransform2D & WithTexture2d
 
-const render2dEntities: Query<Required<Entity2D>> = createQuery({
+const render2dEntities: Query<Required<Entity2D>> = defineQuery({
 	id: 'with-transform-and-texture',
 	with: ['transform2D', 'texture2D'],
 })

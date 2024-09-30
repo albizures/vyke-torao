@@ -28,13 +28,13 @@
 
 <script>
 import type { Vec2D } from '../../src/vec'
-import { AtlasType, createTexture } from '../../src'
+import { AtlasType, createTexture, createWorld } from '../../src'
 import { createTransform2D, type WithTransform2D, type WithVelocity2D } from '../../src/components'
-import { createQuery, createSystem, SystemType } from '../../src/ecs'
+import { createSystem, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { createCamera2d, type WithCamera2D } from '../../src/prefabs'
 import { renderer2d, type WithTexture2d } from '../../src/renderers/renderer2d'
-import { assets, textures } from '../definitions'
+import { assets } from '../definitions'
 
 type MyEntity = WithTransform2D & WithTexture2d & WithVelocity2D & WithCamera2D & {
 	borderBehavior?: BorderBehaviorValue
@@ -79,30 +79,27 @@ type TailValue = {
 	follow: string
 }
 
-const { game, createScene } = createGame<
-	MyEntity,
-	typeof assets,
-	typeof textures
->({
+const world = createWorld<MyEntity>()
+const { createQuery } = world
+
+const { game, createScene } = createGame<MyEntity>({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
 	},
-	assets,
-	textures,
 })
 
-const allHeads = createQuery<MyEntity>({
+const allHeads = createQuery({
 	id: 'all-heads',
-	with: ['head', 'transform2D', 'borderBehavior', 'prevPosition', 'velocity2D'],
+	with: ['head', 'transform2D', 'borderBehavior', 'prevPosition', 'velocity2D', 'direction'],
 })
 
-const allTails = createQuery<MyEntity>({
+const allTails = createQuery({
 	id: 'all-tails',
 	with: ['tail', 'transform2D', 'prevPosition'],
 })
 
-const allGrids = createQuery<MyEntity>({
+const allGrids = createQuery({
 	id: 'all-grids',
 	with: ['grid', 'transform2D'],
 })
@@ -226,126 +223,125 @@ const followSystem = createSystem<MyEntity>({
 	},
 })
 
-const home = createScene('home', (context) => {
-	const { spawn } = context
-	const strokeSize = 2
-	const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
-	const gridTexture = createTexture({
-		asset: assets.grid,
-		atlas: {
-			type: AtlasType.Single,
-			region: {
-				width: gridSize,
-				height: gridSize,
-			},
-		},
-	})
-
-	assets.grid.loader.onLoad((context) => {
-		const { canvas } = context
-
-		canvas.width = gridSize
-		canvas.height = gridSize
-
-		context.strokeStyle = 'red'
-		context.strokeRect(1, 1, gridSize - strokeSize, gridSize - strokeSize)
-	})
-
-	const squareTexture = createTexture({
-		asset: assets.square,
-		atlas: {
-			type: AtlasType.Single,
-			region: {
-				width: CELL_SIZE,
-				height: CELL_SIZE,
-			},
-		},
-	})
-
-	assets.square.loader.onLoad((context) => {
-		const { canvas } = context
-
-		canvas.width = CELL_SIZE
-		canvas.height = CELL_SIZE
-
-		context.fillStyle = 'green'
-		context.fillRect(0, 0, CELL_SIZE, CELL_SIZE)
-	})
-
-	spawn('grid', {
-		grid: {
-			size: { x: CELL_SIZE, y: CELL_SIZE },
-		},
-		transform2D: createTransform2D({
-			position: { x: 20, y: 20 },
-		}),
-		texture2D: gridTexture,
-	})
-
-	const startX = 80
-
-	spawn('head', {
-		head: {
-			position: { x: startX, y: 20 },
-		},
-		borderBehavior: {
-			type: 'wrap',
-		},
-		velocity2D: {
-			x: VELOCITY,
-			y: VELOCITY,
-		},
-		transform2D: createTransform2D({
-			position: { x: startX + CELL_SIZE, y: 30 },
-		}),
-		prevPosition: { x: startX, y: 30 },
-		direction: { dir: DirectionType.Right },
-		texture2D: squareTexture,
-	})
-
-	let follow = 'head'
-
-	for (let index = 0; index < INITIAL_SIZE; index++) {
-		const currentId = `tail-${index}`
-		spawn(currentId, {
-			tail: {
-				position: {
-					x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
-					y: 20,
+const home = createScene({
+	id: 'home',
+	world,
+	systems: [
+		move,
+		snapToGrid,
+		borderBehavior,
+		followSystem,
+	],
+	plugins: [
+		renderer2d,
+	],
+	startup(context) {
+		const { spawn } = context
+		const strokeSize = 2
+		const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
+		const gridTexture = createTexture({
+			asset: assets.grid,
+			atlas: {
+				type: AtlasType.Single,
+				region: {
+					width: gridSize,
+					height: gridSize,
 				},
-				direction: DirectionType.Right,
-				follow,
+			},
+		})
+
+		assets.grid.loader.onLoad((context) => {
+			const { canvas } = context
+
+			canvas.width = gridSize
+			canvas.height = gridSize
+
+			context.strokeStyle = 'red'
+			context.strokeRect(1, 1, gridSize - strokeSize, gridSize - strokeSize)
+		})
+
+		const squareTexture = createTexture({
+			asset: assets.square,
+			atlas: {
+				type: AtlasType.Single,
+				region: {
+					width: CELL_SIZE,
+					height: CELL_SIZE,
+				},
+			},
+		})
+
+		assets.square.loader.onLoad((context) => {
+			const { canvas } = context
+
+			canvas.width = CELL_SIZE
+			canvas.height = CELL_SIZE
+
+			context.fillStyle = 'green'
+			context.fillRect(0, 0, CELL_SIZE, CELL_SIZE)
+		})
+
+		spawn('grid', {
+			grid: {
+				size: { x: CELL_SIZE, y: CELL_SIZE },
 			},
 			transform2D: createTransform2D({
-				position: {
-					x: startX - (index * CELL_SIZE),
-					y: 30,
-				},
+				position: { x: 20, y: 20 },
 			}),
-			prevPosition: {
-				x: startX - ((index - 1) * CELL_SIZE),
-				y: 30,
+			texture2D: gridTexture,
+		})
+
+		const startX = 80
+
+		spawn('head', {
+			head: {
+				position: { x: startX, y: 20 },
 			},
+			borderBehavior: {
+				type: 'wrap',
+			},
+			velocity2D: {
+				x: VELOCITY,
+				y: VELOCITY,
+			},
+			transform2D: createTransform2D({
+				position: { x: startX + CELL_SIZE, y: 30 },
+			}),
+			prevPosition: { x: startX, y: 30 },
+			direction: { dir: DirectionType.Right },
 			texture2D: squareTexture,
 		})
-		follow = currentId
-	}
 
-	spawn('camera', createCamera2d())
+		let follow = 'head'
 
-	return {
-		systems: [
-			...renderer2d.systems,
-			snapToGrid,
-			followSystem,
-			move,
-			borderBehavior,
+		for (let index = 0; index < INITIAL_SIZE; index++) {
+			const currentId = `tail-${index}`
+			spawn(currentId, {
+				tail: {
+					position: {
+						x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
+						y: 20,
+					},
+					direction: DirectionType.Right,
+					follow,
+				},
+				transform2D: createTransform2D({
+					position: {
+						x: startX - (index * CELL_SIZE),
+						y: 30,
+					},
+				}),
+				prevPosition: {
+					x: startX - ((index - 1) * CELL_SIZE),
+					y: 30,
+				},
+				texture2D: squareTexture,
+			})
+			follow = currentId
+		}
 
-		],
-		plugins: [
-			renderer2d,
-		],
-	}
+		spawn('camera', createCamera2d())
+	},
 })
 
 document.addEventListener('keydown', (event) => {

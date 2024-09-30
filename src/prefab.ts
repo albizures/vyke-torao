@@ -1,4 +1,4 @@
-import type { Entity } from './ecs'
+import type { Entity } from './ecs/world'
 
 export type Prefab<TArgs> = {
 	id: string

@@ -5,7 +5,7 @@ type WhereFn<TEntity extends Entity> = (values: TEntity) => boolean
 
 export type AnyQuery = Query<Entity>
 
-type QueryArgs<TEntity extends Entity> = {
+export type QueryArgs<TEntity extends Entity> = {
 	id: string
 	with: Array<keyof TEntity>
 	without?: Array<keyof TEntity>
@@ -23,7 +23,7 @@ export type InferQueryValues<TQuery extends AnyQuery> = TQuery extends Query<inf
 	? TValues
 	: never
 
-export function createQuery<TEntity extends Entity>(args: QueryArgs<TEntity>): Query<TEntity> {
+export function defineQuery<TEntity extends Entity>(args: QueryArgs<TEntity>): Query<TEntity> {
 	const { id, where } = args
 	const withComponents = set(args.with)
 	const withoutComponents = set(args.without || [])

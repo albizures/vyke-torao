@@ -1,8 +1,8 @@
+import type { AnyAsset } from './assets'
 import type { Entity, Spawn } from './ecs/world'
 import type { Texture } from './texture'
-import { type AnyAsset, loadAsset } from './assets'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
-import { createWorld, type Query, type Resource, type System, SystemType, type World } from './ecs'
+import { type Query, type Resource, type System, SystemType, type World } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
 import { CanvasRes, LoopRes } from './resources'
 import { is, map, set } from './types'
@@ -63,16 +63,6 @@ function createSystemBox<TEntity extends Entity>(): SystemBox<TEntity> {
 
 // #region Scene
 
-/**
- * The status of a scene.
- */
-export enum SceneStatus {
-	Idle = 0,
-	Building = 1,
-	Ready = 2,
-	Running = 3,
-}
-
 export type Register = <TEntity extends Entity>(args: Query<TEntity>) => void
 
 export type Plugin = {
@@ -80,88 +70,29 @@ export type Plugin = {
 	systems: Array<System<any>>
 }
 
-type StartupValues<TEntity extends Entity> = {
-	systems?: Array<System<TEntity>>
-	plugins?: Array<Plugin>
-}
-
-export type SceneContext<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
-	assets: TAssets
-	textures: TTextures
+export type SceneContext<TEntity extends Entity> = {
 	spawn: Spawn<TEntity>
 }
 
-type SceneBuilder<
+type SceneStartup<
 	TEntity extends Entity,
-	TAssets extends Assets,
-	TTextures extends Textures,
-> = (context: SceneContext<TEntity, TAssets, TTextures>) => StartupValues<TEntity>
+> = (context: SceneContext<TEntity>) => void
 
 /**
  * A scene is a collection of entities and systems.
  */
-type Scene<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
+type Scene<TEntity extends Entity> = {
 	id: string
-	status: SceneStatus
-	builder: SceneBuilder<TEntity, TAssets, TTextures>
+	startup: SceneStartup<TEntity>
 	assets: Set<AnyAsset>
 	resources: Set<Resource<unknown>>
 	systems: SystemBox<TEntity>
 	world: World<TEntity>
 }
 
-async function buildScene<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(scene: Scene<TEntity, TAssets, TTextures>, game: Game<TEntity, TAssets, TTextures>) {
-	const { builder } = scene
-
-	if (scene.status !== SceneStatus.Idle) {
-		return scene
-	}
-
-	scene.status = SceneStatus.Building
-
-	const assets = new Proxy(game.assets, {
-		get(target, prop) {
-			const asset = target[prop as string]
-			if (!asset) {
-				throw new Error(`Asset not found: ${String(prop)}`)
-			}
-
-			scene.assets.add(asset)
-			loadAsset(asset)
-			return asset
-		},
-	})
-
-	const textures = new Proxy(game.textures, {
-		get(target, prop) {
-			const texture = target[prop as string]
-			if (!texture) {
-				throw new Error(`Texture not found: ${String(prop)}`)
-			}
-
-			scene.assets.add(texture.asset)
-			loadAsset(texture.asset)
-			return texture
-		},
-	})
-
-	const startup = builder({ assets, textures, spawn: scene.world.spawn })
-
-	registerSystems(scene, startup.systems)
-	for (const plugin of startup.plugins ?? []) {
-		registerPlugin(scene, plugin)
-	}
-
-	scene.status = SceneStatus.Ready
-
-	return scene
-}
-
 function registerSystems<
 	TEntity extends Entity,
-	TAssets extends Assets,
-	TTextures extends Textures,
->(scene: Scene<TEntity, TAssets, TTextures>, initSystems: Array<System<TEntity>> = []) {
+>(scene: Scene<TEntity>, initSystems: Array<System<TEntity>> = []) {
 	const { systems } = scene
 
 	for (const system of initSystems) {
@@ -169,7 +100,7 @@ function registerSystems<
 	}
 }
 
-function registerPlugin<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(scene: Scene<TEntity, TAssets, TTextures>, plugin: Plugin) {
+function registerPlugin<TEntity extends Entity>(scene: Scene<TEntity>, plugin: Plugin) {
 	const { queries, systems } = plugin
 
 	queries(scene.world.registerQuery)
@@ -180,48 +111,57 @@ function registerPlugin<TEntity extends Entity, TAssets extends Assets, TTexture
 // #endregion
 
 // #region Game
-type Game<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
+type Game<TEntity extends Entity> = {
 	canvas: Canvas
-	textures: TTextures
-	scenes: Map<string, Scene<TEntity, TAssets, TTextures>>
-	currentScene?: Scene<TEntity, TAssets, TTextures>
-	assets: TAssets
+	scenes: Map<string, Scene<TEntity>>
+	currentScene?: Scene<TEntity>
 }
 
 export type Assets = Record<string, AnyAsset>
 export type Textures = Record<string, Texture>
 
-type GameArgs<TAssets extends Assets, TTextures extends Textures> = {
+type GameArgs = {
 	canvas: Canvas | CanvasArgs
-	assets?: TAssets
-	textures?: TTextures
 }
 
-type CreateGameResult<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures> = {
-	game: Game<TEntity, TAssets, TTextures>
-	createScene: (id: string, builder: SceneBuilder<TEntity, TAssets, TTextures>) => Scene<TEntity, TAssets, TTextures>
+type CreateGameResult<TEntity extends Entity> = {
+	game: Game<TEntity>
+	createScene: (args: SceneArgs<TEntity>) => Scene<TEntity>
 }
 
-export function createGame<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(
-	args: GameArgs<TAssets, TTextures>,
-): CreateGameResult<TEntity, TAssets, TTextures> {
-	const { canvas, assets = {} as TAssets, textures = {} as TTextures } = args
+type SceneArgs<TEntity extends Entity> = {
+	id: string
+	world: World<TEntity>
+	startup?: SceneStartup<TEntity>
+	systems?: Array<System<TEntity>>
+	plugins?: Array<Plugin>
+}
 
-	const scenes = map<string, Scene<TEntity, TAssets, TTextures>>()
-	const world = createWorld<TEntity>()
+export function createGame<TEntity extends Entity>(
+	args: GameArgs,
+): CreateGameResult<TEntity> {
+	const { canvas } = args
+
+	const scenes = map<string, Scene<TEntity>>()
 
 	/**
 	 * Creates a scene to be used in the game.
 	 */
-	function createScene(id: string, builder: SceneBuilder<TEntity, TAssets, TTextures>): Scene<TEntity, TAssets, TTextures> {
-		const scene: Scene<TEntity, TAssets, TTextures> = {
+	function createScene(args: SceneArgs<TEntity>): Scene<TEntity> {
+		const { id, world, startup = () => {}, systems = [], plugins = [] } = args
+
+		const scene: Scene<TEntity> = {
 			id,
-			status: SceneStatus.Idle,
-			builder,
+			startup,
 			assets: set<AnyAsset>(),
 			resources: set<Resource<unknown>>(),
 			systems: createSystemBox(),
 			world,
+		}
+
+		registerSystems(scene, systems)
+		for (const plugin of plugins ?? []) {
+			registerPlugin(scene, plugin)
 		}
 
 		scenes.set(id, scene)
@@ -229,11 +169,9 @@ export function createGame<TEntity extends Entity, TAssets extends Assets, TText
 		return scene
 	}
 
-	const game: Game<TEntity, TAssets, TTextures> = {
+	const game: Game<TEntity> = {
 		canvas: is(canvas, Canvas) ? canvas : createCanvas(canvas),
 		scenes,
-		assets,
-		textures,
 	}
 
 	return {
@@ -242,16 +180,14 @@ export function createGame<TEntity extends Entity, TAssets extends Assets, TText
 	}
 }
 
-export async function start<TEntity extends Entity, TAssets extends Assets, TTextures extends Textures>(
-	game: Game<TEntity, TAssets, TTextures>,
-	scene: Scene<TEntity, TAssets, TTextures>,
+export async function start<TEntity extends Entity>(
+	game: Game<TEntity>,
+	scene: Scene<TEntity>,
 	runner: Runner = createRequestAnimationFrameRunner(),
 ) {
 	const { canvas } = game
 
 	CanvasRes.set(canvas)
-
-	await buildScene(scene, game)
 
 	game.currentScene = scene
 
@@ -260,17 +196,7 @@ export async function start<TEntity extends Entity, TAssets extends Assets, TTex
 
 async function startScene<
 	TEntity extends Entity,
-	TAssets extends Assets,
-	TTextures extends Textures,
->(scene: Scene<TEntity, TAssets, TTextures>, runner: Runner) {
-	if (scene.status === SceneStatus.Running) {
-		return
-	}
-
-	if (scene.status !== SceneStatus.Ready) {
-		throw new Error('Scene is not ready')
-	}
-
+>(scene: Scene<TEntity>, runner: Runner) {
 	const { systems } = scene
 
 	const runArgs = {
@@ -278,6 +204,8 @@ async function startScene<
 		select: scene.world.select,
 		getEntity: scene.world.entities.getById,
 	}
+
+	scene.startup(runArgs)
 
 	for (const system of systems.enterScene) {
 		system.run(runArgs)
@@ -290,8 +218,6 @@ async function startScene<
 		beforeFrame,
 		afterFrame,
 	})
-
-	scene.status = SceneStatus.Running
 
 	function beforeFrame(args: LoopValues) {
 		LoopRes.set(args)

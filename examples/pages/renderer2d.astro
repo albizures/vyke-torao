@@ -16,7 +16,7 @@
 </html>
 
 <script>
-import { AtlasType, createTexture } from '../../src'
+import { AtlasType, createTexture, createWorld } from '../../src'
 import { createTransform2D, type WithTransform2D, type WithVelocity2D } from '../../src/components'
 import { createGame, start } from '../../src/game'
 import { createCamera2d, type WithCamera2D } from '../../src/prefabs'
@@ -28,67 +28,68 @@ type MyEntity = WithTransform2D & WithVelocity2D & WithCamera2D & WithTexture2d 
 	square?: true
 }
 
-const { game, createScene } = createGame<MyEntity, typeof assets, typeof textures>({
+const world = createWorld<MyEntity>()
+
+const { game, createScene } = createGame<MyEntity>({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
 	},
-	assets,
-	textures,
 })
 
-const home = createScene('home', (context) => {
-	const { textures, assets, spawn } = context
+const home = createScene({
+	id: 'home',
+	world,
+	plugins: [
+		renderer2d,
+	],
+	startup(context) {
+		const { spawn } = context
 
-	const size = 30
-	assets.square.loader.onLoad((context) => {
-		const { canvas } = context
+		const size = 30
+		assets.square.loader.onLoad((context) => {
+			const { canvas } = context
 
-		canvas.width = size
-		canvas.height = size
+			canvas.width = size
+			canvas.height = size
 
-		context.fillStyle = 'red'
-		context.strokeStyle = 'black'
-		context.fillRect(1, 1, size - 1, size - 1)
-		context.strokeRect(1, 1, size - 1, size - 1)
-	})
+			context.fillStyle = 'red'
+			context.strokeStyle = 'black'
+			context.fillRect(1, 1, size - 1, size - 1)
+			context.strokeRect(1, 1, size - 1, size - 1)
+		})
 
-	const squareTexture = createTexture({
-		atlas: {
-			type: AtlasType.Single,
-			region: {
-				width: size,
-				height: size,
+		const squareTexture = createTexture({
+			atlas: {
+				type: AtlasType.Single,
+				region: {
+					width: size,
+					height: size,
+				},
 			},
-		},
-		asset: assets.square,
-	})
+			asset: assets.square,
+		})
 
-	spawn('square', {
-		square: true,
-		transform2D: createTransform2D({
-			position: { x: 10, y: 10 },
+		spawn('square', {
+			square: true,
+			transform2D: createTransform2D({
+				position: { x: 10, y: 10 },
 
-		}),
-		texture2D: squareTexture,
-	})
+			}),
+			texture2D: squareTexture,
+		})
 
-	spawn('coin', {
-		coin: true,
-		transform2D: createTransform2D({
-			position: { x: 50, y: 10 },
-		}),
-		texture2D: textures.coin,
+		spawn('coin', {
+			coin: true,
+			transform2D: createTransform2D({
+				position: { x: 50, y: 10 },
+			}),
+			texture2D: textures.coin,
 
-	})
+		})
 
-	spawn('camera', createCamera2d({}))
-
-	return {
-		plugins: [
-			renderer2d,
-		],
-	}
+		spawn('camera', createCamera2d())
+	},
 })
 
 start(game, home)

@@ -1,5 +1,5 @@
 import { assertType, beforeEach, describe, expect, it } from 'vitest'
-import {	createQuery, createWorld } from './'
+import {	createWorld } from './'
 
 type Position = { position: { x: number, y: number } }
 type Player = { player: true }
@@ -8,20 +8,17 @@ type Enemy = { enemy: 'boss' | 'minion' }
 type Components = Partial<Position & Player & Enemy>
 
 const world = createWorld<Components>()
-const { spawn, despawn, reset, update, select, registerQuery } = world
+const { spawn, despawn, reset, update, select, createQuery } = world
 
-const allPlayers = createQuery<Position & Player>({
+const allPlayers = createQuery({
 	id: 'query-test',
 	with: ['position', 'player'],
 })
 
-const allEnemies = createQuery<Position & Enemy>({
+const allEnemies = createQuery({
 	id: 'query-test',
 	with: ['position', 'enemy'],
 })
-
-registerQuery(allPlayers)
-registerQuery(allEnemies)
 
 beforeEach(() => {
 	reset()
@@ -121,13 +118,11 @@ describe('querying', () => {
 			const bossEnemy = spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' })
 			const minionEnemy = spawn('enemy-2', { position: { x: 0, y: 0 }, enemy: 'minion' })
 
-			const onlyBosses = createQuery<Components>({
+			const onlyBosses = createQuery({
 				id: 'only-bosses',
 				with: ['enemy'],
 				where: (values) => values.enemy === 'boss',
 			})
-
-			registerQuery(onlyBosses)
 
 			const onlyBossesEntities = select(onlyBosses)
 
@@ -142,20 +137,17 @@ describe('querying', () => {
 				const bossEnemy = spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' })
 				const minionEnemy = spawn('enemy-2', { position: { x: 0, y: 0 }, enemy: 'minion' })
 
-				const farAwayEntities = createQuery<Position>({
+				const farAwayEntities = createQuery({
 					id: 'far-way-entities',
 					with: ['position'],
 					where: (values) => values.position.x > 10,
 				})
 
-				const onlyBosses = createQuery<Components>({
+				const onlyBosses = createQuery({
 					id: 'only-bosses',
 					with: ['enemy'],
 					where: (values) => values.enemy === 'boss',
 				})
-
-				registerQuery(farAwayEntities)
-				registerQuery(onlyBosses)
 
 				const farAwayEntitiesEntities = select(farAwayEntities)
 				const onlyBossesEntities = select(onlyBosses)
@@ -180,13 +172,11 @@ describe('querying', () => {
 				it('should NOT update query results', () => {
 					const player = spawn('player', { position: { x: 20, y: 20 }, player: true })
 
-					const farAwayEntities = createQuery<Position>({
+					const farAwayEntities = createQuery({
 						id: 'far-way-entities',
 						with: ['position'],
 						where: (values) => values.position.x > 10,
 					})
-
-					registerQuery(farAwayEntities)
 
 					const farAwayEntitiesEntities = select(farAwayEntities)
 
