@@ -18,7 +18,7 @@ const canvas: Canvas = new Canvas(
 
 describe('createGame', () => {
 	it('should create create a game', () => {
-		const { game, createScene } = createGame<MyEntity>({
+		const { game, createScene } = createGame({
 			canvas,
 		})
 
@@ -65,7 +65,7 @@ describe('start', () => {
 	it('should build the scene', async () => {
 		const runner = createStepRunner()
 
-		const { game, createScene } = createGame<MyEntity>({
+		const { game, createScene } = createGame({
 			canvas,
 		})
 

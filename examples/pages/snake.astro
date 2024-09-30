@@ -82,7 +82,7 @@ type TailValue = {
 const world = createWorld<MyEntity>()
 const { createQuery } = world
 
-const { game, createScene } = createGame<MyEntity>({
+const { game, createScene } = createGame({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',

@@ -111,10 +111,10 @@ function registerPlugin<TEntity extends Entity>(scene: Scene<TEntity>, plugin: P
 // #endregion
 
 // #region Game
-type Game<TEntity extends Entity> = {
+type Game = {
 	canvas: Canvas
-	scenes: Map<string, Scene<TEntity>>
-	currentScene?: Scene<TEntity>
+	scenes: Map<string, Scene<Entity>>
+	currentScene?: Scene<Entity>
 }
 
 export type Assets = Record<string, AnyAsset>
@@ -124,9 +124,9 @@ type GameArgs = {
 	canvas: Canvas | CanvasArgs
 }
 
-type CreateGameResult<TEntity extends Entity> = {
-	game: Game<TEntity>
-	createScene: (args: SceneArgs<TEntity>) => Scene<TEntity>
+type CreateGameResult = {
+	game: Game
+	createScene: <TEntity extends Entity>(args: SceneArgs<TEntity>) => Scene<TEntity>
 }
 
 type SceneArgs<TEntity extends Entity> = {
@@ -137,17 +137,17 @@ type SceneArgs<TEntity extends Entity> = {
 	plugins?: Array<Plugin>
 }
 
-export function createGame<TEntity extends Entity>(
+export function createGame(
 	args: GameArgs,
-): CreateGameResult<TEntity> {
+): CreateGameResult {
 	const { canvas } = args
 
-	const scenes = map<string, Scene<TEntity>>()
+	const scenes = map<string, Scene<Entity>>()
 
 	/**
 	 * Creates a scene to be used in the game.
 	 */
-	function createScene(args: SceneArgs<TEntity>): Scene<TEntity> {
+	function createScene<TEntity extends Entity>(args: SceneArgs<TEntity>): Scene<TEntity> {
 		const { id, world, startup = () => {}, systems = [], plugins = [] } = args
 
 		const scene: Scene<TEntity> = {
@@ -169,7 +169,7 @@ export function createGame<TEntity extends Entity>(
 		return scene
 	}
 
-	const game: Game<TEntity> = {
+	const game: Game = {
 		canvas: is(canvas, Canvas) ? canvas : createCanvas(canvas),
 		scenes,
 	}
@@ -181,7 +181,7 @@ export function createGame<TEntity extends Entity>(
 }
 
 export async function start<TEntity extends Entity>(
-	game: Game<TEntity>,
+	game: Game,
 	scene: Scene<TEntity>,
 	runner: Runner = createRequestAnimationFrameRunner(),
 ) {

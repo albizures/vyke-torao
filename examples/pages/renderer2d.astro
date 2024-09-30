@@ -30,7 +30,7 @@ type MyEntity = WithTransform2D & WithVelocity2D & WithCamera2D & WithTexture2d 
 
 const world = createWorld<MyEntity>()
 
-const { game, createScene } = createGame<MyEntity>({
+const { game, createScene } = createGame({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
