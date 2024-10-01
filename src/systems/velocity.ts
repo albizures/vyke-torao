@@ -1,9 +1,9 @@
-import type { WithTransform2D, WithVelocity2D } from '../components'
+import type { Transform2DEntity, Velocity2DEntity } from '../components'
 import { createSystem, type System, SystemType } from '../ecs'
 import { withVelocity2DAndTransform2D } from '../queries'
 import { LoopRes } from '../resources'
 
-type VelocityAndTransform = WithTransform2D & WithVelocity2D
+type VelocityAndTransform = Transform2DEntity & Velocity2DEntity
 
 export const velocityAndTransformSystem: System<VelocityAndTransform> = createSystem<VelocityAndTransform>({
 	id: 'velocity-and-position',

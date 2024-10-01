@@ -1,18 +1,19 @@
-import type { WithTransform2D } from '../components'
-import type { Entity } from '../ecs/world'
-import type { Plugin } from '../game'
+import type { Transform2DEntity } from '../components'
+import type { Entity, InferEntityWith } from '../ecs/entity'
+import type { ScenePlugin } from '../game'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
 import {
 	createResource,
 	createSystem,
+	defineComponent,
 	defineQuery,
 	type Query,
 	type Resource,
 	type System,
 	SystemType,
 } from '../ecs'
-import { camera2DQuery, type WithCamera2D } from '../prefabs'
+import { type Camera2DEntity, camera2DQuery } from '../prefabs'
 import { CanvasRes } from '../resources'
 import { type AnyAtlas, type Texture as AnyTexture, isTextureAssetType, type TextureAssets } from '../texture'
 import { is } from '../types'
@@ -34,18 +35,21 @@ export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
 	},
 })
 
-export type WithTexture2d = {
-	texture2D?: AnyTexture
+export const Texture2D = defineComponent('texture2D', createTexture2D)
+export type Texture2DEntity = InferEntityWith<typeof Texture2D>
+
+function createTexture2D(texture: AnyTexture): AnyTexture {
+	return texture
 }
 
-type Entity2D = WithTransform2D & WithTexture2d
+type Entity2D = Transform2DEntity & Texture2DEntity
 
 const render2dEntities: Query<Required<Entity2D>> = defineQuery({
 	id: 'with-transform-and-texture',
 	with: ['transform2D', 'texture2D'],
 })
 
-const render2dBeforeFrameSystem: System<WithCamera2D> = createSystem({
+const render2dBeforeFrameSystem: System<Camera2DEntity> = createSystem({
 	id: 'renderer-2d-before-frame',
 	type: SystemType.BeforeFrame,
 	fn(args) {
@@ -67,7 +71,7 @@ const render2dBeforeFrameSystem: System<WithCamera2D> = createSystem({
 	},
 })
 
-const render2dAfterFrameSystem: System<any> = createSystem({
+const render2dAfterFrameSystem: System = createSystem({
 	id: 'renderer-2d-after-frame',
 	type: SystemType.AfterFrame,
 	fn() {
@@ -148,7 +152,8 @@ const renderer2dEnterSceneSystem: System<Entity2D> = createSystem({
 
 type Register = <TEntity extends Entity>(args: Query<TEntity>) => void
 
-export const renderer2d: Plugin = {
+export const renderer2d: ScenePlugin = {
+	id: 'renderer-2d',
 	systems: [
 		renderer2dEnterSceneSystem,
 		renderer2dSystem,

@@ -16,19 +16,26 @@
 </html>
 
 <script>
-import { AtlasType, createTexture, createWorld } from '../../src'
-import { createTransform2D, type WithTransform2D, type WithVelocity2D } from '../../src/components'
+import { AtlasType, createTexture, createWorld, defineComponent, defineEntity } from '../../src'
+import { createTransform2D, Transform2D, Velocity2D } from '../../src/components'
 import { createGame, start } from '../../src/game'
-import { createCamera2d, type WithCamera2D } from '../../src/prefabs'
-import { renderer2d, type WithTexture2d } from '../../src/renderers/renderer2d'
+import { Camera2D, createCamera2d } from '../../src/prefabs'
+import { renderer2d, Texture2D } from '../../src/renderers/renderer2d'
 import { assets, textures } from '../definitions'
 
-type MyEntity = WithTransform2D & WithVelocity2D & WithCamera2D & WithTexture2d & {
-	coin?: true
-	square?: true
-}
+const Coin = defineComponent('coin', (value: true) => value)
+const Square = defineComponent('square', (value: true) => value)
 
-const world = createWorld<MyEntity>()
+const entity = defineEntity()
+	.add(Transform2D)
+	.add(Velocity2D)
+	.add(Camera2D)
+	.add(Texture2D)
+	.add(Coin)
+	.add(Square)
+	.get()
+
+const world = createWorld(entity)
 
 const { game, createScene } = createGame({
 	canvas: {
@@ -74,7 +81,6 @@ const home = createScene({
 			square: true,
 			transform2D: createTransform2D({
 				position: { x: 10, y: 10 },
-
 			}),
 			texture2D: squareTexture,
 		})
@@ -85,7 +91,6 @@ const home = createScene({
 				position: { x: 50, y: 10 },
 			}),
 			texture2D: textures.coin,
-
 		})
 
 		spawn('camera', createCamera2d())

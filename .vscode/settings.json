@@ -47,5 +47,10 @@
 		"scss",
 		"pcss",
 		"postcss"
-	]
+	],
+
+	"explorer.fileNesting.enabled": true,
+	"explorer.fileNesting.patterns": {
+		"*.ts": "${capture}.test.ts"
+	}
 }

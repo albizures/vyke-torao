@@ -1,9 +1,7 @@
 import type { Simplify } from 'type-fest'
+import type { Entity } from './entity'
 import { map, set } from '../types'
 import { type AnyQuery, defineQuery, type Query, type QueryArgs } from './query'
-
-export type Component = string | number | symbol
-export type Entity = Record<Component, any>
 
 type QueryEntity<
 	TEntity extends Entity,
@@ -19,7 +17,9 @@ type UpdateArgs<TEntity extends Entity, TComponent extends keyof TEntity> =
 
 export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
 export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => EntityBox<QueryEntity<TEntity, keyof TExpectedEntity>>
-export type World<TEntity extends Entity> = {
+export type World<
+	TEntity extends Entity,
+> = {
 	spawn: Spawn<TEntity>
 	despawn: (entity: TEntity) => void
 	registerQuery: <TExpectedEntity extends TEntity>(args: Query<TExpectedEntity>) => void
@@ -31,7 +31,9 @@ export type World<TEntity extends Entity> = {
 	createQuery: <TComponents extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TComponents>>) => Query<QueryEntity<TEntity, TComponents>>
 }
 
-export function createWorld<TEntity extends Entity>(): World<TEntity> {
+export function createWorld<
+	TEntity extends Entity,
+>(): World<TEntity> {
 	type TComponent = keyof TEntity
 	type TQuery = Query<Required<TEntity>>
 	const entities = createEntityBox<TEntity>()
@@ -200,7 +202,7 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		return result as unknown as EntityBox<QueryEntity<TEntity, TSelect>>
 	}
 
-	return {
+	const world: World<TEntity> = {
 		spawn,
 		despawn,
 		registerQuery,
@@ -211,6 +213,8 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		update,
 		remove,
 	}
+
+	return world
 }
 
 type EntityBox<TEntity> = {

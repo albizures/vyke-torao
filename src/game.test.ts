@@ -1,8 +1,10 @@
+import type { Entity } from './ecs/entity'
 import { describe, expect, it, vi } from 'vitest'
 import { Canvas } from './canvas'
-import { createWorld, type Entity } from './ecs/world'
+import { createWorld } from './ecs/world'
 import { createGame, type SceneContext, start } from './game'
 import { createStepRunner } from './loop'
+import { noop } from './types'
 
 type MyEntity = Entity
 
@@ -11,7 +13,7 @@ const world = createWorld<MyEntity>()
 const canvas: Canvas = new Canvas(
 	{} as unknown as HTMLCanvasElement,
 	() => {
-		return () => {}
+		return noop
 	},
 	{ x: 100, y: 100 },
 )
@@ -49,7 +51,7 @@ describe('start', () => {
 			canvas,
 		})
 
-		const startup = vi.fn(() => {})
+		const startup = vi.fn()
 		const scene = createScene({
 			id: 'test',
 			world,

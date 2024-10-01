@@ -1,13 +1,32 @@
+import type { Vec2D } from '../vec'
 import { assertType, beforeEach, describe, expect, it } from 'vitest'
-import {	createWorld } from './'
+import { createWorld, defineComponent, defineEntity, type InferEntity } from './'
 
-type Position = { position: { x: number, y: number } }
-type Player = { player: true }
-type Enemy = { enemy: 'boss' | 'minion' }
+const Position = defineComponent('position', (values: Partial<Vec2D>) => {
+	const { x = 0, y = 0 } = values
 
-type Components = Partial<Position & Player & Enemy>
+	return { x, y }
+})
 
-const world = createWorld<Components>()
+const Player = defineComponent('player', (_values: true): true => {
+	return true
+})
+
+type EnemyType = 'boss' | 'minion'
+
+const Enemy = defineComponent('enemy', (type: EnemyType) => {
+	return type
+})
+
+const _entity = defineEntity()
+	.add(Position)
+	.add(Player)
+	.add(Enemy)
+	.get()
+
+type Entity = InferEntity<typeof _entity>
+
+const world = createWorld<Entity>()
 const { spawn, despawn, reset, update, select, createQuery } = world
 
 const allPlayers = createQuery({

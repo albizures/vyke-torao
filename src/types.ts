@@ -11,3 +11,5 @@ export function set<TItem>(values?: Iterable<TItem>): Set<TItem> {
 export function map<TKeys, TValues>(entries?: Array<[TKeys, TValues]>): Map<TKeys, TValues> {
 	return new Map<TKeys, TValues>(entries)
 }
+
+export function noop() {}

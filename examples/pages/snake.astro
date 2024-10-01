@@ -29,38 +29,46 @@
 <script>
 import type { Vec2D } from '../../src/vec'
 import { AtlasType, createTexture, createWorld } from '../../src'
-import { createTransform2D, type WithTransform2D, type WithVelocity2D } from '../../src/components'
-import { createSystem, SystemType } from '../../src/ecs'
+import { Transform2D, Velocity2D } from '../../src/components'
+import { createSystem, defineComponent, defineEntity, type InferEntity, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
-import { createCamera2d, type WithCamera2D } from '../../src/prefabs'
-import { renderer2d, type WithTexture2d } from '../../src/renderers/renderer2d'
+import { Camera2D, createCamera2d } from '../../src/prefabs'
+import { renderer2d, Texture2D } from '../../src/renderers/renderer2d'
 import { assets } from '../definitions'
 
-type MyEntity = WithTransform2D & WithTexture2d & WithVelocity2D & WithCamera2D & {
-	borderBehavior?: BorderBehaviorValue
-	grid?: GridValue
-	head?: HeadValue
-	direction?: DirectionValue
-	prevPosition?: Vec2D
-	tail?: TailValue
+const BorderBehavior = defineComponent('borderBehavior', (type: 'wrap' | 'die') => ({ type }))
+const Grid = defineComponent('grid', (size: Vec2D) => ({ size }))
+const Head = defineComponent('head', (position: Vec2D) => ({ position }))
+const Direction = defineComponent('direction', (dir: DirectionType) => ({ dir }))
+const PrevPosition = defineComponent('prevPosition', (position: Vec2D) => position)
+
+type TailArgs = {
+	position: Vec2D
+	direction: DirectionType
+	follow: string
 }
+
+const Tail = defineComponent('tail', (args: TailArgs) => ({
+	...args,
+}))
+
+const entity = defineEntity()
+	.add(BorderBehavior)
+	.add(Grid)
+	.add(Head)
+	.add(Tail)
+	.add(Direction)
+	.add(Transform2D)
+	.add(Velocity2D)
+	.add(PrevPosition)
+	.add(Camera2D)
+	.add(Texture2D)
+	.get()
 
 const INITIAL_SIZE = 4
 const GRID_SIZE = 20
 const CELL_SIZE = 10
 const VELOCITY = 2
-
-type BorderBehaviorValue = {
-	type: 'wrap' | 'die'
-}
-
-type GridValue = {
-	size: Vec2D
-}
-
-type HeadValue = {
-	position: Vec2D
-}
 
 enum DirectionType {
 	Up = 0,
@@ -69,17 +77,9 @@ enum DirectionType {
 	Right = 3,
 }
 
-type DirectionValue = {
-	dir: DirectionType
-}
+type Entity = InferEntity<typeof entity>
 
-type TailValue = {
-	position: Vec2D
-	direction: DirectionType
-	follow: string
-}
-
-const world = createWorld<MyEntity>()
+const world = createWorld<Entity>()
 const { createQuery } = world
 
 const { game, createScene } = createGame({
@@ -91,7 +91,14 @@ const { game, createScene } = createGame({
 
 const allHeads = createQuery({
 	id: 'all-heads',
-	with: ['head', 'transform2D', 'borderBehavior', 'prevPosition', 'velocity2D', 'direction'],
+	with: [
+		'head',
+		'transform2D',
+		'borderBehavior',
+		'prevPosition',
+		'velocity2D',
+		'direction',
+	],
 })
 
 const allTails = createQuery({
@@ -104,7 +111,7 @@ const allGrids = createQuery({
 	with: ['grid', 'transform2D'],
 })
 
-const move = createSystem<MyEntity>({
+const move = createSystem<Entity>({
 	id: 'move',
 	type: SystemType.FixedUpdate,
 	fn(args) {
@@ -131,7 +138,7 @@ const move = createSystem<MyEntity>({
 	},
 })
 
-const snapToGrid = createSystem<MyEntity>({
+const snapToGrid = createSystem<Entity>({
 	id: 'snap-to-grid',
 	type: SystemType.FixedUpdate,
 	fn(args) {
@@ -159,7 +166,7 @@ const snapToGrid = createSystem<MyEntity>({
 	},
 })
 
-const borderBehavior = createSystem<MyEntity>({
+const borderBehavior = createSystem<Entity>({
 	id: 'border-behavior',
 	type: SystemType.FixedUpdate,
 	fn(args) {
@@ -200,7 +207,7 @@ const borderBehavior = createSystem<MyEntity>({
 	},
 })
 
-const followSystem = createSystem<MyEntity>({
+const followSystem = createSystem<Entity>({
 	id: 'follow',
 	type: SystemType.FixedUpdate,
 	fn(args) {
@@ -222,6 +229,24 @@ const followSystem = createSystem<MyEntity>({
 		}
 	},
 })
+
+// const enterExit = createEnterExit<Entity, 's'>({
+// 	component: 'unsubscribe',
+// 	enter(context) {
+// 		function onkeydown() {
+
+// 		}
+
+// 		document.addEventListener('keydown', onkeydown)
+
+// 		return () => {
+// 			document.removeEventListener('keydown', onkeydown)
+// 		}
+// 	},
+// 	exit(unsubscribe) {
+// 		unsubscribe()
+// 	},
+// })
 
 const home = createScene({
 	id: 'home',
@@ -281,42 +306,31 @@ const home = createScene({
 			context.fillRect(0, 0, CELL_SIZE, CELL_SIZE)
 		})
 
-		spawn('grid', {
-			grid: {
-				size: { x: CELL_SIZE, y: CELL_SIZE },
-			},
-			transform2D: createTransform2D({
-				position: { x: 20, y: 20 },
-			}),
+		spawn('grid', entity.build({
+			grid: { x: CELL_SIZE, y: CELL_SIZE },
+			transform2D: { position: { x: 20, y: 20 } },
 			texture2D: gridTexture,
-		})
+		}))
 
 		const startX = 80
 
-		spawn('head', {
-			head: {
-				position: { x: startX, y: 20 },
-			},
-			borderBehavior: {
-				type: 'wrap',
-			},
-			velocity2D: {
-				x: VELOCITY,
-				y: VELOCITY,
-			},
-			transform2D: createTransform2D({
+		spawn('head', entity.build({
+			head: { x: startX, y: 20 },
+			borderBehavior: 'wrap',
+			velocity2D: { x: VELOCITY, y: VELOCITY },
+			transform2D: {
 				position: { x: startX + CELL_SIZE, y: 30 },
-			}),
+			},
 			prevPosition: { x: startX, y: 30 },
-			direction: { dir: DirectionType.Right },
+			direction: DirectionType.Right,
 			texture2D: squareTexture,
-		})
+		}))
 
 		let follow = 'head'
 
 		for (let index = 0; index < INITIAL_SIZE; index++) {
 			const currentId = `tail-${index}`
-			spawn(currentId, {
+			spawn(currentId, entity.build({
 				tail: {
 					position: {
 						x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
@@ -325,18 +339,18 @@ const home = createScene({
 					direction: DirectionType.Right,
 					follow,
 				},
-				transform2D: createTransform2D({
+				transform2D: {
 					position: {
 						x: startX - (index * CELL_SIZE),
 						y: 30,
 					},
-				}),
+				},
 				prevPosition: {
 					x: startX - ((index - 1) * CELL_SIZE),
 					y: 30,
 				},
 				texture2D: squareTexture,
-			})
+			}))
 			follow = currentId
 		}
 

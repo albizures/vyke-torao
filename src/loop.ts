@@ -1,3 +1,5 @@
+import { noop } from './types'
+
 export type LoopValues = {
 	deltaTime: number
 	fps: number
@@ -118,11 +120,11 @@ export function createStepRunner(loop: Loop = createLoop()): StepRunner {
 	let timestamp = 0
 	let frameArgs: FrameArgs = {
 		timestamp: 0,
-		fixedUpdate: () => {},
-		update: () => {},
-		render: () => {},
-		beforeFrame: () => {},
-		afterFrame: () => {},
+		fixedUpdate: noop,
+		update: noop,
+		render: noop,
+		beforeFrame: noop,
+		afterFrame: noop,
 	}
 
 	function tick() {

@@ -1,3 +1,5 @@
+import type { InferEntityWith } from '../ecs/entity'
+import { defineComponent } from '../ecs'
 import { type Vec2D, vec2D } from '../vec'
 
 export type Transform2D = {
@@ -9,9 +11,8 @@ export type Transform2D = {
 	scale: Vec2D
 }
 
-export type WithTransform2D = {
-	transform2D?: Transform2D
-}
+export const Transform2D = defineComponent('transform2D', createTransform2D)
+export type Transform2DEntity = InferEntityWith<typeof Transform2D>
 
 export function createTransform2D(args: Partial<Transform2D>): Transform2D {
 	const { position = vec2D(0, 0), angle = 0, scale = vec2D(1, 1) } = args

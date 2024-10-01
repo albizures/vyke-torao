@@ -1,3 +1,4 @@
+export { defineComponent, defineEntity, type InferEntity } from './entity'
 export * from './query'
 export * from './resource'
 export * from './system'

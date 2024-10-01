@@ -1,4 +1,5 @@
-import type { Entity, Select, Spawn } from './world'
+import type { Entity } from './entity'
+import type { Select, Spawn } from './world'
 
 type RunArgs<TEntity extends Entity> = {
 	spawn: Spawn<TEntity>
@@ -9,19 +10,20 @@ type RunArgs<TEntity extends Entity> = {
 /**
  * A system is a function that updates the state of the game.
  */
-export type System<TEntity extends Entity> = {
+export type System<TEntity extends Entity = Entity> = {
 	id: string
 	run: (args: RunArgs<TEntity>) => void
 	type: SystemType
 }
 
 export enum SystemType {
-	FixedUpdate = 0,
-	Update = 1,
-	Render = 2,
-	EnterScene = 3,
-	BeforeFrame = 4,
+	EnterScene = 0,
+	BeforeFrame = 1,
+	FixedUpdate = 2,
+	Update = 3,
+	Render = 4,
 	AfterFrame = 5,
+	ExitScene = 6,
 }
 
 export type SystemFnArgs<TEntity extends Entity> = {

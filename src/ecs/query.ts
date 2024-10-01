@@ -1,4 +1,4 @@
-import type { Entity } from './world'
+import type { Entity } from './entity'
 import { set } from '../types'
 
 type WhereFn<TEntity extends Entity> = (values: TEntity) => boolean

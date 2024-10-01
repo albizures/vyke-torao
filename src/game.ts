@@ -1,11 +1,12 @@
 import type { AnyAsset } from './assets'
-import type { Entity, Spawn } from './ecs/world'
+import type { Entity } from './ecs/entity'
+import type { Spawn } from './ecs/world'
 import type { Texture } from './texture'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
 import { type Query, type Resource, type System, SystemType, type World } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
 import { CanvasRes, LoopRes } from './resources'
-import { is, map, set } from './types'
+import { is, map, noop, set } from './types'
 
 type SystemIterator<TEntity extends Entity> = Iterable<System<TEntity>>
 
@@ -25,12 +26,13 @@ type SystemBox<TEntity extends Entity> = {
 function createSystemBox<TEntity extends Entity>(): SystemBox<TEntity> {
 	const allSystems = set<System<TEntity>>()
 	const byType = {
+		[SystemType.EnterScene]: set<System<TEntity>>(),
 		[SystemType.FixedUpdate]: set<System<TEntity>>(),
+		[SystemType.BeforeFrame]: set<System<TEntity>>(),
 		[SystemType.Update]: set<System<TEntity>>(),
 		[SystemType.Render]: set<System<TEntity>>(),
-		[SystemType.EnterScene]: set<System<TEntity>>(),
-		[SystemType.BeforeFrame]: set<System<TEntity>>(),
 		[SystemType.AfterFrame]: set<System<TEntity>>(),
+		[SystemType.ExitScene]: set<System<TEntity>>(),
 	}
 
 	function add(system: System<TEntity>) {
@@ -65,9 +67,10 @@ function createSystemBox<TEntity extends Entity>(): SystemBox<TEntity> {
 
 export type Register = <TEntity extends Entity>(args: Query<TEntity>) => void
 
-export type Plugin = {
-	queries: (register: Register) => void
-	systems: Array<System<any>>
+export type ScenePlugin = {
+	id: string
+	queries?: (register: Register) => void
+	systems?: Array<System<any>>
 }
 
 export type SceneContext<TEntity extends Entity> = {
@@ -81,7 +84,7 @@ type SceneStartup<
 /**
  * A scene is a collection of entities and systems.
  */
-type Scene<TEntity extends Entity> = {
+type Scene<TEntity extends Entity > = {
 	id: string
 	startup: SceneStartup<TEntity>
 	assets: Set<AnyAsset>
@@ -100,8 +103,8 @@ function registerSystems<
 	}
 }
 
-function registerPlugin<TEntity extends Entity>(scene: Scene<TEntity>, plugin: Plugin) {
-	const { queries, systems } = plugin
+function registerPlugin<TEntity extends Entity>(scene: Scene<TEntity>, plugin: ScenePlugin) {
+	const { queries = noop, systems } = plugin
 
 	queries(scene.world.registerQuery)
 
@@ -134,7 +137,7 @@ type SceneArgs<TEntity extends Entity> = {
 	world: World<TEntity>
 	startup?: SceneStartup<TEntity>
 	systems?: Array<System<TEntity>>
-	plugins?: Array<Plugin>
+	plugins?: Array<ScenePlugin>
 }
 
 export function createGame(
@@ -142,13 +145,13 @@ export function createGame(
 ): CreateGameResult {
 	const { canvas } = args
 
-	const scenes = map<string, Scene<Entity>>()
+	const scenes = map<string, Scene< Entity>>()
 
 	/**
 	 * Creates a scene to be used in the game.
 	 */
 	function createScene<TEntity extends Entity>(args: SceneArgs<TEntity>): Scene<TEntity> {
-		const { id, world, startup = () => {}, systems = [], plugins = [] } = args
+		const { id, world, startup = noop, systems = [], plugins = [] } = args
 
 		const scene: Scene<TEntity> = {
 			id,
