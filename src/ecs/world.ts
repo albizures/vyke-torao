@@ -1,5 +1,6 @@
 import type { Simplify } from 'type-fest'
 import type { Entity } from './entity'
+import { createRefBox, type RefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
 import { type AnyQuery, defineQuery, type Query, type QueryArgs } from './query'
 
@@ -16,7 +17,7 @@ type UpdateArgs<TEntity extends Entity, TComponent extends keyof TEntity> =
 	| [entity: TEntity, updater: UpdateFn<TEntity>]
 
 export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
-export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => EntityBox<QueryEntity<TEntity, keyof TExpectedEntity>>
+export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
 export type World<
 	TEntity extends Entity,
 > = {
@@ -25,7 +26,7 @@ export type World<
 	registerQuery: <TExpectedEntity extends TEntity>(args: Query<TExpectedEntity>) => void
 	select: Select<TEntity>
 	reset: () => void
-	entities: EntityBox<TEntity>
+	entities: RefBox<TEntity>
 	update: <TComponent extends keyof TEntity>(...args: UpdateArgs<TEntity, TComponent>) => void
 	remove: (entity: TEntity, component: keyof TEntity) => void
 	createQuery: <TComponents extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TComponents>>) => Query<QueryEntity<TEntity, TComponents>>
@@ -36,9 +37,9 @@ export function createWorld<
 >(): World<TEntity> {
 	type TComponent = keyof TEntity
 	type TQuery = Query<Required<TEntity>>
-	const entities = createEntityBox<TEntity>()
+	const entities = createRefBox<TEntity>()
 	const components = map<TComponent, Set<TQuery>>()
-	const queries = map<TQuery, EntityBox<TEntity>>()
+	const queries = map<TQuery, RefBox<TEntity>>()
 
 	function addComponent(entity: TEntity, component: TComponent) {
 		const queries = getQueries(component)
@@ -181,7 +182,7 @@ export function createWorld<
 			queries.add(query)
 		}
 
-		queries.set(query, createEntityBox())
+		queries.set(query, createRefBox())
 		compute(query)
 	}
 
@@ -198,8 +199,8 @@ export function createWorld<
 			registerQuery(query)
 		}
 
-		const result = queries.get(query as AnyQuery) || createEntityBox()
-		return result as unknown as EntityBox<QueryEntity<TEntity, TSelect>>
+		const result = queries.get(query as AnyQuery) || createRefBox()
+		return result as unknown as RefBox<QueryEntity<TEntity, TSelect>>
 	}
 
 	const world: World<TEntity> = {
@@ -215,95 +216,6 @@ export function createWorld<
 	}
 
 	return world
-}
-
-type EntityBox<TEntity> = {
-	byId: Map<string, TEntity>
-	byRef: Map<TEntity, string>
-	getId: (entity: TEntity) => string | undefined
-	add: (id: string, entity: TEntity) => void
-	remove: (idOrEntity: string | TEntity) => void
-	getById: (id: string) => TEntity | undefined
-	first: () => TEntity | undefined
-	has: (idOrEntity: string | TEntity) => boolean
-	clear: () => void
-	size: () => number
-	[Symbol.iterator]: () => IterableIterator<TEntity>
-}
-
-export function createEntityBox<TEntity>(): EntityBox<TEntity> {
-	const byPosition: Array<TEntity> = []
-	const byRef = map<TEntity, string>()
-	const byId = map<string, TEntity>()
-
-	function add(id: string, entity: TEntity) {
-		byRef.set(entity, id)
-		byId.set(id, entity)
-		byPosition.push(entity)
-	}
-
-	function removePair(id: string, entity: TEntity) {
-		byRef.delete(entity)
-		byId.delete(id)
-		byPosition.splice(byPosition.indexOf(entity), 1)
-	}
-
-	function remove(idOrEntity: string | TEntity) {
-		if (typeof idOrEntity === 'string') {
-			const entity = byId.get(idOrEntity)
-			if (entity) {
-				removePair(idOrEntity, entity)
-			}
-		}
-		else {
-			const id = byRef.get(idOrEntity)
-			if (id) {
-				removePair(id, idOrEntity)
-			}
-		}
-	}
-
-	function getById(id: string) {
-		return byId.get(id)
-	}
-
-	function has(idOrEntity: string | TEntity) {
-		if (typeof idOrEntity === 'string') {
-			return byId.has(idOrEntity)
-		}
-
-		return byRef.has(idOrEntity)
-	}
-
-	function getId(entity: TEntity) {
-		return byRef.get(entity)
-	}
-
-	function clear() {
-		byRef.clear()
-		byId.clear()
-		byPosition.length = 0
-	}
-
-	return {
-		byId,
-		byRef,
-		add,
-		remove,
-		getById,
-		has,
-		getId,
-		clear,
-		[Symbol.iterator]: () => {
-			return byId.values()
-		},
-		first() {
-			return byPosition[0]
-		},
-		size() {
-			return byId.size
-		},
-	}
 }
 
 function match<TEntity extends Entity>(entity: TEntity, query: Query<Required<TEntity>>) {
