@@ -1,14 +1,14 @@
 import type { Vec2D } from '../vec'
 import { assertType, describe, expect, it } from 'vitest'
-import { defineComponent, defineEntity } from './entity'
+import { build, defineComponent } from './entity'
 
-const position = defineComponent('position', (values: Partial<Vec2D>) => {
+const Position = defineComponent('position', (values: Partial<Vec2D>) => {
 	const { x = 0, y = 0 } = values
 
 	return { x, y }
 })
 
-const velocity = defineComponent('velocity', (values: Partial<Vec2D>) => {
+const Velocity = defineComponent('velocity', (values: Partial<Vec2D>) => {
 	const { x = 0, y = 0 } = values
 
 	return { x, y }
@@ -16,45 +16,35 @@ const velocity = defineComponent('velocity', (values: Partial<Vec2D>) => {
 
 describe('defineComponent', () => {
 	it('creates a component', () => {
-		const component = defineComponent('position', (values: Partial<Vec2D>) => {
-			const { x = 0, y = 0 } = values
-
-			return { x, y }
-		})
-
-		expect(component.name).toEqual('position')
-		expect(component.creator({ x: 1 })).toEqual({ x: 1, y: 0 })
+		expect(Position).toHaveProperty('position')
+		expect(Position.position({ x: 1 })).toEqual({ x: 1, y: 0 })
 	})
 })
 
 describe('defineEntity', () => {
 	it('creates an entity', () => {
-		const entity = defineEntity()
-			.add(position)
-			.add(velocity)
-			.get()
+		const entity = {
+			...Position,
+			...Velocity,
+		}
 
-		expect(entity.components.position).toEqual(expect.objectContaining({
-			name: 'position',
-			creator: expect.any(Function),
-		}))
-		expect(entity.components.velocity).toEqual(expect.objectContaining({
-			name: 'velocity',
-			creator: expect.any(Function),
+		expect(entity).toEqual(expect.objectContaining({
+			position: Position.position,
+			velocity: Velocity.velocity,
 		}))
 	})
 
 	it('creates an entity with values', () => {
-		const entity = defineEntity()
-			.add(position)
-			.add(velocity)
-			.get()
+		const entity = {
+			...Position,
+			...Velocity,
+		}
 
-		const result1 = entity.build({
+		const result1 = build(entity, {
 			position: { x: 1 },
 			velocity: { y: 4 },
 		})
-		const result2 = entity.build({
+		const result2 = build(entity, {
 			position: { x: 1 },
 		})
 

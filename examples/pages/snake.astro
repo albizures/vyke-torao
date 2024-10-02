@@ -30,7 +30,7 @@
 import type { Vec2D } from '../../src/vec'
 import { AtlasType, createTexture, createWorld } from '../../src'
 import { Transform2D, Velocity2D } from '../../src/components'
-import { createSystem, defineComponent, defineEntity, type InferEntity, SystemType } from '../../src/ecs'
+import { createSystem, defineComponent, type InferEntity, spawn, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { Camera2D, createCamera2d } from '../../src/prefabs'
 import { renderer2d, Texture2D } from '../../src/renderers/renderer2d'
@@ -52,18 +52,18 @@ const Tail = defineComponent('tail', (args: TailArgs) => ({
 	...args,
 }))
 
-const entity = defineEntity()
-	.add(BorderBehavior)
-	.add(Grid)
-	.add(Head)
-	.add(Tail)
-	.add(Direction)
-	.add(Transform2D)
-	.add(Velocity2D)
-	.add(PrevPosition)
-	.add(Camera2D)
-	.add(Texture2D)
-	.get()
+const entity = {
+	...BorderBehavior,
+	...Grid,
+	...Head,
+	...Tail,
+	...Direction,
+	...Transform2D,
+	...Velocity2D,
+	...PrevPosition,
+	...Camera2D,
+	...Texture2D,
+}
 
 const INITIAL_SIZE = 4
 const GRID_SIZE = 20
@@ -261,7 +261,6 @@ const home = createScene({
 		renderer2d,
 	],
 	startup(context) {
-		const { spawn } = context
 		const strokeSize = 2
 		const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
 		const gridTexture = createTexture({
@@ -306,15 +305,15 @@ const home = createScene({
 			context.fillRect(0, 0, CELL_SIZE, CELL_SIZE)
 		})
 
-		spawn('grid', entity.build({
+		spawn('grid', entity, {
 			grid: { x: CELL_SIZE, y: CELL_SIZE },
 			transform2D: { position: { x: 20, y: 20 } },
 			texture2D: gridTexture,
-		}))
+		}, context)
 
 		const startX = 80
 
-		spawn('head', entity.build({
+		spawn('head', entity, {
 			head: { x: startX, y: 20 },
 			borderBehavior: 'wrap',
 			velocity2D: { x: VELOCITY, y: VELOCITY },
@@ -324,13 +323,13 @@ const home = createScene({
 			prevPosition: { x: startX, y: 30 },
 			direction: DirectionType.Right,
 			texture2D: squareTexture,
-		}))
+		}, context)
 
 		let follow = 'head'
 
 		for (let index = 0; index < INITIAL_SIZE; index++) {
 			const currentId = `tail-${index}`
-			spawn(currentId, entity.build({
+			spawn(currentId, entity, {
 				tail: {
 					position: {
 						x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
@@ -350,11 +349,11 @@ const home = createScene({
 					y: 30,
 				},
 				texture2D: squareTexture,
-			}))
+			}, context)
 			follow = currentId
 		}
 
-		spawn('camera', createCamera2d())
+		spawn('camera', entity, createCamera2d(), context)
 	},
 })
 

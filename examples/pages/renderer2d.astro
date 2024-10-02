@@ -16,8 +16,8 @@
 </html>
 
 <script>
-import { AtlasType, createTexture, createWorld, defineComponent, defineEntity } from '../../src'
-import { createTransform2D, Transform2D, Velocity2D } from '../../src/components'
+import { AtlasType, createTexture, createWorld, defineComponent, type InferEntity, spawn } from '../../src'
+import { Transform2D, Velocity2D } from '../../src/components'
 import { createGame, start } from '../../src/game'
 import { Camera2D, createCamera2d } from '../../src/prefabs'
 import { renderer2d, Texture2D } from '../../src/renderers/renderer2d'
@@ -26,16 +26,18 @@ import { assets, textures } from '../definitions'
 const Coin = defineComponent('coin', (value: true) => value)
 const Square = defineComponent('square', (value: true) => value)
 
-const entity = defineEntity()
-	.add(Transform2D)
-	.add(Velocity2D)
-	.add(Camera2D)
-	.add(Texture2D)
-	.add(Coin)
-	.add(Square)
-	.get()
+const entity = {
+	...Transform2D,
+	...Velocity2D,
+	...Camera2D,
+	...Texture2D,
+	...Coin,
+	...Square,
+}
 
-const world = createWorld(entity)
+type Entity = InferEntity<typeof entity>
+
+const world = createWorld<Entity>()
 
 const { game, createScene } = createGame({
 	canvas: {
@@ -51,8 +53,6 @@ const home = createScene({
 		renderer2d,
 	],
 	startup(context) {
-		const { spawn } = context
-
 		const size = 30
 		assets.square.loader.onLoad((context) => {
 			const { canvas } = context
@@ -77,23 +77,23 @@ const home = createScene({
 			asset: assets.square,
 		})
 
-		spawn('square', {
+		spawn('square', entity, {
 			square: true,
-			transform2D: createTransform2D({
+			transform2D: {
 				position: { x: 10, y: 10 },
-			}),
+			},
 			texture2D: squareTexture,
-		})
+		}, context)
 
-		spawn('coin', {
-			coin: true,
-			transform2D: createTransform2D({
+		spawn('coin', entity, {
+			square: true,
+			transform2D: {
 				position: { x: 50, y: 10 },
-			}),
+			},
 			texture2D: textures.coin,
-		})
+		}, context)
 
-		spawn('camera', createCamera2d())
+		spawn('camera', entity, createCamera2d(), context)
 	},
 })
 

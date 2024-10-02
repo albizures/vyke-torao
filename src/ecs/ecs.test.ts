@@ -1,6 +1,6 @@
 import type { Vec2D } from '../vec'
 import { assertType, beforeEach, describe, expect, it } from 'vitest'
-import { createWorld, defineComponent, defineEntity, type InferEntity } from './'
+import { createWorld, defineComponent, type InferEntity } from './'
 
 const Position = defineComponent('position', (values: Partial<Vec2D>) => {
 	const { x = 0, y = 0 } = values
@@ -18,11 +18,11 @@ const Enemy = defineComponent('enemy', (type: EnemyType) => {
 	return type
 })
 
-const _entity = defineEntity()
-	.add(Position)
-	.add(Player)
-	.add(Enemy)
-	.get()
+const _entity = {
+	...Position,
+	...Player,
+	...Enemy,
+}
 
 type Entity = InferEntity<typeof _entity>
 

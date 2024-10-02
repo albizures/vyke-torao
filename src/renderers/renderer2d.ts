@@ -1,5 +1,5 @@
 import type { Transform2DEntity } from '../components'
-import type { Entity, InferEntityWith } from '../ecs/entity'
+import type { Component, Entity, InferEntity } from '../ecs/entity'
 import type { ScenePlugin } from '../game'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
@@ -35,8 +35,8 @@ export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
 	},
 })
 
-export const Texture2D = defineComponent('texture2D', createTexture2D)
-export type Texture2DEntity = InferEntityWith<typeof Texture2D>
+export const Texture2D: Component<'texture2D', AnyTexture, AnyTexture> = defineComponent('texture2D', createTexture2D)
+export type Texture2DEntity = InferEntity<typeof Texture2D>
 
 function createTexture2D(texture: AnyTexture): AnyTexture {
 	return texture
