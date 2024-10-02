@@ -1,13 +1,7 @@
-import type { Simplify } from 'type-fest'
 import type { Entity } from './entity'
 import { createRefBox, type RefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
 import { type AnyQuery, defineQuery, type Query, type QueryArgs } from './query'
-
-type QueryEntity<
-	TEntity extends Entity,
-	TSelect extends keyof TEntity,
-> = Simplify<Required<Pick<TEntity, TSelect>>>
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
 
@@ -16,8 +10,22 @@ type UpdateArgs<TEntity extends Entity, TComponent extends keyof TEntity> =
 	| [entity: TEntity, values: Partial<TEntity>]
 	| [entity: TEntity, updater: UpdateFn<TEntity>]
 
+export type AnyWorld = {
+	spawn: Spawn<any>
+	despawn: (entity: any) => void
+	registerQuery: (args: Query<any>) => void
+	select: Select<any>
+	reset: () => void
+	entities: RefBox<any>
+	update: (...args: UpdateArgs<any, any>) => void
+	remove: (entity: any, component: any) => void
+	createQuery: (args: any) => Query<any>
+}
+
 export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
-export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
+export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(
+	query: Query<TExpectedEntity>
+) => RefBox<TExpectedEntity>
 export type World<
 	TEntity extends Entity,
 > = {
@@ -29,14 +37,12 @@ export type World<
 	entities: RefBox<TEntity>
 	update: <TComponent extends keyof TEntity>(...args: UpdateArgs<TEntity, TComponent>) => void
 	remove: (entity: TEntity, component: keyof TEntity) => void
-	createQuery: <TComponents extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TComponents>>) => Query<QueryEntity<TEntity, TComponents>>
+	createQuery: <TExpectedEntity extends TEntity>(args: QueryArgs<TExpectedEntity>) => Query<TExpectedEntity>
 }
 
-export function createWorld<
-	TEntity extends Entity,
->(): World<TEntity> {
+export function createWorld<TEntity extends Entity>(): World<TEntity> {
 	type TComponent = keyof TEntity
-	type TQuery = Query<Required<TEntity>>
+	type TQuery = Query<TEntity>
 	const entities = createRefBox<TEntity>()
 	const components = map<TComponent, Set<TQuery>>()
 	const queries = map<TQuery, RefBox<TEntity>>()
@@ -133,8 +139,7 @@ export function createWorld<
 		const [entity, valuesOrComponent, value] = args
 
 		if (typeof valuesOrComponent === 'object') {
-			for (const key in valuesOrComponent) {
-				const component = key as TComponent
+			for (const component in valuesOrComponent) {
 				const value = valuesOrComponent[component]
 				if (value === undefined) {
 					remove(entity, component)
@@ -176,17 +181,18 @@ export function createWorld<
 		entities.clear()
 	}
 
-	function registerQuery(query: Query<Required<TEntity>>) {
+	function registerQuery<TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) {
+		const worldQuery = query as TQuery
 		for (const component of [...query.with, ...query.without]) {
 			const queries = getQueries(component)
-			queries.add(query)
+			queries.add(worldQuery)
 		}
 
-		queries.set(query, createRefBox())
-		compute(query)
+		queries.set(worldQuery, createRefBox())
+		compute(worldQuery)
 	}
 
-	function createQuery<TComponents extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TComponents>>): Query<QueryEntity<TEntity, TComponents>> {
+	function createQuery<TExpectedEntity extends TEntity>(args: QueryArgs<TExpectedEntity>): Query<TExpectedEntity> {
 		const query = defineQuery(args)
 
 		registerQuery(query)
@@ -194,13 +200,13 @@ export function createWorld<
 		return query
 	}
 
-	function select<TSelect extends keyof TEntity>(query: Query<TEntity>) {
-		if (!queries.has(query)) {
+	function select<TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) {
+		if (!queries.has(query as AnyQuery)) {
 			registerQuery(query)
 		}
 
 		const result = queries.get(query as AnyQuery) || createRefBox()
-		return result as unknown as RefBox<QueryEntity<TEntity, TSelect>>
+		return result as unknown as RefBox<TExpectedEntity>
 	}
 
 	const world: World<TEntity> = {
