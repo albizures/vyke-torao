@@ -1,11 +1,8 @@
-import type { Transform2DEntity, Velocity2DEntity } from '../components'
 import { createSystem, type System, SystemType } from '../ecs'
-import { withVelocity2DAndTransform2D } from '../queries'
+import { type EntityWithVelocityAndTransform, withVelocity2DAndTransform2D } from '../queries'
 import { LoopRes } from '../resources'
 
-type VelocityAndTransform = Transform2DEntity & Velocity2DEntity
-
-export const velocityAndTransformSystem: System<VelocityAndTransform> = createSystem<VelocityAndTransform>({
+export const velocityAndTransformSystem: System<EntityWithVelocityAndTransform> = createSystem({
 	id: 'velocity-and-position',
 	type: SystemType.Update,
 	fn(args) {

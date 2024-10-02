@@ -8,8 +8,6 @@ function identity<TValue>(value: TValue): TValue {
 
 type Creator<TValue, TArgs> = (args: TArgs) => TValue
 
-export type EntityCreator = Record<any, Creator<any, any>>
-
 export type Component<TName extends string, TValue, TArgs> = {
 	[K in TName]: Creator<TValue, TArgs>
 }
@@ -28,9 +26,3 @@ export type InferEntity<TCreator> = Simplify<{
 		? TValue
 		: never
 }>
-
-export type InferCreateValues<TCreator> = {
-	[K in keyof TCreator]?: TCreator[K] extends Creator<any, infer TArgs>
-		? TArgs
-		: never
-}

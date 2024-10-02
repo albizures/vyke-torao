@@ -29,11 +29,11 @@
 <script>
 import type { Vec2D } from '../../src/vec'
 import { AtlasType, createTexture, createWorld } from '../../src'
-import { Transform2D, Velocity2D } from '../../src/components'
+import { Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
-import { Camera2D, createCamera2d } from '../../src/prefabs'
-import { renderer2d, Texture2D } from '../../src/renderers/renderer2d'
+import { canvas2d } from '../../src/plugins/canvas2d'
+import { createCamera2d } from '../../src/prefabs'
 import { assets } from '../definitions'
 
 const BorderBehavior = defineComponent('borderBehavior', (type: 'wrap' | 'die') => ({ type }))
@@ -53,16 +53,14 @@ const Tail = defineComponent('tail', (args: TailArgs) => ({
 }))
 
 const entity = {
+	...canvas2d.entity,
 	...BorderBehavior,
 	...Grid,
 	...Head,
 	...Tail,
 	...Direction,
-	...Transform2D,
 	...Velocity2D,
 	...PrevPosition,
-	...Camera2D,
-	...Texture2D,
 }
 
 const INITIAL_SIZE = 4
@@ -241,7 +239,7 @@ const home = createScene({
 		followSystem,
 	],
 	plugins: [
-		renderer2d,
+		canvas2d.scene,
 	],
 	startup(context) {
 		const { spawn } = context

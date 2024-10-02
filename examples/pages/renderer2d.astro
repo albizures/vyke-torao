@@ -17,20 +17,16 @@
 
 <script>
 import { AtlasType, createTexture, createWorld, defineComponent, type InferEntity } from '../../src'
-import { Transform2D, Velocity2D } from '../../src/components'
 import { createGame, start } from '../../src/game'
-import { Camera2D, createCamera2d } from '../../src/prefabs'
-import { renderer2d, Texture2D } from '../../src/renderers/renderer2d'
+import { canvas2d } from '../../src/plugins/canvas2d'
+import { createCamera2d } from '../../src/prefabs'
 import { assets, textures } from '../definitions'
 
 const Coin = defineComponent('coin', (value: true) => value)
 const Square = defineComponent('square', (value: true) => value)
 
 const entity = {
-	...Transform2D,
-	...Velocity2D,
-	...Camera2D,
-	...Texture2D,
+	...canvas2d.entity,
 	...Coin,
 	...Square,
 }
@@ -50,7 +46,7 @@ const home = createScene({
 	id: 'home',
 	world,
 	plugins: [
-		renderer2d,
+		canvas2d.scene,
 	],
 	startup(context) {
 		const { spawn } = context

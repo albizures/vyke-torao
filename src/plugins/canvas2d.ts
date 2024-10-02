@@ -1,8 +1,8 @@
-import type { Transform2DEntity } from '../components'
 import type { Component, Entity, InferEntity } from '../ecs/entity'
 import type { ScenePlugin } from '../game'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
+import { Transform2D, type Transform2DComponent } from '../components'
 import {
 	createResource,
 	createSystem,
@@ -13,17 +13,33 @@ import {
 	type System,
 	SystemType,
 } from '../ecs'
-import { type Camera2DEntity, camera2DQuery } from '../prefabs'
+import { Camera2D, type Camera2DComponent, camera2DQuery } from '../prefabs'
 import { CanvasRes } from '../resources'
 import { type AnyAtlas, type Texture as AnyTexture, isTextureAssetType, type TextureAssets } from '../texture'
 import { is } from '../types'
+
+type Texture2DComponent = Component<'texture2D', AnyTexture, AnyTexture>
+const Texture2D: Texture2DComponent = defineComponent('texture2D', createTexture2D)
+
+type Canvas2dEntityCreator =
+	& Camera2DComponent
+	& Transform2DComponent
+	& Texture2DComponent
+
+const canvas2dEntity: Canvas2dEntityCreator = {
+	...Camera2D,
+	...Transform2D,
+	...Texture2D,
+}
+
+type Canvas2dEntity = InferEntity<Canvas2dEntityCreator>
 
 type CanvasBufferValue = {
 	context: CanvasRenderingContext2D
 	buffer: CanvasRenderingContext2D
 }
 
-export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
+const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
 	id: 'canvas-buffer',
 	value: {
 		get context(): CanvasRenderingContext2D {
@@ -35,21 +51,16 @@ export const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
 	},
 })
 
-export const Texture2D: Component<'texture2D', AnyTexture, AnyTexture> = defineComponent('texture2D', createTexture2D)
-export type Texture2DEntity = InferEntity<typeof Texture2D>
-
 function createTexture2D(texture: AnyTexture): AnyTexture {
 	return texture
 }
 
-type Entity2D = Transform2DEntity & Texture2DEntity
-
-const render2dEntities: Query<Required<Entity2D>> = defineQuery({
+const render2dEntities: Query<Canvas2dEntity> = defineQuery({
 	id: 'with-transform-and-texture',
 	with: ['transform2D', 'texture2D'],
 })
 
-const render2dBeforeFrameSystem: System<Camera2DEntity> = createSystem({
+const render2dBeforeFrameSystem: System<Canvas2dEntity> = createSystem({
 	id: 'renderer-2d-before-frame',
 	type: SystemType.BeforeFrame,
 	fn(args) {
@@ -83,7 +94,7 @@ const render2dAfterFrameSystem: System = createSystem({
 	},
 })
 
-const renderer2dSystem: System<Entity2D> = createSystem({
+const renderer2dSystem: System<Canvas2dEntity> = createSystem({
 	id: 'renderer-2d',
 	type: SystemType.Render,
 	fn(args) {
@@ -125,7 +136,7 @@ function getImage(asset: TextureAssets, atlas: AnyAtlas): HTMLCanvasElement | HT
 	return asset.fallback(atlas).canvas
 }
 
-const renderer2dEnterSceneSystem: System<Entity2D> = createSystem({
+const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
 	id: 'renderer-2d-setup',
 	type: SystemType.EnterScene,
 	fn() {
@@ -152,16 +163,19 @@ const renderer2dEnterSceneSystem: System<Entity2D> = createSystem({
 
 type Register = <TEntity extends Entity>(args: Query<TEntity>) => void
 
-export const renderer2d: ScenePlugin = {
-	id: 'renderer-2d',
-	systems: [
-		renderer2dEnterSceneSystem,
-		renderer2dSystem,
-		render2dBeforeFrameSystem,
-		render2dAfterFrameSystem,
-	],
-	queries: (register: Register) => {
-		register(render2dEntities)
-		register(camera2DQuery)
+export const canvas2d: { scene: ScenePlugin, entity: Canvas2dEntityCreator } = {
+	scene: {
+		id: 'renderer-2d',
+		systems: [
+			renderer2dEnterSceneSystem,
+			renderer2dSystem,
+			render2dBeforeFrameSystem,
+			render2dAfterFrameSystem,
+		],
+		queries: (register: Register) => {
+			register(render2dEntities)
+			register(camera2DQuery)
+		},
 	},
+	entity: canvas2dEntity,
 }

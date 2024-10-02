@@ -16,18 +16,6 @@ type UpdateArgs<TEntity extends Entity, TComponent extends keyof TEntity> =
 	| [entity: TEntity, values: Partial<TEntity>]
 	| [entity: TEntity, updater: UpdateFn<TEntity>]
 
-export type AnyWorld = {
-	spawn: Spawn<any>
-	despawn: (entity: any) => void
-	registerQuery: (args: Query<any>) => void
-	select: Select<any>
-	reset: () => void
-	entities: RefBox<any>
-	update: (...args: UpdateArgs<any, any>) => void
-	remove: (entity: any, component: any) => void
-	createQuery: (args: any) => Query<any>
-}
-
 export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
 export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
 export type World<
