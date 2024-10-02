@@ -1,10 +1,10 @@
 import type { Entity } from '../ecs/entity'
 import type { ScenePlugin } from '../game'
-import { createSystem, defineQuery, type Query, type System, type SystemFnArgs, SystemType } from '../ecs'
+import { createSystem, defineQuery, type Query, type System, type SystemContext, SystemType } from '../ecs'
 
 type EnterExitArgs<TEntity extends Entity, TValue> = {
 	component: keyof TEntity
-	enter: (context: SystemFnArgs<TEntity>) => TValue
+	enter: (context: SystemContext<TEntity>) => TValue
 	exit: (value: TValue) => void
 }
 

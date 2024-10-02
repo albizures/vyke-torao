@@ -1,9 +1,8 @@
 import type { AnyAsset } from './assets'
 import type { Entity } from './ecs/entity'
-import type { Spawn } from './ecs/world'
 import type { Texture } from './texture'
 import { Canvas, type CanvasArgs, createCanvas } from './canvas'
-import { type Query, type Resource, type System, SystemType, type World } from './ecs'
+import { createSystem, type Query, type Resource, type System, type SystemContext, SystemType, type World } from './ecs'
 import { createRequestAnimationFrameRunner, type LoopValues, type Runner } from './loop'
 import { CanvasRes, LoopRes } from './resources'
 import { is, map, noop, set } from './types'
@@ -73,20 +72,15 @@ export type ScenePlugin = {
 	systems?: Array<System<any>>
 }
 
-export type SceneContext<TEntity extends Entity> = {
-	spawn: Spawn<TEntity>
-}
-
 type SceneStartup<
 	TEntity extends Entity,
-> = (context: SceneContext<TEntity>) => void
+> = (context: SystemContext<TEntity>) => void
 
 /**
  * A scene is a collection of entities and systems.
  */
 type Scene<TEntity extends Entity > = {
 	id: string
-	startup: SceneStartup<TEntity>
 	assets: Set<AnyAsset>
 	resources: Set<Resource<unknown>>
 	systems: SystemBox<TEntity>
@@ -155,14 +149,19 @@ export function createGame(
 
 		const scene: Scene<TEntity> = {
 			id,
-			startup,
 			assets: set<AnyAsset>(),
 			resources: set<Resource<unknown>>(),
 			systems: createSystemBox(),
 			world,
 		}
 
-		registerSystems(scene, systems)
+		const startupSystem: System<TEntity> = createSystem({
+			id: `startup-${id}`,
+			type: SystemType.EnterScene,
+			fn: startup,
+		})
+
+		registerSystems(scene, [...systems, startupSystem])
 		for (const plugin of plugins ?? []) {
 			registerPlugin(scene, plugin)
 		}
@@ -202,16 +201,14 @@ async function startScene<
 >(scene: Scene<TEntity>, runner: Runner) {
 	const { systems } = scene
 
-	const runArgs = {
+	const systemContext: SystemContext<Entity> = {
 		spawn: scene.world.spawn,
 		select: scene.world.select,
 		getEntity: scene.world.entities.getById,
 	}
 
-	scene.startup(runArgs)
-
 	for (const system of systems.enterScene) {
-		system.run(runArgs)
+		system.run(systemContext)
 	}
 
 	runner.start({
@@ -225,32 +222,32 @@ async function startScene<
 	function beforeFrame(args: LoopValues) {
 		LoopRes.set(args)
 		for (const system of systems.beforeFrame) {
-			system.run(runArgs)
+			system.run(systemContext)
 		}
 	}
 
 	function afterFrame() {
 		for (const system of systems.afterFrame) {
-			system.run(runArgs)
+			system.run(systemContext)
 		}
 	}
 
 	function update() {
 		for (const system of systems.update) {
-			system.run(runArgs)
+			system.run(systemContext)
 		}
 	}
 
 	function render() {
 		for (const system of systems.render) {
-			system.run(runArgs)
+			system.run(systemContext)
 		}
 	}
 
 	function fixedUpdate(args: LoopValues) {
 		LoopRes.set(args)
 		for (const system of systems.fixedUpdate) {
-			system.run(runArgs)
+			system.run(systemContext)
 		}
 	}
 }

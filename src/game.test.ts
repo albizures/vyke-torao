@@ -1,8 +1,9 @@
+import type { SystemContext } from './ecs'
 import type { Entity } from './ecs/entity'
 import { describe, expect, it, vi } from 'vitest'
 import { Canvas } from './canvas'
 import { createWorld } from './ecs/world'
-import { createGame, type SceneContext, start } from './game'
+import { createGame, start } from './game'
 import { createStepRunner } from './loop'
 import { noop } from './types'
 
@@ -72,7 +73,7 @@ describe('start', () => {
 		})
 
 		let entity: MyEntity
-		const startup = vi.fn((context: SceneContext<MyEntity>) => {
+		const startup = vi.fn((context: SystemContext<MyEntity>) => {
 			const { spawn } = context
 			entity = spawn('player', {})
 		})

@@ -1,18 +1,12 @@
 import type { Entity } from './entity'
 import type { Select, Spawn } from './world'
 
-type RunArgs<TEntity extends Entity> = {
-	spawn: Spawn<TEntity>
-	select: Select<Entity>
-	getEntity: (id: string) => TEntity | undefined
-}
-
 /**
  * A system is a function that updates the state of the game.
  */
 export type System<TEntity extends Entity = Entity> = {
 	id: string
-	run: (args: RunArgs<TEntity>) => void
+	run: (context: SystemContext<TEntity>) => void
 	type: SystemType
 }
 
@@ -26,18 +20,18 @@ export enum SystemType {
 	ExitScene = 6,
 }
 
-export type SystemFnArgs<TEntity extends Entity> = {
+export type SystemContext<TEntity extends Entity> = Readonly<{
 	spawn: Spawn<TEntity>
 	select: Select<TEntity>
 	getEntity: (id: string) => TEntity | undefined
-}
+}>
 
-type SystemFn<TEntity extends Entity> = (args: SystemFnArgs<TEntity>) => void
+type SystemFn<TEntity extends Entity> = (context: SystemContext<TEntity>) => void
 
 type SystemArgs<TEntity extends Entity> = {
 	id: string
 	type: SystemType
-	onlyWhen?: (args: SystemFnArgs<TEntity>) => boolean
+	onlyWhen?: (args: SystemContext<TEntity>) => boolean
 	fn: SystemFn<TEntity>
 }
 
@@ -51,18 +45,14 @@ export function createSystem<TEntity extends Entity>(args: SystemArgs<TEntity>):
 	return {
 		id,
 		type,
-		run(args: RunArgs<TEntity>) {
-			const runArgs = {
-				...args,
-			}
-
-			const shouldRun = onlyWhen(runArgs)
+		run(context: SystemContext<TEntity>) {
+			const shouldRun = onlyWhen(context)
 
 			if (!shouldRun) {
 				return
 			}
 
-			fn(runArgs)
+			fn(context)
 		},
 	}
 }
