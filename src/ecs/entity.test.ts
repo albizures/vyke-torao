@@ -1,6 +1,6 @@
 import type { Vec2D } from '../vec'
 import { assertType, describe, expect, it } from 'vitest'
-import { build, defineComponent } from './entity'
+import { defineComponent } from './entity'
 
 const Position = defineComponent('position', (values: Partial<Vec2D>) => {
 	const { x = 0, y = 0 } = values
@@ -40,13 +40,13 @@ describe('defineEntity', () => {
 			...Velocity,
 		}
 
-		const result1 = build(entity, {
-			position: { x: 1 },
-			velocity: { y: 4 },
-		})
-		const result2 = build(entity, {
-			position: { x: 1 },
-		})
+		const result1 = {
+			position: entity.position({ x: 1 }),
+			velocity: entity.velocity({ y: 4 }),
+		}
+		const result2 = {
+			position: entity.position({ x: 1 }),
+		}
 
 		expect(result1).toEqual({
 			position: { x: 1, y: 0 },

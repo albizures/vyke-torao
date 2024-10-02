@@ -30,7 +30,7 @@
 import type { Vec2D } from '../../src/vec'
 import { AtlasType, createTexture, createWorld } from '../../src'
 import { Transform2D, Velocity2D } from '../../src/components'
-import { createSystem, defineComponent, type InferEntity, spawn, SystemType } from '../../src/ecs'
+import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { Camera2D, createCamera2d } from '../../src/prefabs'
 import { renderer2d, Texture2D } from '../../src/renderers/renderer2d'
@@ -39,7 +39,7 @@ import { assets } from '../definitions'
 const BorderBehavior = defineComponent('borderBehavior', (type: 'wrap' | 'die') => ({ type }))
 const Grid = defineComponent('grid', (size: Vec2D) => ({ size }))
 const Head = defineComponent('head', (position: Vec2D) => ({ position }))
-const Direction = defineComponent('direction', (dir: DirectionType) => ({ dir }))
+const Direction = defineComponent('direction', (dir: DirectionType) => dir)
 const PrevPosition = defineComponent('prevPosition', (position: Vec2D) => position)
 
 type TailArgs = {
@@ -230,24 +230,6 @@ const followSystem = createSystem<Entity>({
 	},
 })
 
-// const enterExit = createEnterExit<Entity, 's'>({
-// 	component: 'unsubscribe',
-// 	enter(context) {
-// 		function onkeydown() {
-
-// 		}
-
-// 		document.addEventListener('keydown', onkeydown)
-
-// 		return () => {
-// 			document.removeEventListener('keydown', onkeydown)
-// 		}
-// 	},
-// 	exit(unsubscribe) {
-// 		unsubscribe()
-// 	},
-// })
-
 const home = createScene({
 	id: 'home',
 	world,
@@ -261,6 +243,7 @@ const home = createScene({
 		renderer2d,
 	],
 	startup(context) {
+		const { spawn } = context
 		const strokeSize = 2
 		const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
 		const gridTexture = createTexture({
@@ -305,31 +288,31 @@ const home = createScene({
 			context.fillRect(0, 0, CELL_SIZE, CELL_SIZE)
 		})
 
-		spawn('grid', entity, {
-			grid: { x: CELL_SIZE, y: CELL_SIZE },
-			transform2D: { position: { x: 20, y: 20 } },
+		spawn('grid', {
+			grid: entity.grid({ x: CELL_SIZE, y: CELL_SIZE }),
+			transform2D: entity.transform2D({ position: { x: 20, y: 20 } }),
 			texture2D: gridTexture,
-		}, context)
+		})
 
 		const startX = 80
 
-		spawn('head', entity, {
-			head: { x: startX, y: 20 },
-			borderBehavior: 'wrap',
+		spawn('head', {
+			head: entity.head({ x: startX, y: 20 }),
+			borderBehavior: entity.borderBehavior('wrap'),
 			velocity2D: { x: VELOCITY, y: VELOCITY },
-			transform2D: {
+			transform2D: entity.transform2D({
 				position: { x: startX + CELL_SIZE, y: 30 },
-			},
+			}),
 			prevPosition: { x: startX, y: 30 },
 			direction: DirectionType.Right,
 			texture2D: squareTexture,
-		}, context)
+		})
 
 		let follow = 'head'
 
 		for (let index = 0; index < INITIAL_SIZE; index++) {
 			const currentId = `tail-${index}`
-			spawn(currentId, entity, {
+			spawn(currentId, {
 				tail: {
 					position: {
 						x: startX - ((index + 1) * CELL_SIZE) + CELL_SIZE,
@@ -338,22 +321,22 @@ const home = createScene({
 					direction: DirectionType.Right,
 					follow,
 				},
-				transform2D: {
+				transform2D: entity.transform2D({
 					position: {
 						x: startX - (index * CELL_SIZE),
 						y: 30,
 					},
-				},
+				}),
 				prevPosition: {
 					x: startX - ((index - 1) * CELL_SIZE),
 					y: 30,
 				},
 				texture2D: squareTexture,
-			}, context)
+			})
 			follow = currentId
 		}
 
-		spawn('camera', entity, createCamera2d(), context)
+		spawn('camera', createCamera2d())
 	},
 })
 

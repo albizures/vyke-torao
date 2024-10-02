@@ -1,7 +1,6 @@
 import type { Vec2D } from '../vec'
 import { assertType, beforeEach, describe, expect, it } from 'vitest'
 import { createWorld, defineComponent, type InferEntity } from './'
-import { build } from './entity'
 
 const Position = defineComponent('position', (values: Partial<Vec2D>) => {
 	const { x = 0, y = 0 } = values
@@ -66,10 +65,10 @@ describe('despawn', () => {
 
 describe('querying', () => {
 	it('should return entities with all components', () => {
-		const player = spawn('player', build(entity, { position: { x: 20, y: 20 }, player: true }))
+		const player = spawn('player', { position: entity.position({ y: 20 }), player: true })
 		const enemis = [
-			spawn('enemy-1', build(entity, { position: { x: 0, y: 0 }, enemy: 'boss' })),
-			spawn('enemy-2', build(entity, { position: { x: 10, y: 10 }, enemy: 'minion' })),
+			spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' }),
+			spawn('enemy-2', { position: { x: 10, y: 10 }, enemy: 'minion' }),
 		]
 
 		for (const item of select(allEnemies)) {
@@ -131,8 +130,8 @@ describe('querying', () => {
 
 	describe('when a where clause is given', () => {
 		it('should filter entities', () => {
-			const bossEnemy = spawn('enemy-1', build(entity, { position: { x: 0, y: 0 }, enemy: 'boss' }))
-			const minionEnemy = spawn('enemy-2', build(entity, { position: { x: 0, y: 0 }, enemy: 'minion' }))
+			const bossEnemy = spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' })
+			const minionEnemy = spawn('enemy-2', { position: { x: 0, y: 0 }, enemy: 'minion' })
 
 			const onlyBosses = createQuery({
 				id: 'only-bosses',
@@ -149,9 +148,9 @@ describe('querying', () => {
 
 		describe('when entity is updated', () => {
 			it('should update query results', () => {
-				const player = spawn('player', build(entity, { position: { x: 20, y: 20 }, player: true }))
-				const bossEnemy = spawn('enemy-1', build(entity, { position: { x: 0, y: 0 }, enemy: 'boss' }))
-				const minionEnemy = spawn('enemy-2', build(entity, { position: { x: 0, y: 0 }, enemy: 'minion' }))
+				const player = spawn('player', { position: { x: 20, y: 20 }, player: true })
+				const bossEnemy = spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' })
+				const minionEnemy = spawn('enemy-2', { position: { x: 0, y: 0 }, enemy: 'minion' })
 
 				const farAwayEntities = createQuery({
 					id: 'far-way-entities',
@@ -186,7 +185,7 @@ describe('querying', () => {
 
 			describe('when deep property is updated', () => {
 				it('should NOT update query results', () => {
-					const player = spawn('player', build(entity, { position: { x: 20, y: 20 }, player: true }))
+					const player = spawn('player', { position: { x: 20, y: 20 }, player: true })
 
 					const farAwayEntities = createQuery({
 						id: 'far-way-entities',
