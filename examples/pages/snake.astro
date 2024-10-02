@@ -120,8 +120,9 @@ const move = createSystem<Entity>({
 		for (const item of select(allHeads)) {
 			const { direction, velocity2D, head } = item
 
-			switch (direction.dir) {
+			switch (direction) {
 				case DirectionType.Up:
+
 					head.position.y -= velocity2D.y
 					break
 				case DirectionType.Down:
@@ -341,28 +342,29 @@ const home = createScene({
 })
 
 document.addEventListener('keydown', (event) => {
-	for (const head of home.world.select(allHeads)) {
+	const { select, update } = home.world
+	for (const head of select(allHeads)) {
 		const { direction } = head
-		const { dir } = direction
 		switch (event.key) {
 			case 'ArrowUp':
-				if (dir !== DirectionType.Down) {
-					direction.dir = DirectionType.Up
+
+				if (direction !== DirectionType.Down) {
+					update(head, 'direction', DirectionType.Up)
 				}
 				break
 			case 'ArrowDown':
-				if (dir !== DirectionType.Up) {
-					direction.dir = DirectionType.Down
+				if (direction !== DirectionType.Up) {
+					update(head, 'direction', DirectionType.Down)
 				}
 				break
 			case 'ArrowLeft':
-				if (dir !== DirectionType.Right) {
-					direction.dir = DirectionType.Left
+				if (direction !== DirectionType.Right) {
+					update(head, 'direction', DirectionType.Left)
 				}
 				break
 			case 'ArrowRight':
-				if (dir !== DirectionType.Left) {
-					direction.dir = DirectionType.Right
+				if (direction !== DirectionType.Left) {
+					update(head, 'direction', DirectionType.Right)
 				}
 				break
 		}

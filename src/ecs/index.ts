@@ -1,5 +1,5 @@
-export { defineComponent, type InferEntity, spawn } from './entity'
+export { defineComponent, type InferEntity } from './entity'
 export * from './query'
 export * from './resource'
 export * from './system'
-export { createEntityBox, createWorld, type World } from './world'
+export { createWorld, type World } from './world'

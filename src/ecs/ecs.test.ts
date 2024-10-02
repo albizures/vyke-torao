@@ -85,7 +85,7 @@ describe('querying', () => {
 				position: { x: number, y: number }
 				player: true
 			}>(entity)
-			expect(entity.position).toEqual({ x: 20, y: 20 })
+			expect(entity.position).toEqual({ x: 0, y: 20 })
 			expect(entity.player).toBe(true)
 		}
 

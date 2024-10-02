@@ -1,7 +1,13 @@
+import type { Simplify } from 'type-fest'
 import type { Entity } from './entity'
 import { createRefBox, type RefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
 import { type AnyQuery, defineQuery, type Query, type QueryArgs } from './query'
+
+type QueryEntity<
+	TEntity extends Entity,
+	TSelect extends keyof TEntity,
+> = Simplify<Required<Pick<TEntity, TSelect>>>
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
 
@@ -23,9 +29,7 @@ export type AnyWorld = {
 }
 
 export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
-export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(
-	query: Query<TExpectedEntity>
-) => RefBox<TExpectedEntity>
+export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
 export type World<
 	TEntity extends Entity,
 > = {
@@ -37,7 +41,7 @@ export type World<
 	entities: RefBox<TEntity>
 	update: <TComponent extends keyof TEntity>(...args: UpdateArgs<TEntity, TComponent>) => void
 	remove: (entity: TEntity, component: keyof TEntity) => void
-	createQuery: <TExpectedEntity extends TEntity>(args: QueryArgs<TExpectedEntity>) => Query<TExpectedEntity>
+	createQuery: <TSelect extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TSelect>>) => Query<QueryEntity<TEntity, TSelect>>
 }
 
 export function createWorld<TEntity extends Entity>(): World<TEntity> {
@@ -161,7 +165,7 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		else {
 			const component = valuesOrComponent
 
-			if (value) {
+			if (value !== undefined) {
 				entity[component] = value
 				addComponent(entity, component)
 			}
@@ -192,10 +196,10 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		compute(worldQuery)
 	}
 
-	function createQuery<TExpectedEntity extends TEntity>(args: QueryArgs<TExpectedEntity>): Query<TExpectedEntity> {
+	function createQuery<TSelect extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TSelect>>): Query<QueryEntity<TEntity, TSelect>> {
 		const query = defineQuery(args)
 
-		registerQuery(query)
+		registerQuery(query as unknown as Query<TEntity>)
 
 		return query
 	}
@@ -206,7 +210,7 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		}
 
 		const result = queries.get(query as AnyQuery) || createRefBox()
-		return result as unknown as RefBox<TExpectedEntity>
+		return result as unknown as RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
 	}
 
 	const world: World<TEntity> = {

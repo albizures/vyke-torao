@@ -16,7 +16,7 @@
 </html>
 
 <script>
-import { AtlasType, createTexture, createWorld, defineComponent, type InferEntity, spawn } from '../../src'
+import { AtlasType, createTexture, createWorld, defineComponent, type InferEntity } from '../../src'
 import { Transform2D, Velocity2D } from '../../src/components'
 import { createGame, start } from '../../src/game'
 import { Camera2D, createCamera2d } from '../../src/prefabs'
@@ -53,6 +53,7 @@ const home = createScene({
 		renderer2d,
 	],
 	startup(context) {
+		const { spawn } = context
 		const size = 30
 		assets.square.loader.onLoad((context) => {
 			const { canvas } = context
@@ -77,23 +78,23 @@ const home = createScene({
 			asset: assets.square,
 		})
 
-		spawn('square', entity, {
+		spawn('square', {
 			square: true,
-			transform2D: {
+			transform2D: entity.transform2D({
 				position: { x: 10, y: 10 },
-			},
+			}),
 			texture2D: squareTexture,
-		}, context)
+		})
 
-		spawn('coin', entity, {
+		spawn('coin', {
 			square: true,
-			transform2D: {
+			transform2D: entity.transform2D({
 				position: { x: 50, y: 10 },
-			},
+			}),
 			texture2D: textures.coin,
-		}, context)
+		})
 
-		spawn('camera', entity, createCamera2d(), context)
+		spawn('camera', createCamera2d())
 	},
 })
 
