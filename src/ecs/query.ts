@@ -1,33 +1,31 @@
-import type { Entity } from './entity'
+import type { AnyComponent, InferWithComponents } from './entity'
 import { set } from '../types'
 
-type WhereFn<TEntity extends Entity> = (values: TEntity) => boolean
+export type AnyComponents = Array<AnyComponent>
 
-export type AnyQuery = Query<Entity>
+type WhereFn<TComponents extends AnyComponents> = (values: InferWithComponents<TComponents>) => boolean
 
-export type QueryArgs<TEntity extends Entity> = {
+export type AnyQuery = Query<AnyComponents>
+
+export type QueryArgs<TComponents extends AnyComponents> = {
 	id: string
-	with: Array<keyof TEntity>
-	without?: Array<keyof TEntity>
-	where?: WhereFn<TEntity>
+	with: TComponents
+	without?: Array<AnyComponent>
+	where?: WhereFn<TComponents>
 }
 
-export type Query<TEntity extends Entity> = {
+export type Query<TComponents extends AnyComponents> = {
 	id: string
-	with: Set<keyof TEntity>
-	without: Set<keyof TEntity>
-	where?: WhereFn<TEntity> | undefined
+	with: Set<TComponents[number]>
+	without: Set<AnyComponent>
+	where?: WhereFn<TComponents> | undefined
 }
 
-export type InferQueryValues<TQuery extends AnyQuery> = TQuery extends Query<infer TValues>
-	? TValues
-	: never
-
-export function defineQuery<TEntity extends Entity>(args: QueryArgs<TEntity>): Query<TEntity> {
+export function defineQuery<TComponents extends Array<AnyComponent>>(args: QueryArgs<[...TComponents]>): Query<[...TComponents]> {
 	const { id, where } = args
 	const withComponents = set(args.with)
 	const withoutComponents = set(args.without || [])
-	const query: Query<TEntity> = {
+	const query: Query<TComponents> = {
 		id,
 		with: withComponents,
 		without: withoutComponents,

@@ -29,7 +29,7 @@
 <script>
 import type { Vec2D } from '../../src/vec'
 import { AtlasType, createTexture, createWorld, enterExit, type InferWithComponent } from '../../src'
-import { Velocity2D } from '../../src/components'
+import { Transform2D, Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { canvas2d } from '../../src/plugins/canvas2d'
@@ -53,6 +53,8 @@ type TailArgs = {
 const Tail = defineComponent('tail', (args: TailArgs) => ({
 	...args,
 }))
+
+// type A = InferWithComponents<[typeof Grid, typeof Head]>
 
 const entity = {
 	...canvas2d.entity,
@@ -93,23 +95,26 @@ const { game, createScene } = createGame({
 const allHeads = createQuery({
 	id: 'all-heads',
 	with: [
-		'head',
-		'transform2D',
-		'borderBehavior',
-		'prevPosition',
-		'velocity2D',
-		'direction',
+		Head,
+		Transform2D,
+		BorderBehavior,
+		PrevPosition,
+		Velocity2D,
+		Direction,
 	],
 })
 
 const allTails = createQuery({
 	id: 'all-tails',
-	with: ['tail', 'transform2D', 'prevPosition'],
+	with: [Tail, Transform2D, PrevPosition],
 })
 
 const allGrids = createQuery({
 	id: 'all-grids',
-	with: ['grid', 'transform2D'],
+	with: [
+		Grid,
+		Transform2D,
+	],
 })
 
 const move = createSystem<Entity>({

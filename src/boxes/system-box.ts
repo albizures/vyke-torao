@@ -1,10 +1,10 @@
-import type { Entity } from '../ecs/entity'
+import type { AnyEntity } from '../ecs/entity'
 import { type System, SystemType } from '../ecs'
 import { set } from '../types'
 
-type SystemIterator<TEntity extends Entity> = Iterable<System<TEntity>>
+type SystemIterator<TEntity extends AnyEntity> = Iterable<System<TEntity>>
 
-export type SystemBox<TEntity extends Entity> = {
+export type SystemBox<TEntity extends AnyEntity> = {
 	all: SystemIterator<TEntity>
 	fixedUpdate: SystemIterator<TEntity>
 	update: SystemIterator<TEntity>
@@ -17,7 +17,7 @@ export type SystemBox<TEntity extends Entity> = {
 	size: () => number
 }
 
-export function createSystemBox<TEntity extends Entity>(): SystemBox<TEntity> {
+export function createSystemBox<TEntity extends AnyEntity>(): SystemBox<TEntity> {
 	const allSystems = set<System<TEntity>>()
 	const byType = {
 		[SystemType.EnterScene]: set<System<TEntity>>(),

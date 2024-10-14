@@ -27,12 +27,12 @@ const { spawn, despawn, reset, update, select, createQuery } = world
 
 const allPlayers = createQuery({
 	id: 'query-test',
-	with: ['position', 'player'],
+	with: [Position, Player],
 })
 
 const allEnemies = createQuery({
 	id: 'query-test',
-	with: ['position', 'enemy'],
+	with: [Position, Enemy],
 })
 
 beforeEach(() => {
@@ -135,7 +135,7 @@ describe('querying', () => {
 
 			const onlyBosses = createQuery({
 				id: 'only-bosses',
-				with: ['enemy'],
+				with: [Enemy],
 				where: (values) => values.enemy === 'boss',
 			})
 
@@ -154,13 +154,13 @@ describe('querying', () => {
 
 				const farAwayEntities = createQuery({
 					id: 'far-way-entities',
-					with: ['position'],
+					with: [Position],
 					where: (values) => values.position.x > 10,
 				})
 
 				const onlyBosses = createQuery({
 					id: 'only-bosses',
-					with: ['enemy'],
+					with: [Enemy],
 					where: (values) => values.enemy === 'boss',
 				})
 
@@ -189,7 +189,7 @@ describe('querying', () => {
 
 					const farAwayEntities = createQuery({
 						id: 'far-way-entities',
-						with: ['position'],
+						with: [Position],
 						where: (values) => values.position.x > 10,
 					})
 

@@ -1,6 +1,9 @@
-import type { Simplify } from 'type-fest'
+import type { Merge, Simplify } from 'type-fest'
+import { map, set } from '../types'
 
-export type Entity = Record<any, any>
+export type ComponentId = string | number | symbol
+
+export type AnyEntity = Record<ComponentId, any>
 
 function identity<TValue>(value: TValue): TValue {
 	return value
@@ -8,17 +11,41 @@ function identity<TValue>(value: TValue): TValue {
 
 type Creator<TValue, TArgs> = (args: TArgs) => TValue
 
-export type Component<TName extends string | number | symbol, TValue, TArgs> = {
+export type Component<TName extends ComponentId, TValue, TArgs> = {
 	[K in TName]: Creator<TValue, TArgs>
 }
 
-export function defineComponent<TName extends string | number | symbol, TValue, TArgs = TValue>(
+export type AnyComponent = Component<ComponentId, any, any>
+
+const allComponents = set<ComponentId>()
+const components = map<AnyComponent, ComponentId>()
+
+export function defineComponent<TName extends ComponentId, TValue, TArgs = TValue>(
 	name: TName,
 	creator: Creator<TValue, TArgs> = identity as Creator<TValue, TArgs>,
 ): Component<TName, TValue, TArgs> {
-	return {
+	if (allComponents.has(name)) {
+		throw new Error(`Component ${String(name)} already exists`)
+	}
+
+	const component = {
 		[name]: creator,
 	} as Component<TName, TValue, TArgs>
+	components.set(
+		component,
+		name,
+	)
+	return component
+}
+
+export function getComponentId(component: AnyComponent): ComponentId | undefined {
+	return components.get(component)
+}
+
+export function hasComponent(entity: AnyEntity, component: AnyComponent): boolean {
+	const name = components.get(component)!
+
+	return name in entity
 }
 
 export type InferEntity<TCreator> = Simplify<{
@@ -30,3 +57,8 @@ export type InferEntity<TCreator> = Simplify<{
 export type InferWithComponent<TComponent> = TComponent extends Component<infer TName, infer TValue, any>
 	? { [K in TName]: TValue }
 	: never
+
+export type InferWithComponents<TComponents> = TComponents extends [infer TComponent, ...infer TRest]
+	? Merge<InferWithComponent<TComponent>, InferWithComponents<TRest>>
+	// eslint-disable-next-line ts/no-empty-object-type
+	: {}

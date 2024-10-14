@@ -1,5 +1,5 @@
 import type { SystemContext } from './ecs'
-import type { Entity } from './ecs/entity'
+import type { AnyEntity } from './ecs/entity'
 import { describe, expect, it, vi } from 'vitest'
 import { Canvas } from './canvas'
 import { createWorld } from './ecs/world'
@@ -7,7 +7,7 @@ import { createGame, start } from './game'
 import { createStepRunner } from './loop'
 import { noop } from './types'
 
-type MyEntity = Entity
+type MyEntity = AnyEntity
 
 const world = createWorld<MyEntity>()
 

@@ -1,9 +1,10 @@
-import type { Component, Entity, InferEntity } from '../ecs/entity'
+import type { Component, InferEntity } from '../ecs/entity'
 import type { ScenePlugin } from '../game'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
 import { Transform2D, type Transform2DComponent } from '../components'
 import {
+	type AnyComponents,
 	createResource,
 	createSystem,
 	defineComponent,
@@ -55,9 +56,9 @@ function createTexture2D(texture: AnyTexture): AnyTexture {
 	return texture
 }
 
-const render2dEntities: Query<Canvas2dEntity> = defineQuery({
+const render2dEntities: Query<[typeof Transform2D, typeof Texture2D]> = defineQuery({
 	id: 'with-transform-and-texture',
-	with: ['transform2D', 'texture2D'],
+	with: [Transform2D, Texture2D],
 })
 
 const render2dBeforeFrameSystem: System<Canvas2dEntity> = createSystem({
@@ -161,7 +162,7 @@ const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
 	},
 })
 
-type Register = <TEntity extends Entity>(args: Query<TEntity>) => void
+type Register = <TComponents extends AnyComponents>(args: Query<TComponents>) => void
 
 export const canvas2d: { scene: ScenePlugin, entity: Canvas2dEntityCreator } = {
 	scene: {

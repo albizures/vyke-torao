@@ -13,9 +13,9 @@ const camera2dEntity: Camera2DCreator = {
 
 type Camera2DEntity = InferEntity<Camera2DCreator>
 
-export const camera2DQuery: Query<Camera2DEntity> = defineQuery({
+export const camera2DQuery: Query<[typeof Camera2D, typeof Transform2D]> = defineQuery({
 	id: 'camera-2d',
-	with: ['camera2D', 'transform2D'],
+	with: [Camera2D, Transform2D],
 })
 
 export function createCamera2d(transform2D: Partial<Transform2D> = {}): Required<Camera2DEntity> {

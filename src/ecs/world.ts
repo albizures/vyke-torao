@@ -1,47 +1,58 @@
-import type { Simplify } from 'type-fest'
-import type { Entity } from './entity'
+/* eslint-disabl e no-console */
 import { createRefBox, type RefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
-import { type AnyQuery, defineQuery, type Query, type QueryArgs } from './query'
-
-type QueryEntity<
-	TEntity extends Entity,
-	TSelect extends keyof TEntity,
-> = Simplify<Required<Pick<TEntity, TSelect>>>
+import { type AnyEntity, type ComponentId, getComponentId, hasComponent, type InferWithComponents } from './entity'
+import { type AnyComponents, defineQuery, type Query, type QueryArgs } from './query'
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
 
-type UpdateArgs<TEntity extends Entity, TComponent extends keyof TEntity> =
-	| [entity: TEntity, component: TComponent, value: TEntity[TComponent]]
+type UpdateArgs<TEntity extends AnyEntity, TComponentName extends keyof TEntity> =
+	| [entity: TEntity, componentName: TComponentName, value: TEntity[TComponentName]]
 	| [entity: TEntity, values: Partial<TEntity>]
 	| [entity: TEntity, updater: UpdateFn<TEntity>]
 
-export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
-export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
-export type Update<TEntity extends Entity> = <TComponent extends keyof TEntity>(...args: UpdateArgs<TEntity, TComponent>) => void
+export type Spawn<TEntity extends AnyEntity> = (id: string, values: TEntity) => TEntity
+
+export type Select = <
+	TComponents extends AnyComponents,
+>(query: Query<TComponents>) => RefBox<InferWithComponents<TComponents>>
+
+export type Update<TEntity extends AnyEntity> = <
+	TComponent extends keyof TEntity,
+>(...args: UpdateArgs<TEntity, TComponent>) => void
+
+export type RegisterQuery = <
+	TComponents extends AnyComponents,
+>(args: Query<TComponents>) => void
+
+export type CreateQuery = <
+	TComponents extends AnyComponents,
+	// spread operator allows to infer TComponents as a tuple
+>(args: QueryArgs<[...TComponents]>) => Query<[...TComponents]>
+
 export type World<
-	TEntity extends Entity,
+	TEntity extends AnyEntity,
 > = {
 	spawn: Spawn<TEntity>
 	despawn: (entity: TEntity) => void
-	registerQuery: <TExpectedEntity extends TEntity>(args: Query<TExpectedEntity>) => void
-	select: Select<TEntity>
+	registerQuery: RegisterQuery
+	select: Select
 	reset: () => void
 	entities: RefBox<TEntity>
 	update: Update<TEntity>
-	remove: (entity: TEntity, component: keyof TEntity) => void
-	createQuery: <TSelect extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TSelect>>) => Query<QueryEntity<TEntity, TSelect>>
+	remove: (entity: TEntity, componentName: keyof TEntity) => void
+	createQuery: CreateQuery
 }
 
-export function createWorld<TEntity extends Entity>(): World<TEntity> {
-	type TComponent = keyof TEntity
-	type TQuery = Query<TEntity>
+export function createWorld<TEntity extends AnyEntity>(): World<TEntity> {
+	type TComponentName = ComponentId
+	type TQuery = Query<AnyComponents>
 	const entities = createRefBox<TEntity>()
-	const components = map<TComponent, Set<TQuery>>()
+	const components = map<TComponentName, Set<TQuery>>()
 	const queries = map<TQuery, RefBox<TEntity>>()
 
-	function addComponent(entity: TEntity, component: TComponent) {
-		const queries = getQueries(component)
+	function addComponent(entity: TEntity, componentName: TComponentName) {
+		const queries = getQueries(componentName)
 
 		for (const query of queries) {
 			processEntity(entity, query)
@@ -50,6 +61,7 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 
 	function processEntity(entity: TEntity, query: TQuery) {
 		const queryEntity = queries.get(query)!
+
 		if (match(entity, query)) {
 			const id = entities.getId(entity)
 			if (id === undefined) {
@@ -72,13 +84,13 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		queryEntity.remove(entity)
 	}
 
-	function removeComponent(entity: TEntity, component: TComponent) {
+	function removeComponent(entity: TEntity, component: TComponentName) {
 		for (const query of components.get(component) || []) {
 			removeEntity(entity, query)
 		}
 	}
 
-	function getQueries(component: TComponent) {
+	function getQueries(component: TComponentName) {
 		if (!components.has(component)) {
 			components.set(component, set())
 		}
@@ -86,14 +98,15 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		return components.get(component)!
 	}
 
-	function compute(query: Query<Required<TEntity>>) {
-		const entitiesEntities = queries.get(query as AnyQuery)!
+	function compute<TComponents extends AnyComponents>(query: Query<TComponents>) {
+		const queryEntities = queries.get(query)!
+
 		for (const [id, entity] of entities.byId) {
 			if (match(entity, query)) {
-				entitiesEntities.add(id, entity)
+				queryEntities.add(id, entity)
 			}
 			else {
-				entitiesEntities.remove(entity)
+				queryEntities.remove(entity)
 			}
 		}
 	}
@@ -128,12 +141,12 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		}
 	}
 
-	function update<TUpdated extends TComponent>(...args: UpdateArgs<TEntity, TUpdated>): void {
-		const [entity, valuesOrComponent, value] = args
+	function update<TUpdated extends TComponentName>(...args: UpdateArgs<TEntity, TUpdated>): void {
+		const [entity, valuesOrName, value] = args
 
-		if (typeof valuesOrComponent === 'object') {
-			for (const component in valuesOrComponent) {
-				const value = valuesOrComponent[component]
+		if (typeof valuesOrName === 'object') {
+			for (const component in valuesOrName) {
+				const value = valuesOrName[component]
 				if (value === undefined) {
 					remove(entity, component)
 				}
@@ -142,8 +155,8 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 				}
 			}
 		}
-		else if (typeof valuesOrComponent === 'function') {
-			const values = valuesOrComponent({
+		else if (typeof valuesOrName === 'function') {
+			const values = valuesOrName({
 				...entity,
 			})
 
@@ -152,7 +165,7 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 			}
 		}
 		else {
-			const component = valuesOrComponent
+			const component = valuesOrName
 
 			if (value !== undefined) {
 				entity[component] = value
@@ -161,12 +174,14 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		}
 	}
 
-	function remove(entity: TEntity, component: TComponent) {
-		const previousValue = entity[component]
-		delete entity[component]
+	function remove(entity: TEntity, componentName: TComponentName) {
+		if (componentName) {
+			const previousValue = entity[componentName]
+			delete entity[componentName]
 
-		if (previousValue !== undefined) {
-			removeComponent(entity, component)
+			if (previousValue !== undefined) {
+				removeComponent(entity, componentName)
+			}
 		}
 	}
 
@@ -174,32 +189,36 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 		entities.clear()
 	}
 
-	function registerQuery<TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) {
-		const worldQuery = query as TQuery
+	function registerQuery<TComponents extends AnyComponents>(query: Query<TComponents>) {
 		for (const component of [...query.with, ...query.without]) {
-			const queries = getQueries(component)
-			queries.add(worldQuery)
+			const id = getComponentId(component)
+
+			if (id) {
+				const queries = getQueries(id)
+				queries.add(query)
+			}
 		}
 
-		queries.set(worldQuery, createRefBox())
-		compute(worldQuery)
+		queries.set(query, createRefBox())
+		compute(query)
 	}
 
-	function createQuery<TSelect extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TSelect>>): Query<QueryEntity<TEntity, TSelect>> {
+	function createQuery<TComponents extends AnyComponents>(args: QueryArgs<[...TComponents]>): Query<[...TComponents]> {
 		const query = defineQuery(args)
 
-		registerQuery(query as unknown as Query<TEntity>)
+		registerQuery(query)
 
 		return query
 	}
 
-	function select<TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) {
-		if (!queries.has(query as AnyQuery)) {
+	function select<TComponents extends AnyComponents>(query: Query<TComponents>) {
+		if (!queries.has(query)) {
 			registerQuery(query)
 		}
 
-		const result = queries.get(query as AnyQuery) || createRefBox()
-		return result as unknown as RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
+		const result = queries.get(query) || createRefBox()
+
+		return result as unknown as RefBox<InferWithComponents<TComponents>>
 	}
 
 	const world: World<TEntity> = {
@@ -217,19 +236,19 @@ export function createWorld<TEntity extends Entity>(): World<TEntity> {
 	return world
 }
 
-function match<TEntity extends Entity>(entity: TEntity, query: Query<Required<TEntity>>) {
+function match(entity: AnyEntity, query: Query<AnyComponents>) {
 	const { with: withComponents, without: withoutComponents, where } = query
 	for (const component of withComponents) {
-		if (!(component in entity)) {
+		if (!(hasComponent(entity, component))) {
 			return false
 		}
 	}
 
 	for (const component of withoutComponents) {
-		if (component in entity) {
+		if (hasComponent(entity, component)) {
 			return false
 		}
 	}
 
-	return !where || where(entity as Required<TEntity>)
+	return !where || where(entity)
 }

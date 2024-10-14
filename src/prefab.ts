@@ -1,8 +1,8 @@
-import type { Entity } from './ecs/entity'
+import type { AnyEntity } from './ecs/entity'
 
 export type Prefab<TArgs> = {
 	id: string
-	create: (args: TArgs) => Entity
+	create: (args: TArgs) => AnyEntity
 }
 
 export function createPrefab<TArgs>(args: Prefab<TArgs>): Prefab<TArgs> {
