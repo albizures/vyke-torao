@@ -1,5 +1,5 @@
 import type { Entity } from './entity'
-import type { Select, Spawn } from './world'
+import type { Select, Spawn, Update } from './world'
 
 /**
  * A system is a function that updates the state of the game.
@@ -24,6 +24,7 @@ export type SystemContext<TEntity extends Entity> = Readonly<{
 	spawn: Spawn<TEntity>
 	select: Select<TEntity>
 	getEntity: (id: string) => TEntity | undefined
+	update: Update<TEntity>
 }>
 
 type SystemFn<TEntity extends Entity> = (context: SystemContext<TEntity>) => void

@@ -1,19 +1,31 @@
-import type { Entity } from '../ecs/entity'
+import type { Component, Entity, InferEntity } from '../ecs/entity'
 import type { ScenePlugin } from '../game'
-import { createSystem, defineQuery, type Query, type System, type SystemContext, SystemType } from '../ecs'
+import { createSystem, defineComponent, defineQuery, type Query, type System, type SystemContext, SystemType } from '../ecs'
+
+const enterExitKey: unique symbol = Symbol('enter-exit:data')
+type EnterExitKey = typeof enterExitKey
+type EnterExitComponent = Component<EnterExitKey, unknown, unknown>
+const enterExitEntity: EnterExitComponent = defineComponent<EnterExitKey, unknown>(enterExitKey)
+
+export type EnterExitEntity = InferEntity<EnterExitComponent>
 
 type EnterExitArgs<TEntity extends Entity, TValue> = {
-	component: keyof TEntity
 	enter: (context: SystemContext<TEntity>) => TValue
-	exit: (value: TValue) => void
+	exit?: (value: TValue) => void
 }
 
-export function createEnterExit<TEntity extends Entity, TValue>(args: EnterExitArgs<TEntity, TValue>): ScenePlugin {
-	const { enter, exit, component } = args
+function anyExit(value: unknown): void {
+	if (typeof value === 'function') {
+		value()
+	}
+}
 
-	const allEnterExits: Query<TEntity> = defineQuery({
+function createEnterExit<TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TEntity, TValue>): ScenePlugin {
+	const { enter, exit = anyExit } = args
+
+	const allEnterExits: Query<EnterExitEntity> = defineQuery({
 		id: 'enter-exit',
-		with: [component],
+		with: [enterExitKey],
 	})
 
 	const enterSystem: System<TEntity> = createSystem({
@@ -24,7 +36,7 @@ export function createEnterExit<TEntity extends Entity, TValue>(args: EnterExitA
 
 			const value = enter(context)
 			const entity = {
-				[component]: value,
+				[enterExitKey]: value,
 			} as TEntity
 
 			spawn('enter-exit', entity)
@@ -38,7 +50,7 @@ export function createEnterExit<TEntity extends Entity, TValue>(args: EnterExitA
 			const value = select(allEnterExits).first()
 
 			if (value) {
-				exit(value[component])
+				exit(value[enterExitKey] as TValue)
 			}
 		},
 	})
@@ -50,4 +62,9 @@ export function createEnterExit<TEntity extends Entity, TValue>(args: EnterExitA
 		},
 		systems: [enterSystem, exitSystem],
 	}
+}
+
+export const enterExit = {
+	create: createEnterExit,
+	entity: enterExitEntity,
 }

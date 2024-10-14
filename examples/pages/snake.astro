@@ -28,7 +28,7 @@
 
 <script>
 import type { Vec2D } from '../../src/vec'
-import { AtlasType, createTexture, createWorld } from '../../src'
+import { AtlasType, createTexture, createWorld, enterExit, type InferWithComponent } from '../../src'
 import { Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
@@ -42,6 +42,8 @@ const Head = defineComponent('head', (position: Vec2D) => ({ position }))
 const Direction = defineComponent('direction', (dir: DirectionType) => dir)
 const PrevPosition = defineComponent('prevPosition', (position: Vec2D) => position)
 
+type WithDirection = InferWithComponent<typeof Direction>
+
 type TailArgs = {
 	position: Vec2D
 	direction: DirectionType
@@ -54,6 +56,7 @@ const Tail = defineComponent('tail', (args: TailArgs) => ({
 
 const entity = {
 	...canvas2d.entity,
+	...enterExit.entity,
 	...BorderBehavior,
 	...Grid,
 	...Head,
@@ -229,6 +232,28 @@ const followSystem = createSystem<Entity>({
 	},
 })
 
+const enterExitScenePlugin = enterExit.create<Entity, () => void>({
+	enter: (context) => {
+		function onKeyDown(event: KeyboardEvent) {
+			const { select, update } = context
+
+			for (const head of select(allHeads)) {
+				const { direction } = head
+				const newDirection = getNewDirection(head, event.key)
+				if (newDirection !== direction) {
+					update(head, 'direction', newDirection)
+				}
+			}
+		}
+
+		document.addEventListener('keydown', onKeyDown)
+
+		return () => {
+			document.removeEventListener('keydown', onKeyDown)
+		}
+	},
+})
+
 const home = createScene({
 	id: 'home',
 	world,
@@ -240,6 +265,7 @@ const home = createScene({
 	],
 	plugins: [
 		canvas2d.scene,
+		enterExitScenePlugin,
 	],
 	startup(context) {
 		const { spawn } = context
@@ -339,35 +365,34 @@ const home = createScene({
 	},
 })
 
-document.addEventListener('keydown', (event) => {
-	const { select, update } = home.world
-	for (const head of select(allHeads)) {
-		const { direction } = head
-		switch (event.key) {
-			case 'ArrowUp':
+function getNewDirection(entity: WithDirection, keydown: string): DirectionType {
+	const { direction } = entity
+	switch (keydown) {
+		case 'ArrowUp':
 
-				if (direction !== DirectionType.Down) {
-					update(head, 'direction', DirectionType.Up)
-				}
-				break
-			case 'ArrowDown':
-				if (direction !== DirectionType.Up) {
-					update(head, 'direction', DirectionType.Down)
-				}
-				break
-			case 'ArrowLeft':
-				if (direction !== DirectionType.Right) {
-					update(head, 'direction', DirectionType.Left)
-				}
-				break
-			case 'ArrowRight':
-				if (direction !== DirectionType.Left) {
-					update(head, 'direction', DirectionType.Right)
-				}
-				break
-		}
+			if (direction !== DirectionType.Down) {
+				return DirectionType.Up
+			}
+			break
+		case 'ArrowDown':
+			if (direction !== DirectionType.Up) {
+				return DirectionType.Down
+			}
+			break
+		case 'ArrowLeft':
+			if (direction !== DirectionType.Right) {
+				return DirectionType.Left
+			}
+			break
+		case 'ArrowRight':
+			if (direction !== DirectionType.Left) {
+				return DirectionType.Right
+			}
+			break
 	}
-})
+
+	return direction
+}
 
 start(game, home)
 </script>

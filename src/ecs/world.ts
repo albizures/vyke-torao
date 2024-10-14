@@ -18,6 +18,7 @@ type UpdateArgs<TEntity extends Entity, TComponent extends keyof TEntity> =
 
 export type Spawn<TEntity extends Entity> = (id: string, values: TEntity) => TEntity
 export type Select<TEntity extends Entity> = <TExpectedEntity extends TEntity>(query: Query<TExpectedEntity>) => RefBox<QueryEntity<TEntity, keyof TExpectedEntity>>
+export type Update<TEntity extends Entity> = <TComponent extends keyof TEntity>(...args: UpdateArgs<TEntity, TComponent>) => void
 export type World<
 	TEntity extends Entity,
 > = {
@@ -27,7 +28,7 @@ export type World<
 	select: Select<TEntity>
 	reset: () => void
 	entities: RefBox<TEntity>
-	update: <TComponent extends keyof TEntity>(...args: UpdateArgs<TEntity, TComponent>) => void
+	update: Update<TEntity>
 	remove: (entity: TEntity, component: keyof TEntity) => void
 	createQuery: <TSelect extends keyof TEntity>(args: QueryArgs<QueryEntity<TEntity, TSelect>>) => Query<QueryEntity<TEntity, TSelect>>
 }

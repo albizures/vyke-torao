@@ -151,6 +151,7 @@ async function startScene<
 		spawn: scene.world.spawn,
 		select: scene.world.select,
 		getEntity: scene.world.entities.getById,
+		update: scene.world.update,
 	}
 
 	for (const system of systems.enterScene) {

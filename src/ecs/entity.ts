@@ -8,11 +8,11 @@ function identity<TValue>(value: TValue): TValue {
 
 type Creator<TValue, TArgs> = (args: TArgs) => TValue
 
-export type Component<TName extends string, TValue, TArgs> = {
+export type Component<TName extends string | number | symbol, TValue, TArgs> = {
 	[K in TName]: Creator<TValue, TArgs>
 }
 
-export function defineComponent<TName extends string, TValue, TArgs = TValue>(
+export function defineComponent<TName extends string | number | symbol, TValue, TArgs = TValue>(
 	name: TName,
 	creator: Creator<TValue, TArgs> = identity as Creator<TValue, TArgs>,
 ): Component<TName, TValue, TArgs> {
@@ -26,3 +26,7 @@ export type InferEntity<TCreator> = Simplify<{
 		? TValue
 		: never
 }>
+
+export type InferWithComponent<TComponent> = TComponent extends Component<infer TName, infer TValue, any>
+	? { [K in TName]: TValue }
+	: never

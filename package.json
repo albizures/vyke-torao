@@ -50,9 +50,9 @@
 			"import": "./dist/queries/index.mjs",
 			"require": "./dist/queries/index.cjs"
 		},
-		"./renderers/renderer2d": {
-			"import": "./dist/renderers/renderer2d.mjs",
-			"require": "./dist/renderers/renderer2d.cjs"
+		"./plugins/canvas2d": {
+			"import": "./dist/plugins/canvas2d.mjs",
+			"require": "./dist/plugins/canvas2d.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",
