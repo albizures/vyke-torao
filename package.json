@@ -53,6 +53,10 @@
 		"./plugins/canvas2d": {
 			"import": "./dist/plugins/canvas2d.mjs",
 			"require": "./dist/plugins/canvas2d.cjs"
+		},
+		"./plugins/enter-exit": {
+			"import": "./dist/plugins/enter-exit.mjs",
+			"require": "./dist/plugins/enter-exit.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

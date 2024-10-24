@@ -64,7 +64,12 @@ function createEnterExit<TEntity extends EnterExitEntity, TValue>(args: EnterExi
 	}
 }
 
-export const enterExit = {
+type EnterExitPlugin = {
+	create: <TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TEntity, TValue>) => ScenePlugin
+	entity: EnterExitComponent
+}
+
+export const enterExit: EnterExitPlugin = {
 	create: createEnterExit,
 	entity: enterExitEntity,
 }

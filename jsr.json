@@ -11,7 +11,8 @@
 		"./prefabs": "./src/prefabs/index.ts",
 		"./systems": "./src/systems/index.ts",
 		"./queries": "./src/queries/index.ts",
-		"./plugins/canvas2d": "./src/plugins/canvas2d.ts"
+		"./plugins/canvas2d": "./src/plugins/canvas2d.ts",
+		"./plugins/enter-exit": "./src/plugins/enter-exit.ts"
 	},
 	"license": "MIT"
 }
