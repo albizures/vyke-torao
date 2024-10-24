@@ -1,7 +1,6 @@
 {
 	"name": "@vyke/torao",
 	"version": "0.0.1",
-	"license": "MIT",
 	"exports": {
 		".": "./src/index.ts",
 		"./texture": "./src/texture.ts",
@@ -13,5 +12,6 @@
 		"./systems": "./src/systems/index.ts",
 		"./queries": "./src/queries/index.ts",
 		"./plugins/canvas2d": "./src/plugins/canvas2d.ts"
-	}
+	},
+	"license": "MIT"
 }
