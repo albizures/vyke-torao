@@ -11,17 +11,8 @@ npm i @vyke/torao
 ```
 
 ## API
-### Not
-Creates a query that requires a component not to be present on an entity.
-
-### createQuery
-Creates a query that can be used to filter entities based on their components.
-
 ### createResource
 Creates a resource that can be shared between systems.
-
-### createScene
-Creates a scene to be used in the game.
 
 ## Others vyke projects
 - [Flowmodoro app by vyke](https://github.com/albizures/vyke-flowmodoro)
