@@ -20,6 +20,16 @@ export type AnyComponent = Component<ComponentId, any, any>
 const allComponents = set<ComponentId>()
 const components = map<AnyComponent, ComponentId>()
 
+/**
+ * Define a new component.
+ * @example
+ * ```ts
+ * const Size = defineComponent('size', (value: number) => value)
+ * const Position = defineComponent('position', (pos: {x?: number, y?: number}) => {
+ * 	return {x: pos.x ?? 0, y: pos.y ?? 0}
+ * })
+ * ```
+ */
 export function defineComponent<TName extends ComponentId, TValue, TArgs = TValue>(
 	name: TName,
 	creator: Creator<TValue, TArgs> = identity as Creator<TValue, TArgs>,
