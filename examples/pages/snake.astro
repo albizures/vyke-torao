@@ -28,11 +28,12 @@
 
 <script>
 import type { Vec2D } from '../../src/vec'
-import { AtlasType, createTexture, createWorld, enterExit, type InferWithComponent } from '../../src'
+import { AtlasType, createTexture, createWorld, type InferWithComponent } from '../../src'
 import { Transform2D, Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
 import { createGame, start } from '../../src/game'
 import { canvas2d } from '../../src/plugins/canvas2d'
+import { enterExit } from '../../src/plugins/enter-exit'
 import { createCamera2d } from '../../src/prefabs'
 import { assets } from '../definitions'
 
