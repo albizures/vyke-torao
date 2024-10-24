@@ -8,12 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@vyke/results':
-        specifier: npm:@jsr/vyke__results@^0.4.3
-        version: '@jsr/vyke__results@0.4.3'
       '@vyke/sola':
-        specifier: npm:@jsr/vyke__sola@^0.0.7
-        version: '@jsr/vyke__sola@0.0.7'
+        specifier: ^0.0.7
+        version: 0.0.7
       type-fest:
         specifier: ^4.26.1
         version: 4.26.1
@@ -1429,6 +1426,9 @@ packages:
 
   '@vyke/sola@0.0.6':
     resolution: {integrity: sha512-1PEJ9JaXNSnaMHE8pxhMgyjOvSgHaWd9ZWtTFvupATT6C3IGnmQxv/1lKnH+L6VKooMoxFEdAZ4ACNfKBtm/Iw==}
+
+  '@vyke/sola@0.0.7':
+    resolution: {integrity: sha512-THKVVOv/qd1NIbLXT37nsLpL7l7g4AchCro8z16uTBW1HnskHMqrpAsvvw4/N2qHXc54ExnxOlnNlecwDPYX5A==}
 
   '@vyke/tsdocs@0.0.8':
     resolution: {integrity: sha512-aTn4bHu+dy5ZgQm3csYjpoJc1D2TnFnvHOEWeIAfE9qNcuw/tzLmkgDbegH6ZQlbzujmxkV+7J8wB6feQAxORw==}
@@ -6334,6 +6334,8 @@ snapshots:
   '@vyke/results@0.2.3': {}
 
   '@vyke/sola@0.0.6': {}
+
+  '@vyke/sola@0.0.7': {}
 
   '@vyke/tsdocs@0.0.8(typescript@5.5.3)':
     dependencies:

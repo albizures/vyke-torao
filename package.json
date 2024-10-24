@@ -87,8 +87,7 @@
 		"release": "run-s test build release:jsr-sync release:bump release:publish release:push-tags"
 	},
 	"dependencies": {
-		"@vyke/results": "npm:@jsr/vyke__results@^0.4.3",
-		"@vyke/sola": "npm:@jsr/vyke__sola@^0.0.7",
+		"@vyke/sola": "^0.0.7",
 		"type-fest": "^4.26.1"
 	},
 	"devDependencies": {
