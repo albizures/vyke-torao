@@ -13,3 +13,5 @@ export function map<TKeys, TValues>(entries?: Array<[TKeys, TValues]>): Map<TKey
 }
 
 export function noop() {}
+
+export type OptionalProps<TValue> = [TValue] extends [never] ? [] : [props: TValue]

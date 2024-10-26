@@ -1,10 +1,11 @@
-import { noop } from './types'
+import { noop } from '../types'
 
 export type LoopValues = {
 	deltaTime: number
 	fps: number
 }
-type LoopFns = {
+
+export type LoopFns = {
 	beforeFrame: (args: LoopValues) => void
 	afterFrame: (args: LoopValues) => void
 	fixedUpdate: (args: LoopValues) => void

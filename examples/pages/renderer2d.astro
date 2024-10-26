@@ -16,8 +16,7 @@
 </html>
 
 <script>
-import { AtlasType, createTexture, createWorld, defineComponent, type InferEntity } from '../../src'
-import { createGame, start } from '../../src/game'
+import { AtlasType, createDirector, createGame, createTexture, createWorld, createWorldScene, defineComponent, type InferEntity } from '../../src'
 import { canvas2d } from '../../src/plugins/canvas2d'
 import { createCamera2d } from '../../src/prefabs'
 import { assets, textures } from '../definitions'
@@ -34,21 +33,24 @@ const entity = {
 type Entity = InferEntity<typeof entity>
 
 const world = createWorld<Entity>()
+const director = createDirector<{
+	home: never
+}>()
 
-const { game, createScene } = createGame({
+const game = createGame({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
 	},
+	director,
 })
 
-const home = createScene({
-	id: 'home',
+const home = createWorldScene({
 	world,
 	plugins: [
 		canvas2d.scene,
 	],
-	startup(context) {
+	enter(context) {
 		const { spawn } = context
 		const size = 30
 		assets.square.loader.onLoad((context) => {
@@ -93,6 +95,7 @@ const home = createScene({
 		spawn('camera', createCamera2d())
 	},
 })
+director.setScene('home', home)
 
-start(game, home)
+game.start('home')
 </script>

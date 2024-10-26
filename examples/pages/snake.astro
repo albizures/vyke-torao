@@ -28,10 +28,9 @@
 
 <script>
 import type { Vec2D } from '../../src/vec'
-import { AtlasType, createTexture, createWorld, type InferWithComponent } from '../../src'
+import { AtlasType, createDirector, createGame, createTexture, createWorld, createWorldScene, type InferWithComponent } from '../../src'
 import { Transform2D, Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
-import { createGame, start } from '../../src/game'
 import { canvas2d } from '../../src/plugins/canvas2d'
 import { enterExit } from '../../src/plugins/enter-exit'
 import { createCamera2d } from '../../src/prefabs'
@@ -54,8 +53,6 @@ type TailArgs = {
 const Tail = defineComponent('tail', (args: TailArgs) => ({
 	...args,
 }))
-
-// type A = InferWithComponents<[typeof Grid, typeof Head]>
 
 const entity = {
 	...canvas2d.entity,
@@ -85,12 +82,16 @@ type Entity = InferEntity<typeof entity>
 
 const world = createWorld<Entity>()
 const { createQuery } = world
+const director = createDirector<{
+	home: never
+}>()
 
-const { game, createScene } = createGame({
+const game = createGame({
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
 	},
+	director,
 })
 
 const allHeads = createQuery({
@@ -260,9 +261,7 @@ const enterExitScenePlugin = enterExit.create<Entity, () => void>({
 	},
 })
 
-const home = createScene({
-	id: 'home',
-	world,
+const home = createWorldScene({
 	systems: [
 		move,
 		snapToGrid,
@@ -273,7 +272,8 @@ const home = createScene({
 		canvas2d.scene,
 		enterExitScenePlugin,
 	],
-	startup(context) {
+	world,
+	enter(context) {
 		const { spawn } = context
 		const strokeSize = 2
 		const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
@@ -371,6 +371,8 @@ const home = createScene({
 	},
 })
 
+director.setScene('home', home)
+
 function getNewDirection(entity: WithDirection, keydown: string): DirectionType {
 	const { direction } = entity
 	switch (keydown) {
@@ -400,5 +402,5 @@ function getNewDirection(entity: WithDirection, keydown: string): DirectionType 
 	return direction
 }
 
-start(game, home)
+game.start('home')
 </script>

@@ -1,5 +1,5 @@
 import type { AnyEntity, Component, InferEntity } from '../ecs/entity'
-import type { ScenePlugin } from '../game'
+import type { ScenePlugin } from '../engine/game'
 import { createSystem, defineComponent, defineQuery, type Query, type System, type SystemContext, SystemType } from '../ecs'
 
 const enterExitKey: unique symbol = Symbol('enter-exit:data')

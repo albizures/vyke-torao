@@ -1,5 +1,5 @@
 import type { Component, InferEntity } from '../ecs/entity'
-import type { ScenePlugin } from '../game'
+import type { ScenePlugin } from '../engine/game'
 import type { Vec2D } from '../vec'
 import { loadAsset } from '../assets'
 import { Transform2D, type Transform2DComponent } from '../components'
