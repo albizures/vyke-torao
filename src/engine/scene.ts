@@ -11,6 +11,7 @@ import { noop, type OptionalProps } from '../types'
  * A scene is a collection of entities and systems.
  */
 export type Scene<TProps = never> = {
+	id?: string
 	assets: Set<AnyAsset>
 	enter: (context: SceneContext<TProps>) => void
 	beforeExit: () => void

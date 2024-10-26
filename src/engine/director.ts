@@ -2,7 +2,7 @@ import type { Runner } from './loop'
 import type { Scene, SceneContext } from './scene'
 import { assert } from '../error'
 
-type Scenes = {
+export type Scenes = {
 	[key: string]: unknown
 }
 
@@ -29,6 +29,7 @@ export function createDirector<TScenes extends Scenes>(): Director<TScenes> {
 			TScene extends Scene<TScenes[TName]>,
 		>(name: TName, scene: TScene) => {
 			director.scenes[name] = scene
+			scene.id = String(name)
 		},
 
 		transitTo<TName extends keyof TScenes>(name: TName, props: TScenes[TName]) {
