@@ -1,4 +1,4 @@
-import type { Assets } from './game'
+import type { Assets } from './engine/game'
 import { type Asset, type AssetArgs, type AssetType, createAsset } from './assets'
 import { type AnyAtlas, type AtlasArgs, type AtlasType, createAtlas, createTexture, type Texture, type TextureArgs } from './texture'
 
