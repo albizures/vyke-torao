@@ -38,14 +38,6 @@ export function createGame<TDirector extends Director<any>>(
 ): Game<TDirector> {
 	const { canvas: maybeCanvas, director, runner = createRequestAnimationFrameRunner() } = args
 
-	setTimeout(() => {
-		assert(
-			Object.values(director.scenes).length > 0,
-			'No scenes added to the director',
-			'Did you forget to add scenes to the director?',
-		)
-	})
-
 	type TScenes = InferScenes<TDirector>
 
 	const canvas = is(maybeCanvas, Canvas) ? maybeCanvas : createCanvas(maybeCanvas)
@@ -55,6 +47,11 @@ export function createGame<TDirector extends Director<any>>(
 		runner,
 		...director,
 		start<TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) {
+			assert(
+				Object.values(director.scenes).length > 0,
+				'No scenes added to the director',
+				'Did you forget to add scenes to the director?',
+			)
 			const [props] = args
 			CanvasRes.set(canvas)
 			director.runner = runner

@@ -1,15 +1,10 @@
-import type { SystemContext } from './ecs'
-import type { AnyEntity } from './ecs/entity'
 import { describe, expect, it, vi } from 'vitest'
-import { Canvas } from './canvas'
-import { createWorld } from './ecs/world'
-import { createGame, start } from './game'
+import { Canvas } from '../canvas'
+import { noop } from '../types'
+import { createDirector } from './director'
+import { createGame } from './game'
 import { createStepRunner } from './loop'
-import { noop } from './types'
-
-type MyEntity = AnyEntity
-
-const world = createWorld<MyEntity>()
+import { createScene } from './scene'
 
 const canvas: Canvas = new Canvas(
 	{} as unknown as HTMLCanvasElement,
@@ -21,72 +16,58 @@ const canvas: Canvas = new Canvas(
 
 describe('createGame', () => {
 	it('should create create a game', () => {
-		const { game, createScene } = createGame({
+		const director = createDirector()
+		const game = createGame({
 			canvas,
+			director,
 		})
 
 		expect(game).toBeDefined()
-		expect(createScene).toBeDefined()
+		expect(game.start).toBeDefined()
 	})
 
 	it('should create a scene', () => {
-		const { game, createScene } = createGame({
+		const director = createDirector<{
+			test: never
+		}>()
+		const game = createGame({
 			canvas,
+			director,
 		})
 
 		const scene = createScene({
-			id: 'test',
-			world,
+			enter: vi.fn(),
 		})
 
+		director.setScene('test', scene)
+
 		expect(scene).toBeDefined()
-		expect(game.scenes).includes(scene)
+		expect(game.scenes.test).toBe(scene)
 	})
 })
 
 describe('start', () => {
 	it('should start the game', async () => {
 		const runner = createStepRunner()
+		const director = createDirector<{
+			test: never
+		}>()
 
-		const { game, createScene } = createGame({
+		const game = createGame({
 			canvas,
+			runner,
+			director,
 		})
 
-		const startup = vi.fn()
+		const enter = vi.fn()
 		const scene = createScene({
-			id: 'test',
-			world,
-			startup,
+			enter,
 		})
 
-		await start(game, scene, runner)
+		director.setScene('test', scene)
+		game.start('test')
 
-		expect(game.currentScene).toBe(scene)
-		expect(startup).toHaveBeenCalled()
-	})
-
-	it('should build the scene', async () => {
-		const runner = createStepRunner()
-
-		const { game, createScene } = createGame({
-			canvas,
-		})
-
-		let entity: MyEntity
-		const startup = vi.fn((context: SystemContext<MyEntity>) => {
-			const { spawn } = context
-			entity = spawn('player', {})
-		})
-
-		const scene = createScene({
-			id: 'test',
-			world,
-			startup,
-		})
-
-		await start(game, scene, runner)
-
-		expect(startup).toHaveBeenCalled()
-		expect(scene.world.entities.has(entity!)).toBe(true)
+		expect(director.currentScene).toBe(scene)
+		expect(enter).toHaveBeenCalled()
 	})
 })
