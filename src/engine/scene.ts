@@ -51,7 +51,7 @@ type EnterSceneSystemFn<
 
 type WorldSceneArgs<TEntity extends AnyEntity, TProps = never> = SystemCollectionArgs<TEntity> & {
 	world: World<TEntity>
-	enter: EnterSceneSystemFn<TEntity, TProps>
+	enter?: EnterSceneSystemFn<TEntity, TProps>
 }
 
 export function createWorldScene<TEntity extends AnyEntity, TProps = never>(
@@ -61,15 +61,17 @@ export function createWorldScene<TEntity extends AnyEntity, TProps = never>(
 
 	const systems = createSystemCollection(args)
 
-	const startupSystem: System<TEntity> = createSystem({
-		id: `enter-scene`,
-		type: SystemType.EnterScene,
-		fn(context) {
-			enter(context, ...[ScenePropsRes.mutable()] as OptionalProps<TProps>)
-		},
-	})
+	if (enter) {
+		const enterSystem: System<TEntity> = createSystem({
+			id: `enter-scene`,
+			type: SystemType.EnterScene,
+			fn(context) {
+				enter(context, ...[ScenePropsRes.mutable()] as OptionalProps<TProps>)
+			},
+		})
 
-	systems.box.add(startupSystem)
+		systems.box.add(enterSystem)
+	}
 
 	return createScene({
 		enter(context) {
