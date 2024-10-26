@@ -11,6 +11,16 @@ npm i @vyke/torao
 ```
 
 ## API
+### defineComponent
+Define a new component.
+
+```ts
+const Size = defineComponent('size', (value: number) => value)
+const Position = defineComponent('position', (pos: {x?: number, y?: number}) => {
+	return {x: pos.x ?? 0, y: pos.y ?? 0}
+})
+```
+
 ### createResource
 Creates a resource that can be shared between systems.
 
