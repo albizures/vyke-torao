@@ -1,6 +1,6 @@
 import type { AnyAsset } from '../assets'
 import type { AnyComponents, Query, System } from '../ecs'
-import type { Director } from '../engine/director'
+import type { Director, Scenes } from '../engine/director'
 import type { Texture } from '../texture'
 import { Canvas, type CanvasArgs, createCanvas } from '../canvas'
 import { assert } from '../error'
@@ -16,9 +16,7 @@ export type ScenePlugin = {
 	systems?: Array<System<any>>
 }
 
-type InferScenes<TDirector> = TDirector extends Director<infer TScenes> ? TScenes : never
-
-type Game<TDirector extends Director<any>, TScenes = InferScenes<TDirector>> = TDirector & {
+type Game<TScenes extends Scenes> = Director<TScenes> & {
 	canvas: Canvas
 	runner: Runner
 	start: <TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) => void
@@ -27,18 +25,16 @@ type Game<TDirector extends Director<any>, TScenes = InferScenes<TDirector>> = T
 export type Assets = Record<string, AnyAsset>
 export type Textures = Record<string, Texture>
 
-type GameArgs<TDirector extends Director<any>> = {
+type GameArgs<TScenes extends Scenes> = {
 	canvas: Canvas | CanvasArgs
-	director: TDirector
+	director: Director<TScenes>
 	runner?: Runner
 }
 
-export function createGame<TDirector extends Director<any>>(
-	args: GameArgs<TDirector>,
-): Game<TDirector> {
+export function createGame<TScenes extends Scenes>(
+	args: GameArgs<TScenes>,
+): Game<TScenes> {
 	const { canvas: maybeCanvas, director, runner = createRequestAnimationFrameRunner() } = args
-
-	type TScenes = InferScenes<TDirector>
 
 	const canvas = is(maybeCanvas, Canvas) ? maybeCanvas : createCanvas(maybeCanvas)
 
@@ -55,7 +51,7 @@ export function createGame<TDirector extends Director<any>>(
 			const [props] = args
 			CanvasRes.set(canvas)
 			director.runner = runner
-			director.transitTo(name, props)
+			director.transitTo(name, props as TScenes[TName])
 		},
 	}
 
