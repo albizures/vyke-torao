@@ -1,11 +1,11 @@
 import type { AnyEntity, AnyEntityCreator, InferEntity } from '../ecs/entity'
-import type { OptionalProps } from '../types'
 import type { AnyDirectorScenes, Director } from './director'
 import type { GamePlugin, ScenePlugin } from './plugin'
-import { type CanvasArgs, createCanvas } from '../canvas'
 import { createWorld, type World } from '../ecs'
 import { assert } from '../error'
 import { CanvasRes } from '../resources'
+import { is, type OptionalProps } from '../types'
+import { Canvas, type CanvasArgs, createCanvas } from './canvas'
 import { createRequestAnimationFrameRunner, type Runner } from './loop'
 import { createWorldScene, type Scene, type WorldSceneArgs } from './scene'
 
@@ -14,7 +14,7 @@ type ToraoArgs<TCreator extends AnyEntityCreator, TScenes extends AnyDirectorSce
 	plugins?: Array<GamePlugin>
 	director: Director<TScenes>
 	runner?: Runner
-	canvas: CanvasArgs
+	canvas: CanvasArgs | Canvas
 }
 
 type Torao<TEntity extends AnyEntity, TScenes extends AnyDirectorScenes> = {
@@ -34,14 +34,14 @@ export function createGame<
 		director,
 		runner = createRequestAnimationFrameRunner(),
 		plugins: globalPlugins = [],
-		canvas: canvasArgs,
+		canvas: maybeCanvas,
 	} = args
 
 	const scenePlugins = globalPlugins
 		.map((plugin) => plugin.scene)
 		.filter(Boolean) as Array<ScenePlugin>
 
-	const canvas = createCanvas(canvasArgs)
+	const canvas = is(maybeCanvas, Canvas) ? maybeCanvas : createCanvas(maybeCanvas)
 	const world = createWorld<TEntity>()
 
 	return {

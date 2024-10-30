@@ -1,4 +1,4 @@
-import type { AnyAtlas } from './texture'
+import type { Atlas } from './sprite'
 
 const placeholders = new Map<string, Placeholder>()
 
@@ -7,7 +7,7 @@ export type Placeholder = {
 	canvas: HTMLCanvasElement
 }
 
-export function getPlaceholder(atlas: AnyAtlas): Placeholder {
+export function getPlaceholder(atlas: Atlas): Placeholder {
 	const { region } = atlas
 	const { width, height } = region
 
@@ -28,7 +28,7 @@ export function getPlaceholder(atlas: AnyAtlas): Placeholder {
 	return placeholder
 }
 
-function renderPlaceholder(placeholder: Placeholder, atlas: AnyAtlas) {
+function renderPlaceholder(placeholder: Placeholder, atlas: Atlas) {
 	const { context } = placeholder as Placeholder
 	const { canvas } = context
 	const { region } = atlas

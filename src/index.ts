@@ -1,5 +1,3 @@
-export { AssetType, defineAsset as createAsset } from './assets'
-export * from './canvas'
 export * from './ecs'
 export * from './engine'
 export * from './loader'

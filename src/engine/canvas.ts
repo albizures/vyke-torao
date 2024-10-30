@@ -1,6 +1,6 @@
-import type { Vec2D } from './vec'
-import { CanvasRectRes } from './resources'
-import { vec2D } from './vec'
+import type { Vec2D } from '../vec'
+import { CanvasRectRes } from '../resources'
+import { vec2D } from '../vec'
 
 type ResizeListener = (size: Vec2D) => void
 

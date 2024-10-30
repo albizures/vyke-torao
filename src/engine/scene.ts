@@ -1,6 +1,6 @@
 import type { Simplify } from 'type-fest'
-import type { AnyAsset } from '../assets'
 import type { AnyEntity } from '../ecs/entity'
+import type { AnyAsset } from './assets'
 import type { Runner } from './loop'
 import type { ScenePlugin } from './plugin'
 import { createSystem, type System, type SystemContext, SystemType, type World } from '../ecs'

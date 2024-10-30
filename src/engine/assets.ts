@@ -1,6 +1,6 @@
-import { assert } from './error'
-import { rootSola } from './sola'
-import { deferedPromise } from './types'
+import { assert } from '../error'
+import { rootSola } from '../sola'
+import { deferedPromise } from '../types'
 
 const sola = rootSola.withTag('assets')
 

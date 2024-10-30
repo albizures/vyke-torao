@@ -1,3 +1,5 @@
+export * from './assets'
+export * from './canvas'
 export * from './director'
 export * from './game'
 export * from './loop'

@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-import { Canvas } from '../canvas'
 import { noop } from '../types'
+import { Canvas } from './canvas'
 import { createDirector } from './director'
 import { createGame } from './game'
 import { createStepRunner } from './loop'
-import { createScene } from './scene'
+
+const entity = {}
 
 const canvas: Canvas = new Canvas(
 	{} as unknown as HTMLCanvasElement,
@@ -20,6 +21,7 @@ describe('createGame', () => {
 		const game = createGame({
 			canvas,
 			director,
+			entity,
 		})
 
 		expect(game).toBeDefined()
@@ -33,16 +35,17 @@ describe('createGame', () => {
 		const game = createGame({
 			canvas,
 			director,
+			entity,
 		})
 
-		const scene = createScene({
+		const scene = game.scene('test', {
 			enter: vi.fn(),
 		})
 
 		director.setScene('test', scene)
 
 		expect(scene).toBeDefined()
-		expect(game.scenes.test).toBe(scene)
+		expect(director.scenes.test).toBe(scene)
 	})
 })
 
@@ -57,14 +60,14 @@ describe('start', () => {
 			canvas,
 			runner,
 			director,
+			entity,
 		})
 
 		const enter = vi.fn()
-		const scene = createScene({
+		const scene = game.scene('test', {
 			enter,
 		})
 
-		director.setScene('test', scene)
 		game.start('test')
 
 		expect(director.currentScene).toBe(scene)

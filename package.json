@@ -18,10 +18,6 @@
 			"import": "./dist/index.mjs",
 			"require": "./dist/index.cjs"
 		},
-		"./texture": {
-			"import": "./dist/texture.mjs",
-			"require": "./dist/texture.cjs"
-		},
 		"./ecs": {
 			"import": "./dist/ecs/index.mjs",
 			"require": "./dist/ecs/index.cjs"
@@ -51,8 +47,8 @@
 			"require": "./dist/queries/index.cjs"
 		},
 		"./plugins/canvas2d": {
-			"import": "./dist/plugins/canvas2d.mjs",
-			"require": "./dist/plugins/canvas2d.cjs"
+			"import": "./dist/plugins/canvas2d/index.mjs",
+			"require": "./dist/plugins/canvas2d/index.cjs"
 		},
 		"./plugins/enter-exit": {
 			"import": "./dist/plugins/enter-exit.mjs",

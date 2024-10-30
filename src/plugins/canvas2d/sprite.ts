@@ -1,14 +1,14 @@
 import type { SetOptional } from 'type-fest'
 import type { Region2d } from '../../region'
 import type { Vec2D } from '../../vec'
-import { type AnyAsset, type Asset, AssetType, loadAsset } from '../../assets'
 import { type Component, defineComponent } from '../../ecs/entity'
-import { getPlaceholder } from '../../placeholders'
+import { type AnyAsset, type Asset, AssetType, loadAsset } from '../../engine'
 import { is } from '../../types'
+import { getPlaceholder } from './placeholders'
 
 export type SpriteAsset = Asset<AssetType.Image> | Asset<AssetType.Canvas>
 
-type Atlas = {
+export type Atlas = {
 	region: Region2d
 	grid?: Vec2D | undefined
 	gap?: Vec2D | undefined

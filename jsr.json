@@ -3,15 +3,11 @@
 	"version": "0.0.6",
 	"exports": {
 		".": "./src/index.ts",
-		"./texture": "./src/texture.ts",
 		"./ecs": "./src/ecs/index.ts",
 		"./vec": "./src/vec.ts",
 		"./resources": "./src/resources/index.ts",
 		"./components": "./src/components/index.ts",
-		"./prefabs": "./src/prefabs/index.ts",
-		"./systems": "./src/systems/index.ts",
-		"./queries": "./src/queries/index.ts",
-		"./plugins/canvas2d": "./src/plugins/canvas2d.ts",
+		"./plugins/canvas2d": "./src/plugins/canvas2d/index.ts",
 		"./plugins/enter-exit": "./src/plugins/enter-exit.ts"
 	},
 	"license": "MIT"

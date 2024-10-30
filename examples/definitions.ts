@@ -1,4 +1,4 @@
-import { AssetType, createLoadable, defineAsset } from '../src/assets'
+import { AssetType, createLoadable, defineAsset } from '../src'
 
 function createContext() {
 	const canvas = document.createElement('canvas')
