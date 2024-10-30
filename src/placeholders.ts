@@ -1,34 +1,31 @@
 import type { AnyAtlas } from './texture'
 
+const placeholders = new Map<string, Placeholder>()
+
 export type Placeholder = {
 	context: CanvasRenderingContext2D
 	canvas: HTMLCanvasElement
 }
 
-function createPlaceholder(atlas?: AnyAtlas): Placeholder {
+export function getPlaceholder(atlas: AnyAtlas): Placeholder {
+	const { region } = atlas
+	const { width, height } = region
+
+	const id = `${width}x${height}`
+	const cached = placeholders.get(id)
+
+	if (cached) {
+		return cached
+	}
+
 	const canvas = document.createElement('canvas')
 	const context = canvas.getContext('2d')!
 
 	const placeholder = { context, canvas }
 
-	if (atlas) {
-		renderPlaceholder(placeholder, atlas)
-	}
+	renderPlaceholder(placeholder, atlas)
 
 	return placeholder
-}
-
-export function definePlaceholder(): (atlas: AnyAtlas) => Placeholder {
-	let placeholder: Placeholder
-	return (atlas: AnyAtlas) => {
-		if (!placeholder) {
-			placeholder = createPlaceholder(atlas)
-		}
-
-		renderPlaceholder(placeholder, atlas)
-
-		return placeholder
-	}
 }
 
 function renderPlaceholder(placeholder: Placeholder, atlas: AnyAtlas) {

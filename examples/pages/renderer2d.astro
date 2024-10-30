@@ -16,10 +16,9 @@
 </html>
 
 <script>
-import { AtlasType, createDirector, createGame, createTexture, createWorld, createWorldScene, defineComponent, type InferEntity } from '../../src'
-import { canvas2d } from '../../src/plugins/canvas2d'
-import { createCamera2d } from '../../src/prefabs'
-import { assets, textures } from '../definitions'
+import { createDirector, createGame, createWorld, createWorldScene, defineComponent, type InferEntity } from '../../src'
+import { canvas2d, createCamera2d } from '../../src/plugins/canvas2d'
+import { assets } from '../definitions'
 
 const Coin = defineComponent('coin', (value: true) => value)
 const Square = defineComponent('square', (value: true) => value)
@@ -53,7 +52,9 @@ const home = createWorldScene({
 	enter(context) {
 		const { spawn } = context
 		const size = 30
-		assets.square.loader.onLoad((context) => {
+
+		assets.square.use.then((asset) => {
+			const { value: context } = asset
 			const { canvas } = context
 
 			canvas.width = size
@@ -65,23 +66,18 @@ const home = createWorldScene({
 			context.strokeRect(1, 1, size - 1, size - 1)
 		})
 
-		const squareTexture = createTexture({
-			atlas: {
-				type: AtlasType.Single,
-				region: {
-					width: size,
-					height: size,
-				},
-			},
-			asset: assets.square,
-		})
-
 		spawn('square', {
 			square: true,
 			transform2D: entity.transform2D({
 				position: { x: 10, y: 10 },
 			}),
-			texture2D: squareTexture,
+			sprite: entity.sprite({
+				region: {
+					width: size,
+					height: size,
+				},
+				asset: assets.square,
+			}),
 		})
 
 		spawn('coin', {
@@ -89,7 +85,13 @@ const home = createWorldScene({
 			transform2D: entity.transform2D({
 				position: { x: 50, y: 10 },
 			}),
-			texture2D: textures.coin,
+			sprite: entity.sprite({
+				region: {
+					width: 32,
+					height: 32,
+				},
+				asset: assets.coin,
+			}),
 		})
 
 		spawn('camera', createCamera2d())

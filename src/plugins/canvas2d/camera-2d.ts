@@ -1,6 +1,6 @@
-import type { Component, InferEntity } from '../ecs/entity'
-import { Transform2D, type Transform2DComponent } from '../components'
-import { defineComponent, defineQuery, type Query } from '../ecs'
+import type { Component, InferEntity } from '../../ecs/entity'
+import { defineComponent, defineQuery, type Query } from '../../ecs'
+import { Transform2D, type Transform2DComponent } from './transform2d'
 
 export type Camera2DComponent = Component<'camera2D', true, true>
 export const Camera2D: Camera2DComponent = defineComponent('camera2D', (_args: true) => true as const)

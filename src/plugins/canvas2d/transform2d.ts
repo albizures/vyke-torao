@@ -1,6 +1,6 @@
-import type { Component } from '../ecs/entity'
-import { defineComponent } from '../ecs'
-import { type Vec2D, vec2D } from '../vec'
+import type { Component } from '../../ecs/entity'
+import { defineComponent } from '../../ecs'
+import { type Vec2D, vec2D } from '../../vec'
 
 export type Transform2D = {
 	position: Vec2D

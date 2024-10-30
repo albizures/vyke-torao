@@ -1,36 +1,30 @@
-import type { Component, InferEntity } from '../ecs/entity'
-import type { ScenePlugin } from '../engine/game'
-import type { Vec2D } from '../vec'
-import { loadAsset } from '../assets'
-import { Transform2D, type Transform2DComponent } from '../components'
+import type { InferEntity } from '../../ecs/entity'
+import type { ScenePlugin } from '../../engine/game'
+import type { Vec2D } from '../../vec'
 import {
 	type AnyComponents,
 	createResource,
 	createSystem,
-	defineComponent,
 	defineQuery,
 	type Query,
 	type Resource,
 	type System,
 	SystemType,
-} from '../ecs'
-import { Camera2D, type Camera2DComponent, camera2DQuery } from '../prefabs'
-import { CanvasRes } from '../resources'
-import { type AnyAtlas, type Texture as AnyTexture, isTextureAssetType, type TextureAssets } from '../texture'
-import { is } from '../types'
-
-type Texture2DComponent = Component<'texture2D', AnyTexture, AnyTexture>
-const Texture2D: Texture2DComponent = defineComponent('texture2D', createTexture2D)
+} from '../../ecs'
+import { CanvasRes } from '../../resources'
+import { Camera2D, type Camera2DComponent, camera2DQuery } from './camera-2d'
+import { getSpriteImage, Sprite, type SpriteComponent } from './sprite'
+import { Transform2D, type Transform2DComponent } from './transform2d'
 
 type Canvas2dEntityCreator =
 	& Camera2DComponent
 	& Transform2DComponent
-	& Texture2DComponent
+	& SpriteComponent
 
 const canvas2dEntity: Canvas2dEntityCreator = {
 	...Camera2D,
 	...Transform2D,
-	...Texture2D,
+	...Sprite,
 }
 
 type Canvas2dEntity = InferEntity<Canvas2dEntityCreator>
@@ -52,13 +46,9 @@ const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
 	},
 })
 
-function createTexture2D(texture: AnyTexture): AnyTexture {
-	return texture
-}
-
-const render2dEntities: Query<[typeof Transform2D, typeof Texture2D]> = defineQuery({
+const render2dEntities: Query<[typeof Transform2D, typeof Sprite]> = defineQuery({
 	id: 'with-transform-and-texture',
-	with: [Transform2D, Texture2D],
+	with: [Transform2D, Sprite],
 })
 
 const render2dBeforeFrameSystem: System<Canvas2dEntity> = createSystem({
@@ -103,12 +93,12 @@ const renderer2dSystem: System<Canvas2dEntity> = createSystem({
 		const { buffer } = CanvasBufferRes.mutable()
 
 		for (const entity of select(render2dEntities)) {
-			const { transform2D, texture2D } = entity
-			const { asset, atlas } = texture2D
+			const { transform2D, sprite } = entity
+			const { atlas } = sprite
 			const { position, scale, angle } = transform2D
+			const image = getSpriteImage(sprite)
 
-			if (isTextureAssetType(asset)) {
-				const image = getImage(asset, atlas)
+			if (image) {
 				buffer.save()
 				buffer.rotate(angle)
 
@@ -123,19 +113,6 @@ const renderer2dSystem: System<Canvas2dEntity> = createSystem({
 		}
 	},
 })
-
-function getImage(asset: TextureAssets, atlas: AnyAtlas): HTMLCanvasElement | HTMLImageElement {
-	if (asset.value) {
-		if (is(asset.value, CanvasRenderingContext2D)) {
-			return asset.value.canvas
-		}
-		return asset.value
-	}
-
-	loadAsset(asset)
-
-	return asset.fallback(atlas).canvas
-}
 
 const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
 	id: 'renderer-2d-setup',
@@ -180,3 +157,7 @@ export const canvas2d: { scene: ScenePlugin, entity: Canvas2dEntityCreator } = {
 	},
 	entity: canvas2dEntity,
 }
+
+export * from './camera-2d'
+export * from './sprite'
+export * from './transform2d'

@@ -28,12 +28,11 @@
 
 <script>
 import type { Vec2D } from '../../src/vec'
-import { AtlasType, createDirector, createGame, createTexture, createWorld, createWorldScene, type InferWithComponent } from '../../src'
-import { Transform2D, Velocity2D } from '../../src/components'
+import { createDirector, createGame, createWorld, createWorldScene, type InferWithComponent } from '../../src'
+import { Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
-import { canvas2d } from '../../src/plugins/canvas2d'
+import { canvas2d, createCamera2d, Transform2D } from '../../src/plugins/canvas2d'
 import { enterExit } from '../../src/plugins/enter-exit'
-import { createCamera2d } from '../../src/prefabs'
 import { assets } from '../definitions'
 
 const BorderBehavior = defineComponent('borderBehavior', (type: 'wrap' | 'die') => ({ type }))
@@ -277,18 +276,16 @@ const home = createWorldScene({
 		const { spawn } = context
 		const strokeSize = 2
 		const gridSize = GRID_SIZE * CELL_SIZE + strokeSize
-		const gridTexture = createTexture({
+		const gridSprite = entity.sprite({
 			asset: assets.grid,
-			atlas: {
-				type: AtlasType.Single,
-				region: {
-					width: gridSize,
-					height: gridSize,
-				},
+			region: {
+				width: gridSize,
+				height: gridSize,
 			},
 		})
 
-		assets.grid.loader.onLoad((context) => {
+		assets.grid.use.then((asset) => {
+			const context = asset.value
 			const { canvas } = context
 
 			canvas.width = gridSize
@@ -298,18 +295,16 @@ const home = createWorldScene({
 			context.strokeRect(1, 1, gridSize - strokeSize, gridSize - strokeSize)
 		})
 
-		const squareTexture = createTexture({
+		const sprite = entity.sprite({
 			asset: assets.square,
-			atlas: {
-				type: AtlasType.Single,
-				region: {
-					width: CELL_SIZE,
-					height: CELL_SIZE,
-				},
+			region: {
+				width: CELL_SIZE,
+				height: CELL_SIZE,
 			},
 		})
 
-		assets.square.loader.onLoad((context) => {
+		assets.square.use.then((asset) => {
+			const { value: context } = asset
 			const { canvas } = context
 
 			canvas.width = CELL_SIZE
@@ -322,7 +317,7 @@ const home = createWorldScene({
 		spawn('grid', {
 			grid: entity.grid({ x: CELL_SIZE, y: CELL_SIZE }),
 			transform2D: entity.transform2D({ position: { x: 20, y: 20 } }),
-			texture2D: gridTexture,
+			sprite: gridSprite,
 		})
 
 		const startX = 80
@@ -336,7 +331,7 @@ const home = createWorldScene({
 			}),
 			prevPosition: { x: startX, y: 30 },
 			direction: DirectionType.Right,
-			texture2D: squareTexture,
+			sprite,
 		})
 
 		let follow = 'head'
@@ -362,7 +357,7 @@ const home = createWorldScene({
 					x: startX - ((index - 1) * CELL_SIZE),
 					y: 30,
 				},
-				texture2D: squareTexture,
+				sprite,
 			})
 			follow = currentId
 		}

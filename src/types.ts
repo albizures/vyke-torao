@@ -15,3 +15,13 @@ export function map<TKeys, TValues>(entries?: Array<[TKeys, TValues]>): Map<TKey
 export function noop() {}
 
 export type OptionalProps<TValue> = [TValue] extends [never] ? [] : [props: TValue]
+
+export function deferedPromise<TValue>() {
+	let resolve: (value: TValue) => void
+	let reject: (error: unknown) => void
+	const promise = new Promise<TValue>((res, rej) => {
+		resolve = res
+		reject = rej
+	})
+	return { promise, resolve: resolve!, reject: reject! }
+}
