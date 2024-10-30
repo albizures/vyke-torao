@@ -1,4 +1,4 @@
-import type { ScenePlugin } from '../engine/game'
+import type { ScenePlugin } from '../engine'
 import type { LoopFns, LoopValues } from '../engine/loop'
 import type { AnyEntity } from './entity'
 import type { System, SystemContext } from './system'

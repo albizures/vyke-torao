@@ -1,6 +1,8 @@
+import type { Simplify } from 'type-fest'
 import type { AnyAsset } from '../assets'
 import type { AnyEntity } from '../ecs/entity'
 import type { Runner } from './loop'
+import type { ScenePlugin } from './plugin'
 import { createSystem, type System, type SystemContext, SystemType, type World } from '../ecs'
 import { createSystemCollection, type SystemCollectionArgs } from '../ecs/system-collection'
 import { assert } from '../error'
@@ -50,10 +52,10 @@ type EnterSceneSystemFn<
 	TProps,
 > = (context: SystemContext<TEntity>, ...args: OptionalProps<TProps>) => void
 
-type WorldSceneArgs<TEntity extends AnyEntity, TProps = never> = SystemCollectionArgs<TEntity> & {
+export type WorldSceneArgs<TEntity extends AnyEntity, TProps = never> = Simplify<SystemCollectionArgs<TEntity> & {
 	world: World<TEntity>
 	enter?: EnterSceneSystemFn<TEntity, TProps>
-}
+}>
 
 export function createWorldScene<TEntity extends AnyEntity, TProps = never>(
 	args: WorldSceneArgs<TEntity, TProps>,
@@ -82,4 +84,29 @@ export function createWorldScene<TEntity extends AnyEntity, TProps = never>(
 			runner.start(systems.intoLoop(world))
 		},
 	})
+}
+
+type SceneBuilder<TEntity extends AnyEntity> = {
+	create: <TProps = never>(args: Omit<WorldSceneArgs<TEntity, TProps>, 'world' | 'plugins'>) => Scene<TProps>
+}
+
+type SceneBuilderArgs<TEntity extends AnyEntity> = {
+	world: World<TEntity>
+	plugins?: Array<ScenePlugin>
+}
+
+export function createSceneBuilder<TEntity extends AnyEntity>(args: SceneBuilderArgs<TEntity>): SceneBuilder<TEntity> {
+	const { world, plugins = [] } = args
+
+	return {
+		create(args) {
+			const scene = createWorldScene({
+				...args,
+				world,
+				plugins,
+			})
+
+			return scene
+		},
+	}
 }

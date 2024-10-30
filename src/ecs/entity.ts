@@ -9,7 +9,9 @@ function identity<TValue>(value: TValue): TValue {
 	return value
 }
 
-type Creator<TValue, TArgs> = (args: TArgs) => TValue
+export type AnyEntityCreator = Record<string, Creator<any, any>>
+
+export type Creator<TValue, TArgs> = (args: TArgs) => TValue
 
 export type Component<TName extends ComponentId, TValue, TArgs> = {
 	[K in TName]: Creator<TValue, TArgs>

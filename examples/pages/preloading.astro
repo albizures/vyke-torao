@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>preloading</title>
+		<style>
+			canvas {
+				image-rendering: pixelated;
+			}
+		</style>
+  </head>
+  <body>
+    <canvas></canvas>
+  </body>
+</html>
+
+<script>
+import {
+	createDirector,
+	createGame,
+} from '../../src'
+import { loadAsset } from '../../src/assets'
+import { canvas2d, Canvas2dEntity, createCamera2d } from '../../src/plugins/canvas2d'
+import { assets } from '../definitions'
+
+const entity = {
+	...Canvas2dEntity,
+}
+
+const director = createDirector<{
+	preload: never
+	home: never
+}>()
+
+const torao = createGame({
+	canvas: {
+		element: document.querySelector('canvas')!,
+		resizeMode: 'fill',
+	},
+	plugins: [canvas2d],
+	entity,
+	director,
+})
+
+torao.scene('preload', {
+	enter(_context) {
+		const list = [
+			assets.coin,
+			assets.pino,
+			assets.cloud,
+		]
+
+		Promise.allSettled(
+			list.map((asset) => {
+				loadAsset(asset)
+				return asset.use
+			}),
+		).then(() => {
+			director.goTo('home')
+		}).catch(console.error)
+	},
+})
+
+torao.scene('home', {
+	enter(context) {
+		const { spawn } = context
+
+		spawn('coin', {
+			transform2D: entity.transform2D({
+				position: { x: 50, y: 10 },
+			}),
+			sprite: entity.sprite({
+				region: {
+					width: 32,
+					height: 32,
+				},
+				asset: assets.coin,
+			}),
+		})
+
+		spawn('camera', createCamera2d())
+	},
+})
+
+torao.start('preload')
+</script>

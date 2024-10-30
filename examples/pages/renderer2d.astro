@@ -16,39 +16,36 @@
 </html>
 
 <script>
-import { createDirector, createGame, createWorld, createWorldScene, defineComponent, type InferEntity } from '../../src'
-import { canvas2d, createCamera2d } from '../../src/plugins/canvas2d'
+import { createDirector, createGame, defineComponent } from '../../src'
+import { canvas2d, Canvas2dEntity, createCamera2d } from '../../src/plugins/canvas2d'
 import { assets } from '../definitions'
 
 const Coin = defineComponent('coin', (value: true) => value)
 const Square = defineComponent('square', (value: true) => value)
 
 const entity = {
-	...canvas2d.entity,
+	...Canvas2dEntity,
 	...Coin,
 	...Square,
 }
 
-type Entity = InferEntity<typeof entity>
-
-const world = createWorld<Entity>()
 const director = createDirector<{
 	home: never
 }>()
 
 const game = createGame({
+	entity,
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
 	},
 	director,
+	plugins: [
+		canvas2d,
+	],
 })
 
-const home = createWorldScene({
-	world,
-	plugins: [
-		canvas2d.scene,
-	],
+game.scene('home', {
 	enter(context) {
 		const { spawn } = context
 		const size = 30
@@ -97,7 +94,6 @@ const home = createWorldScene({
 		spawn('camera', createCamera2d())
 	},
 })
-director.setScene('home', home)
 
 game.start('home')
 </script>

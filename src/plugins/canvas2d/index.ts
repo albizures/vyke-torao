@@ -1,5 +1,5 @@
 import type { InferEntity } from '../../ecs/entity'
-import type { ScenePlugin } from '../../engine/game'
+import type { GamePlugin } from '../../engine'
 import type { Vec2D } from '../../vec'
 import {
 	type AnyComponents,
@@ -21,7 +21,7 @@ type Canvas2dEntityCreator =
 	& Transform2DComponent
 	& SpriteComponent
 
-const canvas2dEntity: Canvas2dEntityCreator = {
+export const Canvas2dEntity: Canvas2dEntityCreator = {
 	...Camera2D,
 	...Transform2D,
 	...Sprite,
@@ -141,7 +141,7 @@ const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
 
 type Register = <TComponents extends AnyComponents>(args: Query<TComponents>) => void
 
-export const canvas2d: { scene: ScenePlugin, entity: Canvas2dEntityCreator } = {
+export const canvas2d: GamePlugin = {
 	scene: {
 		id: 'renderer-2d',
 		systems: [
@@ -155,7 +155,6 @@ export const canvas2d: { scene: ScenePlugin, entity: Canvas2dEntityCreator } = {
 			register(camera2DQuery)
 		},
 	},
-	entity: canvas2dEntity,
 }
 
 export * from './camera-2d'

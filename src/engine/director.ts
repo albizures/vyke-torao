@@ -1,16 +1,20 @@
+import type { OptionalProps } from '../types'
 import type { Runner } from './loop'
 import type { Scene, SceneContext } from './scene'
 import { assert } from '../error'
+import { rootSola } from '../sola'
 
-export type Scenes = {
+const sola = rootSola.withTag('director')
+
+export type AnyDirectorScenes = {
 	[key: string]: unknown
 }
 
-type DirectorScenes<TScenes extends Scenes> = {
+type DirectorScenes<TScenes extends AnyDirectorScenes> = {
 	[TName in keyof TScenes]: Scene<TScenes[TName]>
 }
 
-export type Director<TScenes extends Scenes> = {
+export type Director<TScenes extends AnyDirectorScenes> = {
 	scenes: DirectorScenes<TScenes>
 	currentScene?: Scene<any> | undefined
 	runner?: Runner
@@ -18,10 +22,10 @@ export type Director<TScenes extends Scenes> = {
 		TName extends keyof TScenes,
 		TScene extends Scene<TScenes[TName]>,
 	>(name: TName, scene: TScene) => void
-	transitTo: <TName extends keyof TScenes>(name: TName, props: TScenes[TName]) => void
+	goTo: <TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) => void
 }
 
-export function createDirector<TScenes extends Scenes>(): Director<TScenes> {
+export function createDirector<TScenes extends AnyDirectorScenes>(): Director<TScenes> {
 	const director: Director<TScenes> = {
 		scenes: {} as DirectorScenes<TScenes>,
 		setScene: <
@@ -32,7 +36,7 @@ export function createDirector<TScenes extends Scenes>(): Director<TScenes> {
 			scene.id = String(name)
 		},
 
-		transitTo<TName extends keyof TScenes>(name: TName, props: TScenes[TName]) {
+		goTo<TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) {
 			const { currentScene, runner } = director
 			const scene = director.scenes[name] as Scene<TScenes[TName]>
 
@@ -40,12 +44,18 @@ export function createDirector<TScenes extends Scenes>(): Director<TScenes> {
 			assert(runner, 'Runner is not set')
 
 			if (currentScene) {
+				sola.info('Going to scene', name, 'from', currentScene.id)
 				currentScene.beforeExit()
 			}
+			else {
+				sola.info('Going to scene', name)
+			}
+
+			const [props] = args
 
 			const context: SceneContext<TScenes[TName]> = {
 				runner,
-				props,
+				props: props as TScenes[TName],
 			}
 
 			director.currentScene = scene

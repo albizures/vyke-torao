@@ -1,11 +1,11 @@
-import type { AnyEntity, Component, InferEntity } from '../ecs/entity'
-import type { ScenePlugin } from '../engine/game'
+import type { AnyEntity, AnyEntityCreator, Component, InferEntity } from '../ecs/entity'
+import type { GamePlugin, ScenePlugin } from '../engine'
 import { createSystem, defineComponent, defineQuery, type Query, type System, type SystemContext, SystemType } from '../ecs'
 
 const enterExitKey: unique symbol = Symbol('enter-exit:data')
 type EnterExitKey = typeof enterExitKey
 type EnterExitComponent = Component<EnterExitKey, unknown, unknown>
-const enterExitEntity: EnterExitComponent = defineComponent<EnterExitKey, unknown>(enterExitKey)
+export const EnterExitEntity: EnterExitComponent = defineComponent<EnterExitKey, unknown>(enterExitKey)
 
 export type EnterExitEntity = InferEntity<EnterExitComponent>
 
@@ -20,12 +20,12 @@ function anyExit(value: unknown): void {
 	}
 }
 
-function createEnterExit<TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TEntity, TValue>): ScenePlugin {
+function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TEntity, TValue>): ScenePlugin {
 	const { enter, exit = anyExit } = args
 
-	const allEnterExits: Query<[typeof enterExitEntity]> = defineQuery({
+	const allEnterExits: Query<[typeof EnterExitEntity]> = defineQuery({
 		id: 'enter-exit',
-		with: [enterExitEntity],
+		with: [EnterExitEntity],
 	})
 
 	const enterSystem: System<TEntity> = createSystem({
@@ -64,12 +64,12 @@ function createEnterExit<TEntity extends EnterExitEntity, TValue>(args: EnterExi
 	}
 }
 
-type EnterExitPlugin = {
-	create: <TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TEntity, TValue>) => ScenePlugin
-	entity: EnterExitComponent
+type CreateEnterExitArgs<TCreator extends AnyEntityCreator, TValue> = EnterExitArgs<InferEntity<TCreator>, TValue> & {
+	entity: TCreator
 }
 
-export const enterExit: EnterExitPlugin = {
-	create: createEnterExit,
-	entity: enterExitEntity,
+export function createEnterExit<TCreator extends AnyEntityCreator, TValue>(args: CreateEnterExitArgs<TCreator, TValue>): { scene: ScenePlugin } {
+	return {
+		scene: createPluginScene(args),
+	} as const satisfies GamePlugin
 }

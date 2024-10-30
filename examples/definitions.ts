@@ -7,6 +7,8 @@ function createContext() {
 }
 
 export const assets = {
+	pino: createLoadable('/assets/images/pino.png', AssetType.Image),
+	cloud: createLoadable('/assets/images/cloud.png', AssetType.Image),
 	coin: createLoadable('/assets/images/coin.png', AssetType.Image),
 	grid: defineAsset({
 		type: AssetType.Canvas,

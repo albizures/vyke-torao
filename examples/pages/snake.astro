@@ -28,11 +28,11 @@
 
 <script>
 import type { Vec2D } from '../../src/vec'
-import { createDirector, createGame, createWorld, createWorldScene, type InferWithComponent } from '../../src'
+import { createDirector, createGame, type InferWithComponent } from '../../src'
 import { Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
-import { canvas2d, createCamera2d, Transform2D } from '../../src/plugins/canvas2d'
-import { enterExit } from '../../src/plugins/enter-exit'
+import { canvas2d, Canvas2dEntity, createCamera2d, Transform2D } from '../../src/plugins/canvas2d'
+import { createEnterExit, EnterExitEntity } from '../../src/plugins/enter-exit'
 import { assets } from '../definitions'
 
 const BorderBehavior = defineComponent('borderBehavior', (type: 'wrap' | 'die') => ({ type }))
@@ -54,8 +54,8 @@ const Tail = defineComponent('tail', (args: TailArgs) => ({
 }))
 
 const entity = {
-	...canvas2d.entity,
-	...enterExit.entity,
+	...Canvas2dEntity,
+	...EnterExitEntity,
 	...BorderBehavior,
 	...Grid,
 	...Head,
@@ -64,6 +64,8 @@ const entity = {
 	...Velocity2D,
 	...PrevPosition,
 }
+
+type Entity = InferEntity<typeof entity>
 
 const INITIAL_SIZE = 4
 const GRID_SIZE = 20
@@ -77,21 +79,21 @@ enum DirectionType {
 	Right = 3,
 }
 
-type Entity = InferEntity<typeof entity>
-
-const world = createWorld<Entity>()
-const { createQuery } = world
 const director = createDirector<{
 	home: never
 }>()
 
 const game = createGame({
+	entity,
+	plugins: [canvas2d],
 	canvas: {
 		element: document.querySelector('canvas')!,
 		resizeMode: 'fill',
 	},
 	director,
 })
+
+const { createQuery } = game.world
 
 const allHeads = createQuery({
 	id: 'all-heads',
@@ -238,7 +240,8 @@ const followSystem = createSystem<Entity>({
 	},
 })
 
-const enterExitScenePlugin = enterExit.create<Entity, () => void>({
+const enterExit = createEnterExit({
+	entity,
 	enter: (context) => {
 		function onKeyDown(event: KeyboardEvent) {
 			const { select, update } = context
@@ -260,7 +263,7 @@ const enterExitScenePlugin = enterExit.create<Entity, () => void>({
 	},
 })
 
-const home = createWorldScene({
+game.scene('home', {
 	systems: [
 		move,
 		snapToGrid,
@@ -268,10 +271,8 @@ const home = createWorldScene({
 		followSystem,
 	],
 	plugins: [
-		canvas2d.scene,
-		enterExitScenePlugin,
+		enterExit.scene,
 	],
-	world,
 	enter(context) {
 		const { spawn } = context
 		const strokeSize = 2
@@ -365,8 +366,6 @@ const home = createWorldScene({
 		spawn('camera', createCamera2d())
 	},
 })
-
-director.setScene('home', home)
 
 function getNewDirection(entity: WithDirection, keydown: string): DirectionType {
 	const { direction } = entity
