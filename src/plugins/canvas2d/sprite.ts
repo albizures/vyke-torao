@@ -19,7 +19,7 @@ export type Sprite = {
 	atlas: Atlas
 }
 
-export function isSpriteAsset(asset: AnyAsset): asset is SpriteAsset {
+function isSpriteAsset(asset: AnyAsset): asset is SpriteAsset {
 	return [AssetType.Canvas, AssetType.Image].includes(asset.type)
 }
 
