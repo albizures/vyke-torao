@@ -1,7 +1,7 @@
 {
 	"name": "@vyke/torao",
 	"type": "module",
-	"version": "0.0.7",
+	"version": "0.1.0",
 	"description": "Small and type-friendly library for game development",
 	"author": "Jose Albizures <jose@albizures.com> (https://albizures.com/)",
 	"license": "MIT",
