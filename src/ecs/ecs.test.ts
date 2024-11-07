@@ -1,6 +1,6 @@
 import type { Vec2D } from '../vec'
 import { assertType, beforeEach, describe, expect, it } from 'vitest'
-import { createWorld, defineComponent, type InferEntity } from './'
+import { createWorld, defineComponent, type InferEntity, maybe } from './'
 
 const Position = defineComponent('position', (values: Partial<Vec2D>) => {
 	const { x = 0, y = 0 } = values
@@ -14,10 +14,13 @@ type EnemyType = 'boss' | 'minion'
 
 const Enemy = defineComponent<'enemy', EnemyType>('enemy')
 
+const Buff = defineComponent<'buff', { type: 'speed' | 'damage' }>('buff')
+
 const entity = {
 	...Position,
 	...Player,
 	...Enemy,
+	...Buff,
 }
 
 type Entity = InferEntity<typeof entity>
@@ -27,12 +30,12 @@ const { spawn, despawn, reset, update, select, createQuery } = world
 
 const allPlayers = createQuery({
 	id: 'query-test',
-	with: [Position, Player],
+	with: [Position, Player, maybe(Buff)],
 })
 
 const allEnemies = createQuery({
 	id: 'query-test',
-	with: [Position, Enemy],
+	with: [Position, Enemy, maybe(Buff)],
 })
 
 beforeEach(() => {
@@ -68,22 +71,31 @@ describe('querying', () => {
 		const player = spawn('player', { position: entity.position({ y: 20 }), player: true })
 		const enemis = [
 			spawn('enemy-1', { position: { x: 0, y: 0 }, enemy: 'boss' }),
-			spawn('enemy-2', { position: { x: 10, y: 10 }, enemy: 'minion' }),
+			spawn('enemy-2', { position: { x: 10, y: 10 }, enemy: 'minion', buff: { type: 'speed' } }),
 		]
 
+		let enemisWithBuff = 0
 		for (const item of select(allEnemies)) {
 			assertType<{
 				position: { x: number, y: number }
 				enemy: 'boss' | 'minion'
+				buff?: 'speed' | 'damage'
 			}>(item)
 			expect(enemis).include(item)
 			expect(item.enemy).toStrictEqual(expect.stringMatching(/boss|minion/))
+
+			if (item.buff) {
+				enemisWithBuff += 1
+			}
 		}
+
+		expect(enemisWithBuff).toBe(1)
 
 		for (const entity of select(allPlayers)) {
 			assertType<{
 				position: { x: number, y: number }
 				player: true
+				buff?: 'speed' | 'damage'
 			}>(entity)
 			expect(entity.position).toEqual({ x: 0, y: 20 })
 			expect(entity.player).toBe(true)

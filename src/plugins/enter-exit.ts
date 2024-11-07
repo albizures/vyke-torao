@@ -1,6 +1,6 @@
 import type { AnyEntity, AnyEntityCreator, Component, InferEntity } from '../ecs/entity'
 import type { GamePlugin, ScenePlugin } from '../engine'
-import { createSystem, defineComponent, defineQuery, type Query, type System, type SystemContext, SystemType } from '../ecs'
+import { createSystem, defineComponent, defineQuery, type System, type SystemContext, SystemType } from '../ecs'
 
 const enterExitKey: unique symbol = Symbol('enter-exit:data')
 type EnterExitKey = typeof enterExitKey
@@ -23,7 +23,7 @@ function anyExit(value: unknown): void {
 function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TEntity, TValue>): ScenePlugin {
 	const { enter, exit = anyExit } = args
 
-	const allEnterExits: Query<[typeof EnterExitEntity]> = defineQuery({
+	const allEnterExits = defineQuery({
 		id: 'enter-exit',
 		with: [EnterExitEntity],
 	})

@@ -1,7 +1,7 @@
 /* eslint-disabl e no-console */
 import { createRefBox, type RefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
-import { type AnyEntity, type ComponentId, getComponentId, hasComponent, type InferWithComponents } from './entity'
+import { type AnyEntity, type ComponentId, getComponentId, hasComponent, type InferWithComponents, isMaybeComponent } from './entity'
 import { type AnyComponents, defineQuery, type Query, type QueryArgs } from './query'
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
@@ -26,9 +26,8 @@ export type RegisterQuery = <
 >(args: Query<TComponents>) => void
 
 export type CreateQuery = <
-	TComponents extends AnyComponents,
-	// spread operator allows to infer TComponents as a tuple
->(args: QueryArgs<[...TComponents]>) => Query<[...TComponents]>
+	const TComponents extends AnyComponents,
+>(args: QueryArgs<TComponents>) => Query<TComponents>
 
 export type World<
 	TEntity extends AnyEntity,
@@ -191,6 +190,9 @@ export function createWorld<TEntity extends AnyEntity>(): World<TEntity> {
 
 	function registerQuery<TComponents extends AnyComponents>(query: Query<TComponents>) {
 		for (const component of [...query.with, ...query.without]) {
+			if (isMaybeComponent(component)) {
+				continue
+			}
 			const id = getComponentId(component)
 
 			if (id) {
@@ -203,7 +205,7 @@ export function createWorld<TEntity extends AnyEntity>(): World<TEntity> {
 		compute(query)
 	}
 
-	function createQuery<TComponents extends AnyComponents>(args: QueryArgs<[...TComponents]>): Query<[...TComponents]> {
+	function createQuery<const TComponents extends AnyComponents>(args: QueryArgs<TComponents>): Query<TComponents> {
 		const query = defineQuery(args)
 
 		registerQuery(query)
@@ -239,6 +241,10 @@ export function createWorld<TEntity extends AnyEntity>(): World<TEntity> {
 function match(entity: AnyEntity, query: Query<AnyComponents>) {
 	const { with: withComponents, without: withoutComponents, where } = query
 	for (const component of withComponents) {
+		if (isMaybeComponent(component)) {
+			continue
+		}
+
 		if (!(hasComponent(entity, component))) {
 			return false
 		}

@@ -1,4 +1,5 @@
 import type { Merge, Simplify } from 'type-fest'
+import type { Maybe } from './query'
 import { map, set } from '../types'
 
 export type ComponentId = string | number | symbol
@@ -60,17 +61,27 @@ export function hasComponent(entity: AnyEntity, component: AnyComponent): boolea
 	return name in entity
 }
 
+export function isMaybeComponent(component: unknown): component is Maybe<AnyComponent> {
+	return Boolean(typeof component === 'object' && component && 'component' in component)
+}
+
 export type InferEntity<TCreator> = Simplify<{
 	[K in keyof TCreator]?: TCreator[K] extends Creator<infer TValue, any>
 		? TValue
 		: never
 }>
 
-export type InferWithComponent<TComponent> = TComponent extends Component<infer TName, infer TValue, any>
+export type InferWithComponent<TComponent extends AnyComponent> = TComponent extends Component<infer TName, infer TValue, any>
 	? { [K in TName]: TValue }
 	: never
 
+export type InferWith<TComponent> = TComponent extends AnyComponent
+	? InferWithComponent<TComponent>
+	: TComponent extends Maybe<infer TComponent>
+		? Partial<InferWith<TComponent>>
+		: never
+
 export type InferWithComponents<TComponents> = TComponents extends [infer TComponent, ...infer TRest]
-	? Merge<InferWithComponent<TComponent>, InferWithComponents<TRest>>
+	? Merge<InferWith<TComponent>, InferWithComponents<TRest>>
 	// eslint-disable-next-line ts/no-empty-object-type
 	: {}

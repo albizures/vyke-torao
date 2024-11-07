@@ -1,7 +1,9 @@
 import type { AnyComponent, InferWithComponents } from './entity'
 import { set } from '../types'
 
-export type AnyComponents = Array<AnyComponent>
+export type Maybe<TComponents> = { component: TComponents }
+
+export type AnyComponents = Array<AnyComponent | Maybe<AnyComponent>>
 
 type WhereFn<TComponents extends AnyComponents> = (values: InferWithComponents<TComponents>) => boolean
 
@@ -21,7 +23,7 @@ export type Query<TComponents extends AnyComponents> = {
 	where?: WhereFn<TComponents> | undefined
 }
 
-export function defineQuery<TComponents extends Array<AnyComponent>>(args: QueryArgs<[...TComponents]>): Query<[...TComponents]> {
+export function defineQuery<const TComponents extends AnyComponents>(args: QueryArgs<TComponents>): Query<TComponents> {
 	const { id, where } = args
 	const withComponents = set(args.with)
 	const withoutComponents = set(args.without || [])
@@ -33,4 +35,8 @@ export function defineQuery<TComponents extends Array<AnyComponent>>(args: Query
 	}
 
 	return query
+}
+
+export function maybe(component: AnyComponent): Maybe<AnyComponent> {
+	return { component }
 }
