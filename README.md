@@ -16,13 +16,30 @@ Define a new component.
 
 ```ts
 const Size = defineComponent('size', (value: number) => value)
-const Position = defineComponent('position', (pos: { x?: number, y?: number }) => {
-	return { x: pos.x ?? 0, y: pos.y ?? 0 }
+const Position = defineComponent('position', (pos: {x?: number, y?: number}) => {
+	return {x: pos.x ?? 0, y: pos.y ?? 0}
 })
 ```
 
 ### createResource
 Creates a resource that can be shared between systems.
+
+### createGame
+Create a new game.
+
+```ts
+const entity = {
+	// ...your components
+}
+
+const director = createDirector<{
+	// ...your scenes
+}>()
+
+const game = createGame({
+	director,
+	entity,
+})
 
 ## Others vyke projects
 - [Flowmodoro app by vyke](https://github.com/albizures/vyke-flowmodoro)
