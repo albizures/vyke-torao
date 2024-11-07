@@ -79,7 +79,7 @@ describe('querying', () => {
 			assertType<{
 				position: { x: number, y: number }
 				enemy: 'boss' | 'minion'
-				buff?: 'speed' | 'damage'
+				buff?: { type: 'speed' | 'damage' }
 			}>(item)
 			expect(enemis).include(item)
 			expect(item.enemy).toStrictEqual(expect.stringMatching(/boss|minion/))
@@ -95,7 +95,7 @@ describe('querying', () => {
 			assertType<{
 				position: { x: number, y: number }
 				player: true
-				buff?: 'speed' | 'damage'
+				buff?: { type: 'speed' | 'damage' }
 			}>(entity)
 			expect(entity.position).toEqual({ x: 0, y: 20 })
 			expect(entity.player).toBe(true)

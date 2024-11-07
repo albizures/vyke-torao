@@ -37,6 +37,6 @@ export function defineQuery<const TComponents extends AnyComponents>(args: Query
 	return query
 }
 
-export function maybe(component: AnyComponent): Maybe<AnyComponent> {
+export function maybe<const TComponent extends AnyComponent>(component: TComponent): Maybe<TComponent> {
 	return { component }
 }
