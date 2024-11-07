@@ -36,6 +36,7 @@ type CreateToraoSceneArgs<TEntity extends AnyEntity, TProps = never> = Omit<Worl
  * }
  *
  * const director = createDirector<{
+ * home: never,
  * 	// ...your scenes
  * }>()
  *

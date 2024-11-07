@@ -33,6 +33,7 @@ const entity = {
 }
 
 const director = createDirector<{
+home: never,
 	// ...your scenes
 }>()
 
