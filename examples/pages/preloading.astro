@@ -21,8 +21,13 @@ import {
 	createGame,
 	loadAsset,
 } from '../../src'
-import { canvas2d, Canvas2dEntity, createCamera2d } from '../../src/plugins/canvas2d'
+import { Canvas2dEntity, createCamera2d, createCanvas2d } from '../../src/plugins/canvas2d'
 import { assets } from '../definitions'
+
+const canvas2d = createCanvas2d({
+	element: document.querySelector('canvas')!,
+	resizeMode: 'fill',
+})
 
 const entity = {
 	...Canvas2dEntity,
@@ -34,10 +39,6 @@ const director = createDirector<{
 }>()
 
 const torao = createGame({
-	canvas: {
-		element: document.querySelector('canvas')!,
-		resizeMode: 'fill',
-	},
 	plugins: [canvas2d],
 	entity,
 	director,

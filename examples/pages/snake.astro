@@ -31,9 +31,14 @@ import type { Vec2D } from '../../src/vec'
 import { createDirector, createGame, type InferWithComponent } from '../../src'
 import { Velocity2D } from '../../src/components'
 import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
-import { canvas2d, Canvas2dEntity, createCamera2d, Transform2D } from '../../src/plugins/canvas2d'
+import { Canvas2dEntity, createCamera2d, createCanvas2d, Transform2D } from '../../src/plugins/canvas2d'
 import { createEnterExit, EnterExitEntity } from '../../src/plugins/enter-exit'
 import { assets } from '../definitions'
+
+const canvas2d = createCanvas2d({
+	element: document.querySelector('canvas')!,
+	resizeMode: 'fill',
+})
 
 const BorderBehavior = defineComponent('borderBehavior', (type: 'wrap' | 'die') => ({ type }))
 const Grid = defineComponent('grid', (size: Vec2D) => ({ size }))
@@ -86,10 +91,6 @@ const director = createDirector<{
 const game = createGame({
 	entity,
 	plugins: [canvas2d],
-	canvas: {
-		element: document.querySelector('canvas')!,
-		resizeMode: 'fill',
-	},
 	director,
 })
 

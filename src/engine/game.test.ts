@@ -1,25 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { noop } from '../types'
-import { Canvas } from './canvas'
+
 import { createDirector } from './director'
 import { createGame } from './game'
 import { createStepRunner } from './loop'
 
 const entity = {}
 
-const canvas: Canvas = new Canvas(
-	{} as unknown as HTMLCanvasElement,
-	() => {
-		return noop
-	},
-	{ x: 100, y: 100 },
-)
-
 describe('createGame', () => {
 	it('should create create a game', () => {
 		const director = createDirector()
 		const game = createGame({
-			canvas,
 			director,
 			entity,
 		})
@@ -33,7 +23,6 @@ describe('createGame', () => {
 			test: never
 		}>()
 		const game = createGame({
-			canvas,
 			director,
 			entity,
 		})
@@ -57,7 +46,6 @@ describe('start', () => {
 		}>()
 
 		const game = createGame({
-			canvas,
 			runner,
 			director,
 			entity,
@@ -72,5 +60,33 @@ describe('start', () => {
 
 		expect(director.currentScene).toBe(scene)
 		expect(enter).toHaveBeenCalled()
+	})
+
+	it('should run the plugin', () => {
+		const runner = createStepRunner()
+		const director = createDirector<{
+			test: never
+		}>()
+		const beforeStart = vi.fn()
+
+		const game = createGame({
+			runner,
+			director,
+			entity,
+			plugins: [
+				{
+					beforeStart,
+				},
+			],
+		})
+
+		const enter = vi.fn()
+		game.scene('test', {
+			enter,
+		})
+
+		game.start('test')
+
+		expect(beforeStart).toHaveBeenCalled()
 	})
 })

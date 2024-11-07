@@ -7,7 +7,7 @@ import { rootSola } from '../sola'
 const sola = rootSola.withTag('director')
 
 export type AnyDirectorScenes = {
-	[key: string]: unknown
+	[key: string]: any
 }
 
 type DirectorScenes<TScenes extends AnyDirectorScenes> = {

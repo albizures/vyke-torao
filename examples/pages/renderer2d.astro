@@ -17,8 +17,13 @@
 
 <script>
 import { createDirector, createGame, defineComponent } from '../../src'
-import { canvas2d, Canvas2dEntity, createCamera2d } from '../../src/plugins/canvas2d'
+import { Canvas2dEntity, createCamera2d, createCanvas2d } from '../../src/plugins/canvas2d'
 import { assets } from '../definitions'
+
+const canvas2d = createCanvas2d({
+	element: document.querySelector('canvas')!,
+	resizeMode: 'fill',
+})
 
 const Coin = defineComponent('coin', (value: true) => value)
 const Square = defineComponent('square', (value: true) => value)
@@ -35,10 +40,6 @@ const director = createDirector<{
 
 const game = createGame({
 	entity,
-	canvas: {
-		element: document.querySelector('canvas')!,
-		resizeMode: 'fill',
-	},
 	director,
 	plugins: [
 		canvas2d,

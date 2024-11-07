@@ -3,16 +3,15 @@ import type { GamePlugin } from '../../engine'
 import type { Vec2D } from '../../vec'
 import {
 	type AnyComponents,
-	createResource,
 	createSystem,
 	defineQuery,
 	type Query,
-	type Resource,
 	type System,
 	SystemType,
 } from '../../ecs'
-import { CanvasRes } from '../../resources'
 import { Camera2D, type Camera2DComponent, camera2DQuery } from './camera-2d'
+import { createCanvas } from './canvas'
+import { CanvasBufferRes, HtmlCanvasRectRes, HtmlCanvasRes } from './resources'
 import { getSpriteImage, Sprite, type SpriteComponent } from './sprite'
 import { Transform2D, type Transform2DComponent } from './transform2d'
 
@@ -28,23 +27,6 @@ export const Canvas2dEntity: Canvas2dEntityCreator = {
 }
 
 type Canvas2dEntity = InferEntity<Canvas2dEntityCreator>
-
-type CanvasBufferValue = {
-	context: CanvasRenderingContext2D
-	buffer: CanvasRenderingContext2D
-}
-
-const CanvasBufferRes: Resource<CanvasBufferValue> = createResource({
-	id: 'canvas-buffer',
-	value: {
-		get context(): CanvasRenderingContext2D {
-			throw new Error('Trying to access invalid canvas buffer context')
-		},
-		get buffer(): CanvasRenderingContext2D {
-			throw new Error('Trying to access invalid canvas buffer')
-		},
-	},
-})
 
 const render2dEntities: Query<[typeof Transform2D, typeof Sprite]> = defineQuery({
 	id: 'with-transform-and-texture',
@@ -118,10 +100,10 @@ const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
 	id: 'renderer-2d-setup',
 	type: SystemType.EnterScene,
 	fn() {
-		const canvas = CanvasRes.value
-		const { size, element } = canvas
+		const { size } = HtmlCanvasRectRes.value!
+		const { canvas, onResize } = HtmlCanvasRes.value!
 
-		const context = element.getContext('2d')!
+		const context = canvas.getContext('2d')!
 		const buffer = document.createElement('canvas').getContext('2d')!
 
 		function setSize(size: Vec2D) {
@@ -131,7 +113,7 @@ const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
 			buffer.canvas.height = size.y
 		}
 
-		canvas.onResize(setSize)
+		onResize(setSize)
 
 		setSize(size)
 
@@ -141,22 +123,39 @@ const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
 
 type Register = <TComponents extends AnyComponents>(args: Query<TComponents>) => void
 
-export const canvas2d: GamePlugin = {
-	scene: {
-		id: 'renderer-2d',
-		systems: [
-			renderer2dEnterSceneSystem,
-			renderer2dSystem,
-			render2dBeforeFrameSystem,
-			render2dAfterFrameSystem,
-		],
-		queries: (register: Register) => {
-			register(render2dEntities)
-			register(camera2DQuery)
+type Canvas2dArgs = {
+	element: HTMLElement
+} & ({
+	resizeMode: 'fill'
+} | {
+	resizeMode: 'static'
+	size: Vec2D
+})
+
+export function createCanvas2d(args: Canvas2dArgs): GamePlugin {
+	const plugin = {
+		beforeGameStart() {
+			createCanvas(args)
 		},
-	},
+		scene: {
+			id: 'renderer-2d',
+			systems: [
+				renderer2dEnterSceneSystem,
+				renderer2dSystem,
+				render2dBeforeFrameSystem,
+				render2dAfterFrameSystem,
+			],
+			queries: (register: Register) => {
+				register(render2dEntities)
+				register(camera2DQuery)
+			},
+		},
+	}
+
+	return plugin
 }
 
 export * from './camera-2d'
+export * from './resources'
 export * from './sprite'
 export * from './transform2d'
