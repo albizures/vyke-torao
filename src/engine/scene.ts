@@ -54,6 +54,11 @@ type EnterSceneSystemFn<
 
 export type WorldSceneArgs<TEntity extends AnyEntity, TProps = never> = Simplify<SystemCollectionArgs<TEntity> & {
 	world: World<TEntity>
+	/**
+	 * A function that is called when the scene is entered.
+	 * This is where you should create entities and add systems.
+	 * Internally, this is a system of type EnterScene that is added to the scene.
+	 */
 	enter?: EnterSceneSystemFn<TEntity, TProps>
 }>
 
