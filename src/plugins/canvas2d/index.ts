@@ -133,8 +133,8 @@ type Canvas2dArgs = {
 })
 
 export function createCanvas2d(args: Canvas2dArgs): GamePlugin {
-	const plugin = {
-		beforeGameStart() {
+	const plugin: GamePlugin = {
+		beforeStart() {
 			createCanvas(args)
 		},
 		scene: {
