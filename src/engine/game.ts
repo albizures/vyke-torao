@@ -43,6 +43,7 @@ type CreateToraoSceneArgs<TEntity extends AnyEntity, TProps = never> = Omit<Worl
  * 	director,
  * 	entity,
  * })
+ * ```
  */
 export function createGame<
 	TCreator extends AnyEntityCreator,

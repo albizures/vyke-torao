@@ -40,6 +40,7 @@ const game = createGame({
 	director,
 	entity,
 })
+```
 
 ## Others vyke projects
 - [Flowmodoro app by vyke](https://github.com/albizures/vyke-flowmodoro)
