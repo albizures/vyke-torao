@@ -18,12 +18,32 @@ export type AnyTorao = Torao<any, any>
 
 export type Torao<TEntity extends AnyEntity, TScenes extends AnyDirectorScenes> = {
 	world: World<TEntity>
+	/**
+	 * Create a new scene.
+	 */
 	scene: <TProps = never>(name: keyof TScenes, args: CreateToraoSceneArgs<TEntity, TProps>) => Scene<TScenes[keyof TScenes]>
 	start: <TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) => void
 }
 
 type CreateToraoSceneArgs<TEntity extends AnyEntity, TProps = never> = Omit<WorldSceneArgs<TEntity, TProps>, 'world'>
 
+/**
+ * Create a new game.
+ * @example
+ * ```ts
+ * const entity = {
+ * 	// ...your components
+ * }
+ *
+ * const director = createDirector<{
+ * 	// ...your scenes
+ * }>()
+ *
+ * const game = createGame({
+ * 	director,
+ * 	entity,
+ * })
+ */
 export function createGame<
 	TCreator extends AnyEntityCreator,
 	TScenes extends AnyDirectorScenes,
