@@ -1,10 +1,11 @@
 import type { Merge, Simplify } from 'type-fest'
 import type { Maybe } from './query'
+import { assert } from '../error'
 import { map, set } from '../types'
 
-export type ComponentId = string | number | symbol
+export type ComponentKey = string | number | symbol
 
-export type AnyEntity = Record<ComponentId, any>
+export type AnyEntity = Record<ComponentKey, any>
 
 function identity<TValue>(value: TValue): TValue {
 	return value
@@ -12,16 +13,14 @@ function identity<TValue>(value: TValue): TValue {
 
 export type AnyEntityCreator = Record<string, Creator<any, any>>
 
-export type Creator<TValue, TArgs> = (args: TArgs) => TValue
+type Creator<TValue, TArgs> = (args: TArgs) => TValue
 
-export type Component<TName extends ComponentId, TValue, TArgs> = {
-	[K in TName]: Creator<TValue, TArgs>
-}
+export type Component<TName extends ComponentKey, TValue, TArgs> = Record<TName, Creator<TValue, TArgs>>
 
-export type AnyComponent = Component<ComponentId, any, any>
+export type AnyComponent = Component<ComponentKey, any, any>
 
-const allComponents = set<ComponentId>()
-const components = map<AnyComponent, ComponentId>()
+const allComponents = set<ComponentKey>()
+const components = map<AnyComponent, ComponentKey>()
 
 /**
  * Define a new component.
@@ -33,7 +32,7 @@ const components = map<AnyComponent, ComponentId>()
  * })
  * ```
  */
-export function defineComponent<TName extends ComponentId, TValue, TArgs = TValue>(
+export function defineComponent<TName extends ComponentKey, TValue, TArgs = TValue>(
 	name: TName,
 	creator: Creator<TValue, TArgs> = identity as Creator<TValue, TArgs>,
 ): Component<TName, TValue, TArgs> {
@@ -51,8 +50,11 @@ export function defineComponent<TName extends ComponentId, TValue, TArgs = TValu
 	return component
 }
 
-export function getComponentId(component: AnyComponent): ComponentId | undefined {
-	return components.get(component)
+export function getComponentId(component: AnyComponent): ComponentKey {
+	const id = components.get(component)
+	assert(id, `Component ${component} not found`)
+
+	return id
 }
 
 export function hasComponent(entity: AnyEntity, component: AnyComponent): boolean {

@@ -1,6 +1,6 @@
 import type { Vec2D } from '../vec'
 import { assertType, beforeEach, describe, expect, it } from 'vitest'
-import { createWorld, defineComponent, type InferEntity, maybe } from './'
+import { createWorld, defineComponent, maybe } from './'
 
 const Position = defineComponent('position', (values: Partial<Vec2D>) => {
 	const { x = 0, y = 0 } = values
@@ -23,9 +23,7 @@ const entity = {
 	...Buff,
 }
 
-type Entity = InferEntity<typeof entity>
-
-const world = createWorld<Entity>()
+const world = createWorld()
 const { spawn, despawn, reset, update, select, createQuery } = world
 
 const allPlayers = createQuery({

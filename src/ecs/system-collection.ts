@@ -1,22 +1,21 @@
 import type { ScenePlugin } from '../engine'
 import type { LoopFns, LoopValues } from '../engine/loop'
-import type { AnyEntity } from './entity'
 import type { System, SystemContext } from './system'
 import type { World } from './world'
 import { createSystemBox, type SystemBox } from '../boxes/system-box'
 import { LoopRes } from '../resources'
 
-type SystemCollection<TEntity extends AnyEntity> = {
-	box: SystemBox<TEntity>
-	intoLoop: (world: World<TEntity>) => LoopFns
+type SystemCollection = {
+	box: SystemBox
+	intoLoop: (world: World) => LoopFns
 }
 
-export type SystemCollectionArgs<TEntity extends AnyEntity> = {
-	systems?: Array<System<TEntity>>
+export type SystemCollectionArgs = {
+	systems?: Array<System>
 	plugins?: Array<ScenePlugin>
 }
 
-export function createSystemCollection<TEntity extends AnyEntity>(args: SystemCollectionArgs<TEntity>): SystemCollection<TEntity> {
+export function createSystemCollection(args: SystemCollectionArgs): SystemCollection {
 	const { systems: initSystems = [], plugins = [] } = args
 	const box = createSystemBox()
 
@@ -32,8 +31,8 @@ export function createSystemCollection<TEntity extends AnyEntity>(args: SystemCo
 
 	return {
 		box,
-		intoLoop<TEntity extends AnyEntity>(world: World<TEntity>) {
-			const systemContext: SystemContext<AnyEntity> = {
+		intoLoop(world: World) {
+			const systemContext: SystemContext = {
 				spawn: world.spawn,
 				select: world.select,
 				getEntity: world.entities.getById,

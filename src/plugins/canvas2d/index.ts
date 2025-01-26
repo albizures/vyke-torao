@@ -33,7 +33,7 @@ const render2dEntities: Query<[typeof Transform2D, typeof Sprite]> = defineQuery
 	with: [Transform2D, Sprite],
 })
 
-const render2dBeforeFrameSystem: System<Canvas2dEntity> = createSystem({
+const render2dBeforeFrameSystem: System = createSystem({
 	id: 'renderer-2d-before-frame',
 	type: SystemType.BeforeFrame,
 	fn(args) {
@@ -67,7 +67,7 @@ const render2dAfterFrameSystem: System = createSystem({
 	},
 })
 
-const renderer2dSystem: System<Canvas2dEntity> = createSystem({
+const renderer2dSystem: System = createSystem({
 	id: 'renderer-2d',
 	type: SystemType.Render,
 	fn(args) {
@@ -96,7 +96,7 @@ const renderer2dSystem: System<Canvas2dEntity> = createSystem({
 	},
 })
 
-const renderer2dEnterSceneSystem: System<Canvas2dEntity> = createSystem({
+const renderer2dEnterSceneSystem: System = createSystem({
 	id: 'renderer-2d-setup',
 	type: SystemType.EnterScene,
 	fn() {

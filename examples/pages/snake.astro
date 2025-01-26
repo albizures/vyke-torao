@@ -30,7 +30,7 @@
 import type { Vec2D } from '../../src/vec'
 import { createDirector, createGame, type InferWithComponent } from '../../src'
 import { Velocity2D } from '../../src/components'
-import { createSystem, defineComponent, type InferEntity, SystemType } from '../../src/ecs'
+import { createSystem, defineComponent, SystemType } from '../../src/ecs'
 import { Canvas2dEntity, createCamera2d, createCanvas2d, Transform2D } from '../../src/plugins/canvas2d'
 import { createEnterExit, EnterExitEntity } from '../../src/plugins/enter-exit'
 import { assets } from '../definitions'
@@ -70,7 +70,6 @@ const entity = {
 	...PrevPosition,
 }
 
-type Entity = InferEntity<typeof entity>
 
 const INITIAL_SIZE = 4
 const GRID_SIZE = 20
@@ -89,7 +88,6 @@ const director = createDirector<{
 }>()
 
 const game = createGame({
-	entity,
 	plugins: [canvas2d],
 	director,
 })
@@ -121,7 +119,7 @@ const allGrids = createQuery({
 	],
 })
 
-const move = createSystem<Entity>({
+const move = createSystem({
 	id: 'move',
 	type: SystemType.FixedUpdate,
 	fn(args) {
@@ -149,7 +147,7 @@ const move = createSystem<Entity>({
 	},
 })
 
-const snapToGrid = createSystem<Entity>({
+const snapToGrid = createSystem({
 	id: 'snap-to-grid',
 	type: SystemType.FixedUpdate,
 	fn(args) {
@@ -177,7 +175,7 @@ const snapToGrid = createSystem<Entity>({
 	},
 })
 
-const borderBehavior = createSystem<Entity>({
+const borderBehavior = createSystem({
 	id: 'border-behavior',
 	type: SystemType.FixedUpdate,
 	fn(args) {
@@ -218,7 +216,7 @@ const borderBehavior = createSystem<Entity>({
 	},
 })
 
-const followSystem = createSystem<Entity>({
+const followSystem = createSystem({
 	id: 'follow',
 	type: SystemType.FixedUpdate,
 	fn(args) {

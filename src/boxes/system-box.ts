@@ -1,40 +1,39 @@
-import type { AnyEntity } from '../ecs/entity'
 import { type System, SystemType } from '../ecs'
 import { set } from '../types'
 
-type SystemIterator<TEntity extends AnyEntity> = Iterable<System<TEntity>>
+type SystemIterator = Iterable<System>
 
-export type SystemBox<TEntity extends AnyEntity> = {
-	all: SystemIterator<TEntity>
-	fixedUpdate: SystemIterator<TEntity>
-	update: SystemIterator<TEntity>
-	render: SystemIterator<TEntity>
-	enterScene: SystemIterator<TEntity>
-	beforeFrame: SystemIterator<TEntity>
-	afterFrame: SystemIterator<TEntity>
-	add: (system: System<TEntity>) => void
-	remove: (system: System<TEntity>) => void
+export type SystemBox = {
+	all: SystemIterator
+	fixedUpdate: SystemIterator
+	update: SystemIterator
+	render: SystemIterator
+	enterScene: SystemIterator
+	beforeFrame: SystemIterator
+	afterFrame: SystemIterator
+	add: (system: System) => void
+	remove: (system: System) => void
 	size: () => number
 }
 
-export function createSystemBox<TEntity extends AnyEntity>(): SystemBox<TEntity> {
-	const allSystems = set<System<TEntity>>()
+export function createSystemBox(): SystemBox {
+	const allSystems = set<System>()
 	const byType = {
-		[SystemType.EnterScene]: set<System<TEntity>>(),
-		[SystemType.FixedUpdate]: set<System<TEntity>>(),
-		[SystemType.BeforeFrame]: set<System<TEntity>>(),
-		[SystemType.Update]: set<System<TEntity>>(),
-		[SystemType.Render]: set<System<TEntity>>(),
-		[SystemType.AfterFrame]: set<System<TEntity>>(),
-		[SystemType.ExitScene]: set<System<TEntity>>(),
+		[SystemType.EnterScene]: set<System>(),
+		[SystemType.FixedUpdate]: set<System>(),
+		[SystemType.BeforeFrame]: set<System>(),
+		[SystemType.Update]: set<System>(),
+		[SystemType.Render]: set<System>(),
+		[SystemType.AfterFrame]: set<System>(),
+		[SystemType.ExitScene]: set<System>(),
 	}
 
-	function add(system: System<TEntity>) {
+	function add(system: System) {
 		allSystems.add(system)
 		byType[system.type].add(system)
 	}
 
-	function remove(system: System<TEntity>) {
+	function remove(system: System) {
 		allSystems.delete(system)
 		byType[system.type].delete(system)
 	}

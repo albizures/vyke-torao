@@ -1,4 +1,4 @@
-import type { AnyEntity, AnyEntityCreator, Component, InferEntity } from '../ecs/entity'
+import type { AnyEntityCreator, Component, InferEntity } from '../ecs/entity'
 import type { GamePlugin, ScenePlugin } from '../engine'
 import { createSystem, defineComponent, defineQuery, type System, type SystemContext, SystemType } from '../ecs'
 
@@ -9,8 +9,8 @@ export const EnterExitEntity: EnterExitComponent = defineComponent<EnterExitKey,
 
 export type EnterExitEntity = InferEntity<EnterExitComponent>
 
-type EnterExitArgs<TEntity extends AnyEntity, TValue> = {
-	enter: (context: SystemContext<TEntity>) => TValue
+type EnterExitArgs<TValue> = {
+	enter: (context: SystemContext) => TValue
 	exit?: (value: TValue) => void
 }
 
@@ -20,7 +20,7 @@ function anyExit(value: unknown): void {
 	}
 }
 
-function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TEntity, TValue>): ScenePlugin {
+function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterExitArgs<TValue>): ScenePlugin {
 	const { enter, exit = anyExit } = args
 
 	const allEnterExits = defineQuery({
@@ -28,7 +28,7 @@ function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterE
 		with: [EnterExitEntity],
 	})
 
-	const enterSystem: System<TEntity> = createSystem({
+	const enterSystem: System = createSystem({
 		id: 'enter-exit:enter',
 		type: SystemType.EnterScene,
 		fn(context) {
@@ -43,7 +43,7 @@ function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterE
 		},
 	})
 
-	const exitSystem: System<TEntity> = createSystem({
+	const exitSystem: System = createSystem({
 		id: 'enter-exit:exit',
 		type: SystemType.ExitScene,
 		fn({ select }) {
@@ -64,7 +64,7 @@ function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterE
 	}
 }
 
-type CreateEnterExitArgs<TCreator extends AnyEntityCreator, TValue> = EnterExitArgs<InferEntity<TCreator>, TValue> & {
+type CreateEnterExitArgs<TCreator extends AnyEntityCreator, TValue> = EnterExitArgs<TValue> & {
 	entity: TCreator
 }
 

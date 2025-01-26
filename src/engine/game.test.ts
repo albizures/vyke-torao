@@ -4,14 +4,11 @@ import { createDirector } from './director'
 import { createGame } from './game'
 import { createStepRunner } from './loop'
 
-const entity = {}
-
 describe('createGame', () => {
 	it('should create create a game', () => {
 		const director = createDirector()
 		const game = createGame({
 			director,
-			entity,
 		})
 
 		expect(game).toBeDefined()
@@ -24,7 +21,6 @@ describe('createGame', () => {
 		}>()
 		const game = createGame({
 			director,
-			entity,
 		})
 
 		const scene = game.scene('test', {
@@ -48,7 +44,6 @@ describe('start', () => {
 		const game = createGame({
 			runner,
 			director,
-			entity,
 		})
 
 		const enter = vi.fn()
@@ -72,7 +67,6 @@ describe('start', () => {
 		const game = createGame({
 			runner,
 			director,
-			entity,
 			plugins: [
 				{
 					beforeStart,

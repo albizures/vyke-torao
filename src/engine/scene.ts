@@ -1,5 +1,4 @@
 import type { Simplify } from 'type-fest'
-import type { AnyEntity } from '../ecs/entity'
 import type { AnyAsset } from './assets'
 import type { Runner } from './loop'
 import type { ScenePlugin } from './plugin'
@@ -47,30 +46,27 @@ export function createScene<TProps = never>(args: SceneArgs<TProps>): Scene<TPro
 	}
 }
 
-type EnterSceneSystemFn<
-	TEntity extends AnyEntity,
-	TProps,
-> = (context: SystemContext<TEntity>, ...args: OptionalProps<TProps>) => void
+type EnterSceneSystemFn<TProps> = (context: SystemContext, ...args: OptionalProps<TProps>) => void
 
-export type WorldSceneArgs<TEntity extends AnyEntity, TProps = never> = Simplify<SystemCollectionArgs<TEntity> & {
-	world: World<TEntity>
+export type WorldSceneArgs<TProps = never> = Simplify<SystemCollectionArgs & {
+	world: World
 	/**
 	 * A function that is called when the scene is entered.
 	 * This is where you should create entities and add systems.
 	 * Internally, this is a system of type EnterScene that is added to the scene.
 	 */
-	enter?: EnterSceneSystemFn<TEntity, TProps>
+	enter?: EnterSceneSystemFn<TProps>
 }>
 
-export function createWorldScene<TEntity extends AnyEntity, TProps = never>(
-	args: WorldSceneArgs<TEntity, TProps>,
+export function createWorldScene<TProps = never>(
+	args: WorldSceneArgs<TProps>,
 ): Scene<TProps> {
 	const { world, enter } = args
 
 	const systems = createSystemCollection(args)
 
 	if (enter) {
-		const enterSystem: System<TEntity> = createSystem({
+		const enterSystem: System = createSystem({
 			id: `enter-scene`,
 			type: SystemType.EnterScene,
 			fn(context) {
@@ -91,16 +87,16 @@ export function createWorldScene<TEntity extends AnyEntity, TProps = never>(
 	})
 }
 
-type SceneBuilder<TEntity extends AnyEntity> = {
-	create: <TProps = never>(args: Omit<WorldSceneArgs<TEntity, TProps>, 'world' | 'plugins'>) => Scene<TProps>
+type SceneBuilder = {
+	create: <TProps = never>(args: Omit<WorldSceneArgs<TProps>, 'world' | 'plugins'>) => Scene<TProps>
 }
 
-type SceneBuilderArgs<TEntity extends AnyEntity> = {
-	world: World<TEntity>
+type SceneBuilderArgs = {
+	world: World
 	plugins?: Array<ScenePlugin>
 }
 
-export function createSceneBuilder<TEntity extends AnyEntity>(args: SceneBuilderArgs<TEntity>): SceneBuilder<TEntity> {
+export function createSceneBuilder(args: SceneBuilderArgs): SceneBuilder {
 	const { world, plugins = [] } = args
 
 	return {

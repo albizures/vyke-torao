@@ -1,4 +1,3 @@
-import type { AnyEntity, AnyEntityCreator, InferEntity } from '../ecs/entity'
 import type { OptionalProps } from '../types'
 import type { AnyDirectorScenes, Director } from './director'
 import type { GamePlugin, ScenePlugin } from './plugin'
@@ -7,25 +6,24 @@ import { assert } from '../error'
 import { createRequestAnimationFrameRunner, type Runner } from './loop'
 import { createWorldScene, type Scene, type WorldSceneArgs } from './scene'
 
-type ToraoArgs<TCreator extends AnyEntityCreator, TScenes extends AnyDirectorScenes> = {
-	entity: TCreator
+type ToraoArgs<TScenes extends AnyDirectorScenes> = {
 	plugins?: Array<GamePlugin>
 	director: Director<TScenes>
 	runner?: Runner
 }
 
-export type AnyTorao = Torao<any, any>
+export type AnyTorao = Torao<any>
 
-export type Torao<TEntity extends AnyEntity, TScenes extends AnyDirectorScenes> = {
-	world: World<TEntity>
+export type Torao<TScenes extends AnyDirectorScenes> = {
+	world: World
 	/**
 	 * Create a new scene.
 	 */
-	scene: <TProps = never>(name: keyof TScenes, args: CreateToraoSceneArgs<TEntity, TProps>) => Scene<TScenes[keyof TScenes]>
+	scene: <TProps = never>(name: keyof TScenes, args: CreateToraoSceneArgs<TProps>) => Scene<TScenes[keyof TScenes]>
 	start: <TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) => void
 }
 
-type CreateToraoSceneArgs<TEntity extends AnyEntity, TProps = never> = Omit<WorldSceneArgs<TEntity, TProps>, 'world'>
+type CreateToraoSceneArgs<TProps = never> = Omit<WorldSceneArgs<TProps>, 'world'>
 
 /**
  * Create a new game.
@@ -47,10 +45,8 @@ type CreateToraoSceneArgs<TEntity extends AnyEntity, TProps = never> = Omit<Worl
  * ```
  */
 export function createGame<
-	TCreator extends AnyEntityCreator,
 	TScenes extends AnyDirectorScenes,
-	TEntity extends AnyEntity = InferEntity<TCreator>,
->(args: ToraoArgs<TCreator, TScenes>): Torao<TEntity, TScenes> {
+>(args: ToraoArgs<TScenes>): Torao<TScenes> {
 	const {
 		director,
 		runner = createRequestAnimationFrameRunner(),
@@ -61,11 +57,11 @@ export function createGame<
 		.map((plugin) => plugin.scene)
 		.filter(Boolean) as Array<ScenePlugin>
 
-	const world = createWorld<TEntity>()
+	const world = createWorld()
 
-	const game: Torao<TEntity, TScenes> = {
+	const game: Torao<TScenes> = {
 		world,
-		scene<TProps = never>(name: keyof TScenes, args: CreateToraoSceneArgs<TEntity, TProps>) {
+		scene<TProps = never>(name: keyof TScenes, args: CreateToraoSceneArgs<TProps>) {
 			const { plugins = [] } = args
 
 			const scene = createWorldScene({

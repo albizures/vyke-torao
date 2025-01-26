@@ -1,6 +1,7 @@
+import type { AnyEntity } from '../ecs/entity'
 import { map } from '../types'
 
-export type RefBox<TRef> = {
+export type RefBox<TRef = AnyEntity> = {
 	byId: Map<string, TRef>
 	byRef: Map<TRef, string>
 	getId: (ref: TRef) => string | undefined
