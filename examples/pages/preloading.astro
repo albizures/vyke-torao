@@ -33,17 +33,16 @@ const entity = {
 	...Canvas2dEntity,
 }
 
+const torao = createGame({
+	plugins: [canvas2d],
+})
+
 const director = createDirector<{
 	preload: never
 	home: never
-}>()
+}>(torao)
 
-const torao = createGame({
-	plugins: [canvas2d],
-	director,
-})
-
-torao.scene('preload', {
+director.scene('preload', {
 	enter(_context) {
 		const list = [
 			assets.coin,
@@ -62,7 +61,7 @@ torao.scene('preload', {
 	},
 })
 
-torao.scene('home', {
+director.scene('home', {
 	enter(context) {
 		const { spawn } = context
 
@@ -83,5 +82,5 @@ torao.scene('home', {
 	},
 })
 
-torao.start('preload')
+director.start('preload')
 </script>

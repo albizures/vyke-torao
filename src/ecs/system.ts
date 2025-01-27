@@ -1,3 +1,4 @@
+import type { SceneContext } from '../engine/scene'
 import type { AnyEntity } from './entity'
 import type { Select, Spawn, Update } from './world'
 
@@ -25,6 +26,7 @@ export type SystemContext = Readonly<{
 	select: Select
 	getEntity: (id: string) => AnyEntity | undefined
 	update: Update
+	scene: SceneContext<unknown>
 }>
 
 type SystemFn = (context: SystemContext) => void

@@ -1,29 +1,30 @@
-import type { OptionalProps } from '../types'
-import type { AnyDirectorScenes, Director } from './director'
 import type { GamePlugin, ScenePlugin } from './plugin'
 import { createWorld, type World } from '../ecs'
 import { assert } from '../error'
+import { rootSola } from '../sola'
+import { map } from '../types'
 import { createRequestAnimationFrameRunner, type Runner } from './loop'
-import { createWorldScene, type Scene, type WorldSceneArgs } from './scene'
+import { createWorldScene, type Scene, type SceneContext, type WorldSceneArgs } from './scene'
 
-type ToraoArgs<TScenes extends AnyDirectorScenes> = {
+const sola = rootSola.withTag('game')
+
+type ToraoArgs = {
 	plugins?: Array<GamePlugin>
-	director: Director<TScenes>
 	runner?: Runner
 }
 
-export type AnyTorao = Torao<any>
+export type AnyTorao = Torao
 
-export type Torao<TScenes extends AnyDirectorScenes> = {
+export type Torao = {
 	world: World
+	readonly currentScene: string | undefined
 	/**
 	 * Create a new scene.
 	 */
-	scene: <TProps = never>(name: keyof TScenes, args: CreateToraoSceneArgs<TProps>) => Scene<TScenes[keyof TScenes]>
-	start: <TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) => void
+	scene: (name: string, args: WorldSceneArgs<unknown>) => Scene<unknown>
+	start: (name: string, props?: unknown) => void
+	goTo: (name: string, props?: unknown) => void
 }
-
-type CreateToraoSceneArgs<TProps = never> = Omit<WorldSceneArgs<TProps>, 'world'>
 
 /**
  * Create a new game.
@@ -44,11 +45,8 @@ type CreateToraoSceneArgs<TProps = never> = Omit<WorldSceneArgs<TProps>, 'world'
  * })
  * ```
  */
-export function createGame<
-	TScenes extends AnyDirectorScenes,
->(args: ToraoArgs<TScenes>): Torao<TScenes> {
+export function createGame(args: ToraoArgs): Torao {
 	const {
-		director,
 		runner = createRequestAnimationFrameRunner(),
 		plugins: globalPlugins = [],
 	} = args
@@ -58,24 +56,28 @@ export function createGame<
 		.filter(Boolean) as Array<ScenePlugin>
 
 	const world = createWorld()
+	const scenes = map<string, Scene<unknown>>()
+	let currentScene: string | undefined
 
-	const game: Torao<TScenes> = {
+	const game: Torao = {
 		world,
-		scene<TProps = never>(name: keyof TScenes, args: CreateToraoSceneArgs<TProps>) {
+		get currentScene() {
+			return currentScene
+		},
+		scene(name: string, args: WorldSceneArgs<unknown>) {
 			const { plugins = [] } = args
 
 			const scene = createWorldScene({
 				...args,
 				plugins: scenePlugins.concat(plugins),
-				world,
-			}) as Scene<TScenes[keyof TScenes]>
+			}) as Scene<unknown>
 
-			director.setScene(name, scene)
+			scenes.set(name, scene)
 			return scene
 		},
-		start<TName extends keyof TScenes>(name: TName, ...args: OptionalProps<TScenes[TName]>) {
+		start(name: string, props: unknown) {
 			assert(
-				Object.values(director.scenes).length > 0,
+				scenes.size > 0,
 				'No scenes added to the director',
 				'Did you forget to add scenes to the director?',
 			)
@@ -86,8 +88,33 @@ export function createGame<
 				}
 			}
 
-			director.runner = runner
-			director.goTo(name, ...args)
+			game.goTo(name, props)
+		},
+		goTo(name: string, props: unknown) {
+			const scene = scenes.get(name) as Scene<unknown>
+
+			assert(scene, `Scene "${String(name)}" does not exist`)
+
+			if (currentScene) {
+				const current = scenes.get(currentScene)
+				if (current) {
+					sola.info('Going to scene', name, 'from', current.id)
+					current.beforeExit()
+				}
+			}
+			else {
+				sola.info('Going to scene', name)
+			}
+
+			const context: SceneContext<unknown> = {
+				runner,
+				world,
+				props,
+			}
+
+			currentScene = name
+
+			scene.enter(context)
 		},
 	}
 	return game

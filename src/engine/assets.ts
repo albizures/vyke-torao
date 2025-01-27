@@ -1,6 +1,6 @@
 import { assert } from '../error'
 import { rootSola } from '../sola'
-import { deferedPromise } from '../types'
+import { deferredPromise } from '../types'
 
 const sola = rootSola.withTag('assets')
 
@@ -70,7 +70,7 @@ export function createLoadable<TType extends AssetType>(url: string, type: TType
 		return storedAsset
 	}
 
-	const promise = deferedPromise<AvailableAsset<TType>>()
+	const promise = deferredPromise<AvailableAsset<TType>>()
 
 	let value: AssetValues<TType> | undefined
 	const asset: Asset<TType> = {
@@ -101,7 +101,7 @@ type AssetArgs<TType extends AssetType> = {
 export function defineAsset<TType extends AssetType>(args: AssetArgs<TType>): Asset<TType> {
 	const { value, type } = args
 
-	const promise = deferedPromise<AvailableAsset<TType>>()
+	const promise = deferredPromise<AvailableAsset<TType>>()
 
 	const asset: Asset<TType> = {
 		type,

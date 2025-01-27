@@ -1,7 +1,5 @@
 import type { Simplify } from 'type-fest'
-import type { AnyAsset } from './assets'
 import type { Runner } from './loop'
-import type { ScenePlugin } from './plugin'
 import { createSystem, type System, type SystemContext, SystemType, type World } from '../ecs'
 import { createSystemCollection, type SystemCollectionArgs } from '../ecs/system-collection'
 import { assert } from '../error'
@@ -13,7 +11,6 @@ import { noop, type OptionalProps } from '../types'
  */
 export type Scene<TProps = never> = {
 	id?: string
-	assets: Set<AnyAsset>
 	enter: (context: SceneContext<TProps>) => void
 	beforeExit: () => void
 }
@@ -21,6 +18,7 @@ export type Scene<TProps = never> = {
 export type SceneContext<TProps = never> = {
 	props: TProps
 	runner: Runner
+	world: World
 }
 
 type SceneArgs<TProps = never> = {
@@ -42,14 +40,12 @@ export function createScene<TProps = never>(args: SceneArgs<TProps>): Scene<TPro
 			assert(savedContext, 'Scene context is not set')
 			beforeExit(savedContext)
 		},
-		assets: new Set(),
 	}
 }
 
 type EnterSceneSystemFn<TProps> = (context: SystemContext, ...args: OptionalProps<TProps>) => void
 
 export type WorldSceneArgs<TProps = never> = Simplify<SystemCollectionArgs & {
-	world: World
 	/**
 	 * A function that is called when the scene is entered.
 	 * This is where you should create entities and add systems.
@@ -61,7 +57,7 @@ export type WorldSceneArgs<TProps = never> = Simplify<SystemCollectionArgs & {
 export function createWorldScene<TProps = never>(
 	args: WorldSceneArgs<TProps>,
 ): Scene<TProps> {
-	const { world, enter } = args
+	const { enter } = args
 
 	const systems = createSystemCollection(args)
 
@@ -82,32 +78,8 @@ export function createWorldScene<TProps = never>(
 			const { runner, props } = context
 
 			ScenePropsRes.set(props)
-			runner.start(systems.intoLoop(world))
+			systems.enter(context)
+			runner.start(systems.intoLoop(context))
 		},
 	})
-}
-
-type SceneBuilder = {
-	create: <TProps = never>(args: Omit<WorldSceneArgs<TProps>, 'world' | 'plugins'>) => Scene<TProps>
-}
-
-type SceneBuilderArgs = {
-	world: World
-	plugins?: Array<ScenePlugin>
-}
-
-export function createSceneBuilder(args: SceneBuilderArgs): SceneBuilder {
-	const { world, plugins = [] } = args
-
-	return {
-		create(args) {
-			const scene = createWorldScene({
-				...args,
-				world,
-				plugins,
-			})
-
-			return scene
-		},
-	}
 }

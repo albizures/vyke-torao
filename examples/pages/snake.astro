@@ -83,14 +83,15 @@ enum DirectionType {
 	Right = 3,
 }
 
-const director = createDirector<{
-	home: never
-}>()
 
 const game = createGame({
 	plugins: [canvas2d],
-	director,
 })
+
+const director = createDirector<{
+	home: never
+}>(game)
+
 
 const { createQuery } = game.world
 
@@ -262,7 +263,7 @@ const enterExit = createEnterExit({
 	},
 })
 
-game.scene('home', {
+director.scene('home', {
 	systems: [
 		move,
 		snapToGrid,
@@ -370,7 +371,6 @@ function getNewDirection(entity: WithDirection, keydown: string): DirectionType 
 	const { direction } = entity
 	switch (keydown) {
 		case 'ArrowUp':
-
 			if (direction !== DirectionType.Down) {
 				return DirectionType.Up
 			}
@@ -395,5 +395,5 @@ function getNewDirection(entity: WithDirection, keydown: string): DirectionType 
 	return direction
 }
 
-game.start('home')
+director.start('home')
 </script>

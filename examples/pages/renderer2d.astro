@@ -34,18 +34,19 @@ const entity = {
 	...Square,
 }
 
-const director = createDirector<{
-	home: never
-}>()
 
 const game = createGame({
-	director,
 	plugins: [
 		canvas2d,
 	],
 })
 
-game.scene('home', {
+const director = createDirector<{
+	home: never
+}>(game)
+
+
+director.scene('home', {
 	enter(context) {
 		const { spawn } = context
 		const size = 30
@@ -95,5 +96,5 @@ game.scene('home', {
 	},
 })
 
-game.start('home')
+director.start('home')
 </script>

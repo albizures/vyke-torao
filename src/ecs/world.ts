@@ -1,4 +1,3 @@
-/* eslint-disabl e no-console */
 import { createRefBox, type RefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
 import { type AnyEntity, type ComponentKey, getComponentId, hasComponent, type InferWithComponents, isMaybeComponent } from './entity'

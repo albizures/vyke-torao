@@ -14,9 +14,12 @@ export function map<TKeys, TValues>(entries?: Array<[TKeys, TValues]>): Map<TKey
 
 export function noop() {}
 
+/**
+ * Useful for creating optional props.
+ */
 export type OptionalProps<TValue> = [TValue] extends [never] ? [] : [props: TValue]
 
-export function deferedPromise<TValue>() {
+export function deferredPromise<TValue>() {
 	let resolve: (value: TValue) => void
 	let reject: (error: unknown) => void
 	const promise = new Promise<TValue>((res, rej) => {

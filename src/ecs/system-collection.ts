@@ -1,13 +1,17 @@
-import type { ScenePlugin } from '../engine'
+import type { SceneContext, ScenePlugin } from '../engine'
 import type { LoopFns, LoopValues } from '../engine/loop'
 import type { System, SystemContext } from './system'
-import type { World } from './world'
 import { createSystemBox, type SystemBox } from '../boxes/system-box'
 import { LoopRes } from '../resources'
 
 type SystemCollection = {
 	box: SystemBox
-	intoLoop: (world: World) => LoopFns
+	/**
+	 * Creates loop functions for the systems in the collection.
+	 * Basically, converts the systems into functions that can be called by a Runner.
+	 */
+	intoLoop: <TProps = never>(scene: SceneContext<TProps>) => LoopFns
+	enter: <TProps = never>(scene: SceneContext<TProps>) => void
 }
 
 export type SystemCollectionArgs = {
@@ -29,19 +33,28 @@ export function createSystemCollection(args: SystemCollectionArgs): SystemCollec
 		}
 	}
 
-	return {
+	function createSystemContext(scene: SceneContext<any>): SystemContext {
+		const { world } = scene
+		return {
+			spawn: world.spawn,
+			select: world.select,
+			getEntity: world.entities.getById,
+			update: world.update,
+			scene,
+		}
+	}
+
+	const collection: SystemCollection = {
 		box,
-		intoLoop(world: World) {
-			const systemContext: SystemContext = {
-				spawn: world.spawn,
-				select: world.select,
-				getEntity: world.entities.getById,
-				update: world.update,
-			}
+		enter(scene) {
+			const systemContext = createSystemContext(scene)
 
 			for (const system of box.enterScene) {
 				system.run(systemContext)
 			}
+		},
+		intoLoop(scene) {
+			const systemContext = createSystemContext(scene)
 
 			function beforeFrame(args: LoopValues) {
 				LoopRes.set(args)
@@ -84,4 +97,6 @@ export function createSystemCollection(args: SystemCollectionArgs): SystemCollec
 			}
 		},
 	}
+
+	return collection
 }
