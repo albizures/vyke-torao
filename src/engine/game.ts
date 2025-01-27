@@ -21,7 +21,7 @@ export type Torao = {
 	/**
 	 * Create a new scene.
 	 */
-	scene: (name: string, args: WorldSceneArgs<unknown>) => Scene<unknown>
+	scene: (name: string, args: Omit<WorldSceneArgs<unknown>, 'id'>) => Scene<unknown>
 	start: (name: string, props?: unknown) => void
 	goTo: (name: string, props?: unknown) => void
 }
@@ -45,7 +45,7 @@ export type Torao = {
  * })
  * ```
  */
-export function createGame(args: ToraoArgs): Torao {
+export function createGame(args: ToraoArgs = {}): Torao {
 	const {
 		runner = createRequestAnimationFrameRunner(),
 		plugins: globalPlugins = [],
@@ -64,11 +64,12 @@ export function createGame(args: ToraoArgs): Torao {
 		get currentScene() {
 			return currentScene
 		},
-		scene(name: string, args: WorldSceneArgs<unknown>) {
+		scene(name: string, args: Omit<WorldSceneArgs<unknown>, 'id'>) {
 			const { plugins = [] } = args
 
 			const scene = createWorldScene({
 				...args,
+				id: name,
 				plugins: scenePlugins.concat(plugins),
 			}) as Scene<unknown>
 

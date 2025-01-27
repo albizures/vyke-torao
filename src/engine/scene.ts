@@ -10,7 +10,7 @@ import { noop, type OptionalProps } from '../types'
  * A scene is a collection of entities and systems.
  */
 export type Scene<TProps = never> = {
-	id?: string
+	id: string
 	enter: (context: SceneContext<TProps>) => void
 	beforeExit: () => void
 }
@@ -22,16 +22,18 @@ export type SceneContext<TProps = never> = {
 }
 
 type SceneArgs<TProps = never> = {
+	id: string
 	enter: (context: SceneContext<TProps>) => void
 	beforeExit?: (context: SceneContext<TProps>) => void
 }
 
 export function createScene<TProps = never>(args: SceneArgs<TProps>): Scene<TProps> {
-	const { enter, beforeExit = noop } = args
+	const { id, enter, beforeExit = noop } = args
 
 	let savedContext: SceneContext<TProps> | undefined
 
 	return {
+		id,
 		enter(context: SceneContext<TProps>) {
 			savedContext = context
 			enter(context)
@@ -46,6 +48,7 @@ export function createScene<TProps = never>(args: SceneArgs<TProps>): Scene<TPro
 type EnterSceneSystemFn<TProps> = (context: SystemContext, ...args: OptionalProps<TProps>) => void
 
 export type WorldSceneArgs<TProps = never> = Simplify<SystemCollectionArgs & {
+	id: string
 	/**
 	 * A function that is called when the scene is entered.
 	 * This is where you should create entities and add systems.
@@ -57,7 +60,7 @@ export type WorldSceneArgs<TProps = never> = Simplify<SystemCollectionArgs & {
 export function createWorldScene<TProps = never>(
 	args: WorldSceneArgs<TProps>,
 ): Scene<TProps> {
-	const { enter } = args
+	const { id, enter } = args
 
 	const systems = createSystemCollection(args)
 
@@ -74,6 +77,7 @@ export function createWorldScene<TProps = never>(
 	}
 
 	return createScene({
+		id,
 		enter(context) {
 			const { runner, props } = context
 
