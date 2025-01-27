@@ -1,18 +1,20 @@
 import type { Simplify } from 'type-fest'
 import type { Runner } from './loop'
 import { createSystem, type System, type SystemContext, SystemType, type World } from '../ecs'
-import { createSystemCollection, type SystemCollectionArgs } from '../ecs/system-collection'
+import { createSystemCollection, type SystemCollection, type SystemCollectionArgs } from '../ecs/system-collection'
 import { assert } from '../error'
 import { ScenePropsRes } from '../resources/scene-props'
-import { noop, type OptionalProps } from '../types'
+
+export type EnterSceneSystemFn<TProps> = (context: SystemContext<TProps>) => void
 
 /**
  * A scene is a collection of entities and systems.
  */
-export type Scene<TProps = never> = {
+export type Scene = {
 	id: string
-	enter: (context: SceneContext<TProps>) => void
-	beforeExit: () => void
+	systems: SystemCollection
+	enter: (context: SceneContext<unknown>) => void
+	exit: () => void
 }
 
 export type SceneContext<TProps = never> = {
@@ -21,69 +23,60 @@ export type SceneContext<TProps = never> = {
 	world: World
 }
 
-type SceneArgs<TProps = never> = {
-	id: string
-	enter: (context: SceneContext<TProps>) => void
-	beforeExit?: (context: SceneContext<TProps>) => void
-}
-
-export function createScene<TProps = never>(args: SceneArgs<TProps>): Scene<TProps> {
-	const { id, enter, beforeExit = noop } = args
-
-	let savedContext: SceneContext<TProps> | undefined
-
-	return {
-		id,
-		enter(context: SceneContext<TProps>) {
-			savedContext = context
-			enter(context)
-		},
-		beforeExit() {
-			assert(savedContext, 'Scene context is not set')
-			beforeExit(savedContext)
-		},
-	}
-}
-
-type EnterSceneSystemFn<TProps> = (context: SystemContext, ...args: OptionalProps<TProps>) => void
-
-export type WorldSceneArgs<TProps = never> = Simplify<SystemCollectionArgs & {
+export type SceneArgs = Simplify<SystemCollectionArgs & {
 	id: string
 	/**
 	 * A function that is called when the scene is entered.
 	 * This is where you should create entities and add systems.
 	 * Internally, this is a system of type EnterScene that is added to the scene.
 	 */
-	enter?: EnterSceneSystemFn<TProps>
+	enter?: EnterSceneSystemFn<unknown>
+	beforeExit?: (context: SceneContext<unknown>) => void
 }>
 
-export function createWorldScene<TProps = never>(
-	args: WorldSceneArgs<TProps>,
-): Scene<TProps> {
-	const { id, enter } = args
+export function createScene(args: SceneArgs): Scene {
+	const { id, enter, beforeExit } = args
 
 	const systems = createSystemCollection(args)
-
+	let savedContext: SceneContext<unknown> | undefined
 	if (enter) {
 		const enterSystem: System = createSystem({
 			id: `enter-scene`,
 			type: SystemType.EnterScene,
-			fn(context) {
-				enter(context, ...[ScenePropsRes.mutable()] as OptionalProps<TProps>)
-			},
+			fn: enter,
 		})
 
 		systems.box.add(enterSystem)
 	}
 
-	return createScene({
+	if (beforeExit) {
+		const beforeExitSystem: System = createSystem({
+			id: `before-exit-scene`,
+			type: SystemType.BeforeExitScene,
+			fn() {
+				assert(savedContext, 'Scene context is not set')
+				beforeExit(savedContext)
+			},
+		})
+
+		systems.box.add(beforeExitSystem)
+	}
+
+	return {
 		id,
-		enter(context) {
+		systems,
+		enter(context: SceneContext<unknown>) {
+			savedContext = context
+
 			const { runner, props } = context
 
 			ScenePropsRes.set(props)
 			systems.enter(context)
 			runner.start(systems.intoLoop(context))
 		},
-	})
+		exit() {
+			assert(savedContext, 'Scene context is not set')
+			systems.beforeExit(savedContext)
+		},
+	}
 }

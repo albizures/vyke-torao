@@ -1,4 +1,4 @@
-import type { AnyEntityCreator, Component, InferEntity } from '../ecs/entity'
+import type { Component, InferEntity } from '../ecs/entity'
 import type { GamePlugin, ScenePlugin } from '../engine'
 import { createSystem, defineComponent, defineQuery, type System, type SystemContext, SystemType } from '../ecs'
 
@@ -45,7 +45,7 @@ function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterE
 
 	const exitSystem: System = createSystem({
 		id: 'enter-exit:exit',
-		type: SystemType.ExitScene,
+		type: SystemType.BeforeExitScene,
 		fn({ select }) {
 			const value = select(allEnterExits).first()
 
@@ -64,11 +64,7 @@ function createPluginScene<TEntity extends EnterExitEntity, TValue>(args: EnterE
 	}
 }
 
-type CreateEnterExitArgs<TCreator extends AnyEntityCreator, TValue> = EnterExitArgs<TValue> & {
-	entity: TCreator
-}
-
-export function createEnterExit<TCreator extends AnyEntityCreator, TValue>(args: CreateEnterExitArgs<TCreator, TValue>): { scene: ScenePlugin } {
+export function createEnterExit<TValue>(args: EnterExitArgs<TValue>): { scene: ScenePlugin } {
 	return {
 		scene: createPluginScene(args),
 	} as const satisfies GamePlugin

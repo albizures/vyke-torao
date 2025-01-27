@@ -4,7 +4,7 @@ import type { System, SystemContext } from './system'
 import { createSystemBox, type SystemBox } from '../boxes/system-box'
 import { LoopRes } from '../resources'
 
-type SystemCollection = {
+export type SystemCollection = {
 	box: SystemBox
 	/**
 	 * Creates loop functions for the systems in the collection.
@@ -12,6 +12,7 @@ type SystemCollection = {
 	 */
 	intoLoop: <TProps = never>(scene: SceneContext<TProps>) => LoopFns
 	enter: <TProps = never>(scene: SceneContext<TProps>) => void
+	beforeExit: <TProps = never>(scene: SceneContext<TProps>) => void
 }
 
 export type SystemCollectionArgs = {
@@ -50,6 +51,13 @@ export function createSystemCollection(args: SystemCollectionArgs): SystemCollec
 			const systemContext = createSystemContext(scene)
 
 			for (const system of box.enterScene) {
+				system.run(systemContext)
+			}
+		},
+		beforeExit(scene) {
+			const systemContext = createSystemContext(scene)
+
+			for (const system of box.beforeExitScene) {
 				system.run(systemContext)
 			}
 		},

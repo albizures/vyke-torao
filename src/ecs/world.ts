@@ -1,7 +1,7 @@
+import type { AnyComponents, Query, QueryArgs } from './query'
 import { createRefBox, type RefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
 import { type AnyEntity, type ComponentKey, getComponentId, hasComponent, type InferWithComponents, isMaybeComponent } from './entity'
-import { type AnyComponents, defineQuery, type Query, type QueryArgs } from './query'
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
 
@@ -35,7 +35,6 @@ export type World = {
 	entities: RefBox
 	update: Update
 	remove: (entity: AnyEntity, key: ComponentKey) => void
-	createQuery: CreateQuery
 }
 
 export function createWorld(): World {
@@ -195,14 +194,6 @@ export function createWorld(): World {
 		compute(query)
 	}
 
-	function createQuery<const TComponents extends AnyComponents>(args: QueryArgs<TComponents>): Query<TComponents> {
-		const query = defineQuery(args)
-
-		registerQuery(query)
-
-		return query
-	}
-
 	function select<TComponents extends AnyComponents>(query: Query<TComponents>) {
 		if (!queries.has(query)) {
 			registerQuery(query)
@@ -218,7 +209,6 @@ export function createWorld(): World {
 		despawn,
 		registerQuery,
 		select,
-		createQuery,
 		reset,
 		entities,
 		update,

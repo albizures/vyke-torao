@@ -30,7 +30,7 @@
 import type { Vec2D } from '../../src/vec'
 import { createDirector, createGame, type InferWithComponent } from '../../src'
 import { Velocity2D } from '../../src/components'
-import { createSystem, defineComponent, SystemType } from '../../src/ecs'
+import { createSystem, defineComponent, defineQuery, SystemType } from '../../src/ecs'
 import { Canvas2dEntity, createCamera2d, createCanvas2d, Transform2D } from '../../src/plugins/canvas2d'
 import { createEnterExit, EnterExitEntity } from '../../src/plugins/enter-exit'
 import { assets } from '../definitions'
@@ -92,10 +92,7 @@ const director = createDirector<{
 	home: never
 }>(game)
 
-
-const { createQuery } = game.world
-
-const allHeads = createQuery({
+const allHeads = defineQuery({
 	id: 'all-heads',
 	with: [
 		Head,
@@ -107,12 +104,12 @@ const allHeads = createQuery({
 	],
 })
 
-const allTails = createQuery({
+const allTails = defineQuery({
 	id: 'all-tails',
 	with: [Tail, Transform2D, PrevPosition],
 })
 
-const allGrids = createQuery({
+const allGrids = defineQuery({
 	id: 'all-grids',
 	with: [
 		Grid,
@@ -241,7 +238,6 @@ const followSystem = createSystem({
 })
 
 const enterExit = createEnterExit({
-	entity,
 	enter: (context) => {
 		function onKeyDown(event: KeyboardEvent) {
 			const { select, update } = context

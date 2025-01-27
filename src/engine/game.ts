@@ -4,7 +4,7 @@ import { assert } from '../error'
 import { rootSola } from '../sola'
 import { map } from '../types'
 import { createRequestAnimationFrameRunner, type Runner } from './loop'
-import { createWorldScene, type Scene, type SceneContext, type WorldSceneArgs } from './scene'
+import { createScene, type Scene, type SceneArgs, type SceneContext } from './scene'
 
 const sola = rootSola.withTag('game')
 
@@ -21,7 +21,7 @@ export type Torao = {
 	/**
 	 * Create a new scene.
 	 */
-	scene: (name: string, args: Omit<WorldSceneArgs<unknown>, 'id'>) => Scene<unknown>
+	scene: (name: string, args: Omit<SceneArgs, 'id'>) => Scene
 	start: (name: string, props?: unknown) => void
 	goTo: (name: string, props?: unknown) => void
 }
@@ -56,7 +56,7 @@ export function createGame(args: ToraoArgs = {}): Torao {
 		.filter(Boolean) as Array<ScenePlugin>
 
 	const world = createWorld()
-	const scenes = map<string, Scene<unknown>>()
+	const scenes = map<string, Scene>()
 	let currentScene: string | undefined
 
 	const game: Torao = {
@@ -64,19 +64,19 @@ export function createGame(args: ToraoArgs = {}): Torao {
 		get currentScene() {
 			return currentScene
 		},
-		scene(name: string, args: Omit<WorldSceneArgs<unknown>, 'id'>) {
+		scene(name, args) {
 			const { plugins = [] } = args
 
-			const scene = createWorldScene({
+			const scene = createScene({
 				...args,
 				id: name,
 				plugins: scenePlugins.concat(plugins),
-			}) as Scene<unknown>
+			}) as Scene
 
 			scenes.set(name, scene)
 			return scene
 		},
-		start(name: string, props: unknown) {
+		start(name, props) {
 			assert(
 				scenes.size > 0,
 				'No scenes added to the director',
@@ -91,8 +91,8 @@ export function createGame(args: ToraoArgs = {}): Torao {
 
 			game.goTo(name, props)
 		},
-		goTo(name: string, props: unknown) {
-			const scene = scenes.get(name) as Scene<unknown>
+		goTo(name, props) {
+			const scene = scenes.get(name)
 
 			assert(scene, `Scene "${String(name)}" does not exist`)
 
@@ -100,7 +100,7 @@ export function createGame(args: ToraoArgs = {}): Torao {
 				const current = scenes.get(currentScene)
 				if (current) {
 					sola.info('Going to scene', name, 'from', current.id)
-					current.beforeExit()
+					current.exit()
 				}
 			}
 			else {

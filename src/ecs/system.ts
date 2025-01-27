@@ -18,15 +18,15 @@ export enum SystemType {
 	Update = 3,
 	Render = 4,
 	AfterFrame = 5,
-	ExitScene = 6,
+	BeforeExitScene = 6,
 }
 
-export type SystemContext = Readonly<{
+export type SystemContext<TProps = unknown> = Readonly<{
 	spawn: Spawn
 	select: Select
 	getEntity: (id: string) => AnyEntity | undefined
 	update: Update
-	scene: SceneContext<unknown>
+	scene: SceneContext<TProps>
 }>
 
 type SystemFn = (context: SystemContext) => void

@@ -3,7 +3,7 @@ import { createGame } from './game'
 import { createStepRunner } from './loop'
 
 describe('createGame', () => {
-	it('should create create a game', () => {
+	it('should create a game', () => {
 		const game = createGame()
 
 		expect(game).toBeDefined()

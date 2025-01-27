@@ -9,6 +9,7 @@ export type SystemBox = {
 	update: SystemIterator
 	render: SystemIterator
 	enterScene: SystemIterator
+	beforeExitScene: SystemIterator
 	beforeFrame: SystemIterator
 	afterFrame: SystemIterator
 	add: (system: System) => void
@@ -25,7 +26,7 @@ export function createSystemBox(): SystemBox {
 		[SystemType.Update]: set<System>(),
 		[SystemType.Render]: set<System>(),
 		[SystemType.AfterFrame]: set<System>(),
-		[SystemType.ExitScene]: set<System>(),
+		[SystemType.BeforeExitScene]: set<System>(),
 	}
 
 	function add(system: System) {
@@ -48,6 +49,7 @@ export function createSystemBox(): SystemBox {
 		update: byType[SystemType.Update],
 		render: byType[SystemType.Render],
 		enterScene: byType[SystemType.EnterScene],
+		beforeExitScene: byType[SystemType.BeforeExitScene],
 		beforeFrame: byType[SystemType.BeforeFrame],
 		afterFrame: byType[SystemType.AfterFrame],
 		add,
