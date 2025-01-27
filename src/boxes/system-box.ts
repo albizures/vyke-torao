@@ -1,4 +1,5 @@
-import { type System, SystemType } from '../ecs'
+import type { System } from '../ecs'
+import { SystemType } from '../ecs'
 import { set } from '../types'
 
 type SystemIterator = Iterable<System>

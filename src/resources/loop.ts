@@ -1,5 +1,6 @@
+import type { Resource } from '../ecs'
 import type { LoopValues } from '../engine/loop'
-import { createResource, type Resource } from '../ecs'
+import { createResource } from '../ecs'
 
 export const LoopRes: Resource<LoopValues> = createResource<LoopValues>({
 	id: 'loop',

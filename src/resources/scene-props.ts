@@ -1,4 +1,5 @@
-import { createResource, type Resource } from '../ecs'
+import type { Resource } from '../ecs'
+import { createResource } from '../ecs'
 
 export const ScenePropsRes: Resource<any> = createResource({
 	id: 'canvas-rect',

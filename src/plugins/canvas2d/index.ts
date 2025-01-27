@@ -1,19 +1,16 @@
+import type { AnyComponents, Query, System } from '../../ecs'
 import type { InferEntity } from '../../ecs/entity'
 import type { GamePlugin } from '../../engine'
 import type { Vec2D } from '../../vec'
-import {
-	type AnyComponents,
-	createSystem,
-	defineQuery,
-	type Query,
-	type System,
-	SystemType,
-} from '../../ecs'
-import { Camera2D, type Camera2DComponent, camera2DQuery } from './camera-2d'
+import type { Camera2DComponent } from './camera-2d'
+import type { SpriteComponent } from './sprite'
+import type { Transform2DComponent } from './transform2d'
+import { createSystem, defineQuery, SystemType } from '../../ecs'
+import { Camera2D, camera2DQuery } from './camera-2d'
 import { createCanvas } from './canvas'
 import { CanvasBufferRes, HtmlCanvasRectRes, HtmlCanvasRes } from './resources'
-import { getSpriteImage, Sprite, type SpriteComponent } from './sprite'
-import { Transform2D, type Transform2DComponent } from './transform2d'
+import { getSpriteImage, Sprite } from './sprite'
+import { Transform2D } from './transform2d'
 
 type Canvas2dEntityCreator =
 	& Camera2DComponent

@@ -1,7 +1,8 @@
+import type { SystemBox } from '../boxes/system-box'
 import type { SceneContext, ScenePlugin } from '../engine'
 import type { LoopFns, LoopValues } from '../engine/loop'
 import type { System, SystemContext } from './system'
-import { createSystemBox, type SystemBox } from '../boxes/system-box'
+import { createSystemBox } from '../boxes/system-box'
 import { LoopRes } from '../resources'
 
 export type SystemCollection = {

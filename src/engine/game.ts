@@ -1,10 +1,13 @@
+import type { World } from '../ecs'
+import type { Runner } from './loop'
 import type { GamePlugin, ScenePlugin } from './plugin'
-import { createWorld, type World } from '../ecs'
+import type { Scene, SceneArgs, SceneContext } from './scene'
+import { createWorld } from '../ecs'
 import { assert } from '../error'
 import { rootSola } from '../sola'
 import { map } from '../types'
-import { createRequestAnimationFrameRunner, type Runner } from './loop'
-import { createScene, type Scene, type SceneArgs, type SceneContext } from './scene'
+import { createRequestAnimationFrameRunner } from './loop'
+import { createScene } from './scene'
 
 const sola = rootSola.withTag('game')
 

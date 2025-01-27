@@ -1,5 +1,6 @@
+import type { Resource } from '../../ecs'
 import type { Vec2D } from '../../vec'
-import { createResource, type Resource } from '../../ecs'
+import { createResource } from '../../ecs'
 
 type HtmlCanvas = {
 	canvas: HTMLCanvasElement

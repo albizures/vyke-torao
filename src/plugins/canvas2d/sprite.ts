@@ -1,8 +1,10 @@
 import type { SetOptional } from 'type-fest'
+import type { Component } from '../../ecs/entity'
+import type { AnyAsset, Asset } from '../../engine'
 import type { Region2d } from '../../region'
 import type { Vec2D } from '../../vec'
-import { type Component, defineComponent } from '../../ecs/entity'
-import { type AnyAsset, type Asset, AssetType, loadAsset } from '../../engine'
+import { defineComponent } from '../../ecs/entity'
+import { AssetType, loadAsset } from '../../engine'
 import { is } from '../../types'
 import { getPlaceholder } from './placeholders'
 

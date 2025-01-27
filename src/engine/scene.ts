@@ -1,7 +1,9 @@
 import type { Simplify } from 'type-fest'
+import type { System, SystemContext, World } from '../ecs'
+import type { SystemCollection, SystemCollectionArgs } from '../ecs/system-collection'
 import type { Runner } from './loop'
-import { createSystem, type System, type SystemContext, SystemType, type World } from '../ecs'
-import { createSystemCollection, type SystemCollection, type SystemCollectionArgs } from '../ecs/system-collection'
+import { createSystem, SystemType } from '../ecs'
+import { createSystemCollection } from '../ecs/system-collection'
 import { assert } from '../error'
 import { ScenePropsRes } from '../resources/scene-props'
 

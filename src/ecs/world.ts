@@ -1,7 +1,9 @@
+import type { RefBox } from '../boxes/ref-box'
+import type { AnyEntity, ComponentKey, InferWithComponents } from './entity'
 import type { AnyComponents, Query, QueryArgs } from './query'
-import { createRefBox, type RefBox } from '../boxes/ref-box'
+import { createRefBox } from '../boxes/ref-box'
 import { map, set } from '../types'
-import { type AnyEntity, type ComponentKey, getComponentId, hasComponent, type InferWithComponents, isMaybeComponent } from './entity'
+import { getComponentId, hasComponent, isMaybeComponent } from './entity'
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
 

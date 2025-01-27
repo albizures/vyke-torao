@@ -34,7 +34,6 @@ const entity = {
 	...Square,
 }
 
-
 const game = createGame({
 	plugins: [
 		canvas2d,
@@ -44,7 +43,6 @@ const game = createGame({
 const director = createDirector<{
 	home: never
 }>(game)
-
 
 director.scene('home', {
 	enter(context) {

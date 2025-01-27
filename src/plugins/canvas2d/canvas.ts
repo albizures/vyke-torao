@@ -1,5 +1,6 @@
+import type { Vec2D } from '../../vec'
 import { assert } from '../../error'
-import { vec2D, type Vec2D } from '../../vec'
+import { vec2D } from '../../vec'
 import { HtmlCanvasRectRes, HtmlCanvasRes } from './resources'
 
 type ResizeListener = (size: Vec2D) => void

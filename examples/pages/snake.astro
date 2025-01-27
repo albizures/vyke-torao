@@ -27,10 +27,12 @@
 </html>
 
 <script>
+import type { InferWithComponent } from '../../src'
+import type { SystemContext } from '../../src/ecs'
 import type { Vec2D } from '../../src/vec'
-import { createDirector, createGame, type InferWithComponent } from '../../src'
+import { createDirector, createGame } from '../../src'
 import { Velocity2D } from '../../src/components'
-import { createSystem, defineComponent, defineQuery, SystemType } from '../../src/ecs'
+import { defineComponent, defineQuery, Systems, SystemType } from '../../src/ecs'
 import { Canvas2dEntity, createCamera2d, createCanvas2d, Transform2D } from '../../src/plugins/canvas2d'
 import { createEnterExit, EnterExitEntity } from '../../src/plugins/enter-exit'
 import { assets } from '../definitions'
@@ -70,7 +72,6 @@ const entity = {
 	...PrevPosition,
 }
 
-
 const INITIAL_SIZE = 4
 const GRID_SIZE = 20
 const CELL_SIZE = 10
@@ -82,7 +83,6 @@ enum DirectionType {
 	Left = 2,
 	Right = 3,
 }
-
 
 const game = createGame({
 	plugins: [canvas2d],
@@ -117,125 +117,109 @@ const allGrids = defineQuery({
 	],
 })
 
-const move = createSystem({
-	id: 'move',
-	type: SystemType.FixedUpdate,
-	fn(args) {
-		const { select } = args
+function move(context: SystemContext) {
+	const { select } = context
 
-		for (const item of select(allHeads)) {
-			const { direction, velocity2D, head } = item
+	for (const item of select(allHeads)) {
+		const { direction, velocity2D, head } = item
 
-			switch (direction) {
-				case DirectionType.Up:
+		switch (direction) {
+			case DirectionType.Up:
 
-					head.position.y -= velocity2D.y
-					break
-				case DirectionType.Down:
-					head.position.y += velocity2D.y
-					break
-				case DirectionType.Left:
-					head.position.x -= velocity2D.x
-					break
-				case DirectionType.Right:
-					head.position.x += velocity2D.x
-					break
-			}
+				head.position.y -= velocity2D.y
+				break
+			case DirectionType.Down:
+				head.position.y += velocity2D.y
+				break
+			case DirectionType.Left:
+				head.position.x -= velocity2D.x
+				break
+			case DirectionType.Right:
+				head.position.x += velocity2D.x
+				break
 		}
-	},
-})
+	}
+}
 
-const snapToGrid = createSystem({
-	id: 'snap-to-grid',
-	type: SystemType.FixedUpdate,
-	fn(args) {
-		const { select } = args
+function snapToGrid(context: SystemContext) {
+	const { select } = context
 
-		const offset = select(allGrids).first()!.transform2D.position
+	const offset = select(allGrids).first()!.transform2D.position
 
-		for (const item of select(allHeads)) {
-			const { transform2D, head, prevPosition } = item
-			const position = transform2D.position
+	for (const item of select(allHeads)) {
+		const { transform2D, head, prevPosition } = item
+		const position = transform2D.position
 
-			const inGridX = head.position.x + offset.x
-			const inGridY = head.position.y + offset.y
+		const inGridX = head.position.x + offset.x
+		const inGridY = head.position.y + offset.y
 
-			const x = Math.round(inGridX / CELL_SIZE) * CELL_SIZE
-			const y = Math.round(inGridY / CELL_SIZE) * CELL_SIZE
+		const x = Math.round(inGridX / CELL_SIZE) * CELL_SIZE
+		const y = Math.round(inGridY / CELL_SIZE) * CELL_SIZE
 
-			if (x !== position.x || y !== position.y) {
-				prevPosition.x = position.x
-				prevPosition.y = position.y
-				position.x = x
-				position.y = y
-			}
+		if (x !== position.x || y !== position.y) {
+			prevPosition.x = position.x
+			prevPosition.y = position.y
+			position.x = x
+			position.y = y
 		}
-	},
-})
+	}
+}
 
-const borderBehavior = createSystem({
-	id: 'border-behavior',
-	type: SystemType.FixedUpdate,
-	fn(args) {
-		const { select } = args
-		const { grid: gridValues } = select(allGrids).first()!
+function borderBehavior(context: SystemContext) {
+	const { select } = context
+	const { grid: gridValues } = select(allGrids).first()!
 
-		const canvasSize = {
-			x: gridValues.size.x * GRID_SIZE,
-			y: gridValues.size.y * GRID_SIZE,
+	const canvasSize = {
+		x: gridValues.size.x * GRID_SIZE,
+		y: gridValues.size.y * GRID_SIZE,
+	}
+
+	for (const item of select(allHeads)) {
+		const { borderBehavior, head } = item
+		const { position } = head
+
+		if (borderBehavior.type === 'die') {
+			if (position.x < 0 || position.x > canvasSize.x || position.y < 0 || position.y > canvasSize.y) {
+				// console.log('die')
+			}
+
+			continue
 		}
 
-		for (const item of select(allHeads)) {
-			const { borderBehavior, head } = item
-			const { position } = head
-
-			if (borderBehavior.type === 'die') {
-				if (position.x < 0 || position.x > canvasSize.x || position.y < 0 || position.y > canvasSize.y) {
-					// console.log('die')
-				}
-
-				continue
-			}
-
-			if (position.x <= 0) {
-				position.x = canvasSize.x - CELL_SIZE
-			}
-			else if (position.x > canvasSize.x - CELL_SIZE) {
-				position.x = 0
-			}
-
-			if (position.y <= 0) {
-				position.y = canvasSize.y - CELL_SIZE
-			}
-			else if (position.y > canvasSize.y - CELL_SIZE) {
-				position.y = 0
-			}
+		if (position.x <= 0) {
+			position.x = canvasSize.x - CELL_SIZE
 		}
-	},
-})
-
-const followSystem = createSystem({
-	id: 'follow',
-	type: SystemType.FixedUpdate,
-	fn(args) {
-		const { select, getEntity } = args
-
-		for (const item of select(allTails)) {
-			const { tail: tailValues, transform2D, prevPosition } = item
-			const { follow } = tailValues
-
-			const followPrevPosition = getEntity(follow)?.prevPosition
-			const position = transform2D.position
-
-			if (followPrevPosition && (followPrevPosition.x !== position.x || followPrevPosition.y !== position.y)) {
-				prevPosition.x = position.x
-				prevPosition.y = position.y
-				position.x = followPrevPosition!.x
-				position.y = followPrevPosition!.y
-			}
+		else if (position.x > canvasSize.x - CELL_SIZE) {
+			position.x = 0
 		}
-	},
-})
+
+		if (position.y <= 0) {
+			position.y = canvasSize.y - CELL_SIZE
+		}
+		else if (position.y > canvasSize.y - CELL_SIZE) {
+			position.y = 0
+		}
+	}
+}
+
+function followSystem(context: SystemContext) {
+	const { select, getEntity } = context
+
+	for (const item of select(allTails)) {
+		const { tail: tailValues, transform2D, prevPosition } = item
+		const { follow } = tailValues
+
+		const followPrevPosition = getEntity(follow)?.prevPosition
+		const position = transform2D.position
+
+		if (followPrevPosition && (followPrevPosition.x !== position.x || followPrevPosition.y !== position.y)) {
+			prevPosition.x = position.x
+			prevPosition.y = position.y
+			position.x = followPrevPosition!.x
+			position.y = followPrevPosition!.y
+		}
+	}
+}
 
 const enterExit = createEnterExit({
 	enter: (context) => {
@@ -260,12 +244,12 @@ const enterExit = createEnterExit({
 })
 
 director.scene('home', {
-	systems: [
-		move,
-		snapToGrid,
-		borderBehavior,
-		followSystem,
-	],
+	systems: Systems(
+		[SystemType.FixedUpdate, move],
+		[SystemType.FixedUpdate, snapToGrid],
+		[SystemType.FixedUpdate, borderBehavior],
+		[SystemType.FixedUpdate, followSystem],
+	),
 	plugins: [
 		enterExit.scene,
 	],

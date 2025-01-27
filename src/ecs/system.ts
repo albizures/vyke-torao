@@ -59,3 +59,16 @@ export function createSystem(args: SystemArgs): System {
 		},
 	}
 }
+
+type SystemItem = [type: SystemType, fn: SystemFn]
+
+export function Systems(...systems: Array<SystemItem>): Array<System> {
+	return systems.map(([type, fn], index) => {
+		const id = fn.name || `system-${index}`
+		return createSystem({
+			id,
+			type,
+			fn,
+		})
+	})
+}
