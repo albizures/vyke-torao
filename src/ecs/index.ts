@@ -1,4 +1,4 @@
-export { defineComponent, type InferEntity, type InferWith as InferWithComponent } from './entity'
+export { defineComponent, identity, type InferEntity, type InferWith as InferWithComponent } from './entity'
 export * from './query'
 export * from './resource'
 export * from './system'

@@ -7,8 +7,12 @@ export type ComponentKey = string | number | symbol
 
 export type AnyEntity = Record<ComponentKey, any>
 
-function identity<TValue>(value: TValue): TValue {
+function identityFn<TValue>(value: TValue): TValue {
 	return value
+}
+
+export function identity<TValue>() {
+	return identityFn as Creator<TValue, TValue>
 }
 
 export type AnyEntityCreator = Record<string, Creator<any, any>>
@@ -34,7 +38,7 @@ const components = map<AnyComponent, ComponentKey>()
  */
 export function defineComponent<TName extends ComponentKey, TValue, TArgs = TValue>(
 	name: TName,
-	creator: Creator<TValue, TArgs> = identity as Creator<TValue, TArgs>,
+	creator: Creator<TValue, TArgs>,
 ): Component<TName, TValue, TArgs> {
 	if (allComponents.has(name)) {
 		throw new Error(`Component ${String(name)} already exists`)

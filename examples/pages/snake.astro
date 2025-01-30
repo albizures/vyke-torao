@@ -32,7 +32,7 @@ import type { SystemContext } from '../../src/ecs'
 import type { Vec2D } from '../../src/vec'
 import { createDirector, createGame } from '../../src'
 import { Velocity2D } from '../../src/components'
-import { defineComponent, defineQuery, Systems, SystemType } from '../../src/ecs'
+import { defineComponent, defineQuery, identity, Systems, SystemType } from '../../src/ecs'
 import { Canvas2dEntity, createCamera2d, createCanvas2d, Transform2D } from '../../src/plugins/canvas2d'
 import { createEnterExit, EnterExitEntity } from '../../src/plugins/enter-exit'
 import { assets } from '../definitions'
@@ -42,11 +42,11 @@ const canvas2d = createCanvas2d({
 	resizeMode: 'fill',
 })
 
-const BorderBehavior = defineComponent('borderBehavior', (type: 'wrap' | 'die') => ({ type }))
-const Grid = defineComponent('grid', (size: Vec2D) => ({ size }))
-const Head = defineComponent('head', (position: Vec2D) => ({ position }))
-const Direction = defineComponent('direction', (dir: DirectionType) => dir)
-const PrevPosition = defineComponent('prevPosition', (position: Vec2D) => position)
+const BorderBehavior = defineComponent('borderBehavior', identity<'wrap' | 'die'>())
+const Grid = defineComponent('gridSize', identity<Vec2D>())
+const HeadPosition = defineComponent('headPosition', identity<Vec2D>())
+const Direction = defineComponent('direction', identity<DirectionType>())
+const PrevPosition = defineComponent('prevPosition', identity<Vec2D>())
 
 type WithDirection = InferWithComponent<typeof Direction>
 
@@ -56,16 +56,14 @@ type TailArgs = {
 	follow: string
 }
 
-const Tail = defineComponent('tail', (args: TailArgs) => ({
-	...args,
-}))
+const Tail = defineComponent('tail', identity<TailArgs>())
 
 const entity = {
 	...Canvas2dEntity,
 	...EnterExitEntity,
 	...BorderBehavior,
 	...Grid,
-	...Head,
+	...HeadPosition,
 	...Tail,
 	...Direction,
 	...Velocity2D,
@@ -95,7 +93,7 @@ const director = createDirector<{
 const allHeads = defineQuery({
 	id: 'all-heads',
 	with: [
-		Head,
+		HeadPosition,
 		Transform2D,
 		BorderBehavior,
 		PrevPosition,
@@ -121,21 +119,21 @@ function move(context: SystemContext) {
 	const { select } = context
 
 	for (const item of select(allHeads)) {
-		const { direction, velocity2D, head } = item
+		const { direction, velocity2D, headPosition } = item
 
 		switch (direction) {
 			case DirectionType.Up:
 
-				head.position.y -= velocity2D.y
+				headPosition.y -= velocity2D.y
 				break
 			case DirectionType.Down:
-				head.position.y += velocity2D.y
+				headPosition.y += velocity2D.y
 				break
 			case DirectionType.Left:
-				head.position.x -= velocity2D.x
+				headPosition.x -= velocity2D.x
 				break
 			case DirectionType.Right:
-				head.position.x += velocity2D.x
+				headPosition.x += velocity2D.x
 				break
 		}
 	}
@@ -147,11 +145,11 @@ function snapToGrid(context: SystemContext) {
 	const offset = select(allGrids).first()!.transform2D.position
 
 	for (const item of select(allHeads)) {
-		const { transform2D, head, prevPosition } = item
+		const { transform2D, headPosition, prevPosition } = item
 		const position = transform2D.position
 
-		const inGridX = head.position.x + offset.x
-		const inGridY = head.position.y + offset.y
+		const inGridX = headPosition.x + offset.x
+		const inGridY = headPosition.y + offset.y
 
 		const x = Math.round(inGridX / CELL_SIZE) * CELL_SIZE
 		const y = Math.round(inGridY / CELL_SIZE) * CELL_SIZE
@@ -167,37 +165,32 @@ function snapToGrid(context: SystemContext) {
 
 function borderBehavior(context: SystemContext) {
 	const { select } = context
-	const { grid: gridValues } = select(allGrids).first()!
+	const { gridSize } = select(allGrids).first()!
 
 	const canvasSize = {
-		x: gridValues.size.x * GRID_SIZE,
-		y: gridValues.size.y * GRID_SIZE,
+		x: gridSize.x * GRID_SIZE,
+		y: gridSize.y * GRID_SIZE,
 	}
 
 	for (const item of select(allHeads)) {
-		const { borderBehavior, head } = item
-		const { position } = head
+		const { borderBehavior, headPosition } = item
 
-		if (borderBehavior.type === 'die') {
-			if (position.x < 0 || position.x > canvasSize.x || position.y < 0 || position.y > canvasSize.y) {
-				// console.log('die')
-			}
-
+		if (borderBehavior === 'die') {
 			continue
 		}
 
-		if (position.x <= 0) {
-			position.x = canvasSize.x - CELL_SIZE
+		if (headPosition.x <= 0) {
+			headPosition.x = canvasSize.x - CELL_SIZE
 		}
-		else if (position.x > canvasSize.x - CELL_SIZE) {
-			position.x = 0
+		else if (headPosition.x > canvasSize.x - CELL_SIZE) {
+			headPosition.x = 0
 		}
 
-		if (position.y <= 0) {
-			position.y = canvasSize.y - CELL_SIZE
+		if (headPosition.y <= 0) {
+			headPosition.y = canvasSize.y - CELL_SIZE
 		}
-		else if (position.y > canvasSize.y - CELL_SIZE) {
-			position.y = 0
+		else if (headPosition.y > canvasSize.y - CELL_SIZE) {
+			headPosition.y = 0
 		}
 	}
 }
@@ -296,7 +289,7 @@ director.scene('home', {
 		})
 
 		spawn('grid', {
-			grid: entity.grid({ x: CELL_SIZE, y: CELL_SIZE }),
+			grid: entity.gridSize({ x: CELL_SIZE, y: CELL_SIZE }),
 			transform2D: entity.transform2D({ position: { x: 20, y: 20 } }),
 			sprite: gridSprite,
 		})
@@ -304,7 +297,7 @@ director.scene('home', {
 		const startX = 80
 
 		spawn('head', {
-			head: entity.head({ x: startX, y: 20 }),
+			head: entity.headPosition({ x: startX, y: 20 }),
 			borderBehavior: entity.borderBehavior('wrap'),
 			velocity2D: { x: VELOCITY, y: VELOCITY },
 			transform2D: entity.transform2D({
