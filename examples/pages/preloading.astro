@@ -19,6 +19,7 @@
 import {
 	createDirector,
 	createGame,
+	defineEntity,
 	loadAsset,
 } from '../../src'
 import { Canvas2dEntity, createCamera2d, createCanvas2d } from '../../src/plugins/canvas2d'
@@ -29,9 +30,9 @@ const canvas2d = createCanvas2d({
 	resizeMode: 'fill',
 })
 
-const entity = {
+const entity = defineEntity({
 	...Canvas2dEntity,
-}
+})
 
 const torao = createGame({
 	plugins: [canvas2d],
@@ -43,6 +44,7 @@ const director = createDirector<{
 }>(torao)
 
 director.scene('preload', {
+	entity,
 	enter(_context) {
 		const list = [
 			assets.coin,
@@ -62,11 +64,12 @@ director.scene('preload', {
 })
 
 director.scene('home', {
+	entity,
 	enter(context) {
 		const { spawn } = context
 
 		spawn('coin', {
-			transform2D: entity.transform2D({
+			transform2d: entity.transform2d({
 				position: { x: 50, y: 10 },
 			}),
 			sprite: entity.sprite({

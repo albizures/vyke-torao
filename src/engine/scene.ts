@@ -7,8 +7,6 @@ import { createSystemCollection } from '../ecs/system-collection'
 import { assert } from '../error'
 import { ScenePropsRes } from '../resources/scene-props'
 
-export type EnterSceneSystemFn<TProps> = (context: SystemContext<TProps>) => void
-
 /**
  * A scene is a collection of entities and systems.
  */
@@ -29,10 +27,10 @@ export type SceneArgs = Simplify<SystemCollectionArgs & {
 	id: string
 	/**
 	 * A function that is called when the scene is entered.
-	 * This is where you should create entities and add systems.
+	 * This is where you should spawn entities
 	 * Internally, this is a system of type EnterScene that is added to the scene.
 	 */
-	enter?: EnterSceneSystemFn<unknown>
+	enter?: (context: SystemContext) => void
 	beforeExit?: (context: SceneContext<unknown>) => void
 }>
 

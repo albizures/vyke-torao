@@ -1,7 +1,7 @@
-import type { AnyComponents, Query, System } from '../ecs'
+import type { AnyCreators, Query, System } from '../ecs'
 import type { Torao } from './game'
 
-export type Register = <TComponents extends AnyComponents>(args: Query<TComponents>) => void
+export type Register = <TComponents extends AnyCreators>(args: Query<TComponents>) => void
 
 export type ScenePlugin = {
 	id: string

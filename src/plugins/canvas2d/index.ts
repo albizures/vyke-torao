@@ -1,33 +1,24 @@
-import type { AnyComponents, Query, System } from '../../ecs'
-import type { InferEntity } from '../../ecs/entity'
+import type { AnyCreators, Query, System } from '../../ecs'
 import type { GamePlugin } from '../../engine'
-import type { Vec2D } from '../../vec'
-import type { Camera2DComponent } from './camera-2d'
-import type { SpriteComponent } from './sprite'
-import type { Transform2DComponent } from './transform2d'
-import { createSystem, defineQuery, SystemType } from '../../ecs'
-import { Camera2D, camera2DQuery } from './camera-2d'
+import type { Vec2d } from '../../vec'
+import { createSystem, defineEntity, defineQuery, SystemType } from '../../ecs'
+import { Camera2dEntity, camera2DQuery } from './camera-2d'
 import { createCanvas } from './canvas'
 import { CanvasBufferRes, HtmlCanvasRectRes, HtmlCanvasRes } from './resources'
-import { getSpriteImage, Sprite } from './sprite'
-import { Transform2D } from './transform2d'
+import { getSpriteImage, SpriteEntity } from './sprite'
+import { Transform2dEntity } from './transform2d'
 
-type Canvas2dEntityCreator =
-	& Camera2DComponent
-	& Transform2DComponent
-	& SpriteComponent
+export const Canvas2dEntity = defineEntity({
+	...Camera2dEntity,
+	...Transform2dEntity,
+	...SpriteEntity,
+})
 
-export const Canvas2dEntity: Canvas2dEntityCreator = {
-	...Camera2D,
-	...Transform2D,
-	...Sprite,
-}
+const { transform2d, sprite } = Canvas2dEntity
 
-type Canvas2dEntity = InferEntity<Canvas2dEntityCreator>
-
-const render2dEntities: Query<[typeof Transform2D, typeof Sprite]> = defineQuery({
+const render2dEntities: Query<[typeof transform2d, typeof sprite]> = defineQuery({
 	id: 'with-transform-and-texture',
-	with: [Transform2D, Sprite],
+	with: [transform2d, sprite],
 })
 
 const render2dBeforeFrameSystem: System = createSystem({
@@ -41,8 +32,8 @@ const render2dBeforeFrameSystem: System = createSystem({
 		buffer.clearRect(0, 0, context.canvas.width, context.canvas.height)
 
 		if (camera2d) {
-			const { transform2D } = camera2d
-			const { position, scale, angle } = transform2D
+			const { transform2d } = camera2d
+			const { position, scale, angle } = transform2d
 
 			buffer.save()
 			buffer.translate(position.x, position.y)
@@ -72,9 +63,9 @@ const renderer2dSystem: System = createSystem({
 		const { buffer } = CanvasBufferRes.mutable()
 
 		for (const entity of select(render2dEntities)) {
-			const { transform2D, sprite } = entity
+			const { transform2d, sprite } = entity
 			const { atlas } = sprite
-			const { position, scale, angle } = transform2D
+			const { position, scale, angle } = transform2d
 			const image = getSpriteImage(sprite)
 
 			if (image) {
@@ -103,7 +94,7 @@ const renderer2dEnterSceneSystem: System = createSystem({
 		const context = canvas.getContext('2d')!
 		const buffer = document.createElement('canvas').getContext('2d')!
 
-		function setSize(size: Vec2D) {
+		function setSize(size: Vec2d) {
 			context.canvas.width = size.x
 			context.canvas.height = size.y
 			buffer.canvas.width = size.x
@@ -118,7 +109,7 @@ const renderer2dEnterSceneSystem: System = createSystem({
 	},
 })
 
-type Register = <TComponents extends AnyComponents>(args: Query<TComponents>) => void
+type Register = <TComponents extends AnyCreators>(args: Query<TComponents>) => void
 
 type Canvas2dArgs = {
 	element: HTMLElement
@@ -126,7 +117,7 @@ type Canvas2dArgs = {
 	resizeMode: 'fill'
 } | {
 	resizeMode: 'static'
-	size: Vec2D
+	size: Vec2d
 })
 
 export function createCanvas2d(args: Canvas2dArgs): GamePlugin {

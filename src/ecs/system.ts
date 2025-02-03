@@ -21,8 +21,8 @@ export enum SystemType {
 	BeforeExitScene = 6,
 }
 
-export type SystemContext<TProps = unknown> = Readonly<{
-	spawn: Spawn
+export type SystemContext<TEntity = AnyEntity, TProps = unknown> = Readonly<{
+	spawn: Spawn<TEntity>
 	select: Select
 	getEntity: (id: string) => AnyEntity | undefined
 	update: Update

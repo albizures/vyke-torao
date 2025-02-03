@@ -1,29 +1,32 @@
-import type { AnyComponent, InferWithComponents } from './entity'
+import type { AnyCreator, InferWithComponents } from './entity'
 import { set } from '../types'
 
-export type Maybe<TComponents> = { component: TComponents }
+export class Maybe<TCreator> {
+	constructor(public readonly creator: TCreator) {
+	}
+}
 
-export type AnyComponents = Array<AnyComponent | Maybe<AnyComponent>>
+export type AnyCreators = Array<AnyCreator | Maybe<AnyCreator>>
 
-type WhereFn<TComponents extends AnyComponents> = (values: InferWithComponents<TComponents>) => boolean
+type WhereFn<TComponents extends AnyCreators> = (values: InferWithComponents<TComponents>) => boolean
 
-export type AnyQuery = Query<AnyComponents>
+export type AnyQuery = Query<AnyCreators>
 
-export type QueryArgs<TComponents extends AnyComponents> = {
+export type QueryArgs<TComponents extends AnyCreators> = {
 	id: string
 	with: TComponents
-	without?: Array<AnyComponent>
+	without?: Array<AnyCreator>
 	where?: WhereFn<TComponents>
 }
 
-export type Query<TComponents extends AnyComponents> = {
+export type Query<TCreators extends AnyCreators> = {
 	id: string
-	with: Set<TComponents[number]>
-	without: Set<AnyComponent>
-	where?: WhereFn<TComponents> | undefined
+	with: Set<TCreators[number]>
+	without: Set<AnyCreator>
+	where?: WhereFn<TCreators> | undefined
 }
 
-export function defineQuery<const TComponents extends AnyComponents>(args: QueryArgs<TComponents>): Query<TComponents> {
+export function defineQuery<const TComponents extends AnyCreators>(args: QueryArgs<TComponents>): Query<TComponents> {
 	const { id, where } = args
 	const withComponents = set(args.with)
 	const withoutComponents = set(args.without || [])
@@ -37,6 +40,6 @@ export function defineQuery<const TComponents extends AnyComponents>(args: Query
 	return query
 }
 
-export function maybe<const TComponent extends AnyComponent>(component: TComponent): Maybe<TComponent> {
-	return { component }
+export function maybe<const TCreator extends AnyCreator>(creator: TCreator): Maybe<TCreator> {
+	return new Maybe(creator)
 }

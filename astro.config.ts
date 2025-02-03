@@ -5,4 +5,7 @@ import { defineConfig } from 'astro/config'
 export default defineConfig({
 	srcDir: './examples',
 	outDir: './build',
+	devToolbar: {
+		enabled: false,
+	},
 })

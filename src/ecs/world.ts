@@ -1,17 +1,18 @@
 import type { RefBox } from '../boxes/ref-box'
 import type { AnyEntity, ComponentKey, InferWithComponents } from './entity'
-import type { AnyComponents, Query, QueryArgs } from './query'
+import type { AnyCreators, Query, QueryArgs } from './query'
 import { createRefBox } from '../boxes/ref-box'
+import { assert } from '../error'
 import { map, set } from '../types'
-import { getComponentId, hasComponent, isMaybeComponent } from './entity'
+import { hasComponent, isMaybe } from './entity'
 
 type UpdateFn<TEntity> = (values: TEntity) => TEntity
 
-export type Spawn = (id: string, values: AnyEntity) => AnyEntity
+export type Spawn<TEntity = AnyEntity> = (id: string, values: TEntity) => AnyEntity
 
 export type Select = <
-	TComponents extends AnyComponents,
->(query: Query<TComponents>) => RefBox<InferWithComponents<TComponents>>
+	TCreators extends AnyCreators,
+>(query: Query<TCreators>) => RefBox<InferWithComponents<TCreators>>
 
 type UpdateArgs =
 	| [entity: AnyEntity, key: ComponentKey, value: unknown]
@@ -20,13 +21,9 @@ type UpdateArgs =
 
 export type Update = (...args: UpdateArgs) => void
 
-export type RegisterQuery = <
-	TComponents extends AnyComponents,
->(args: Query<TComponents>) => void
-
-export type CreateQuery = <
-	const TComponents extends AnyComponents,
->(args: QueryArgs<TComponents>) => Query<TComponents>
+type RegisterQuery = <
+	TCreator extends AnyCreators,
+>(args: Query<TCreator>) => void
 
 export type World = {
 	spawn: Spawn
@@ -40,32 +37,29 @@ export type World = {
 }
 
 export function createWorld(): World {
-	type TQuery = Query<AnyComponents>
+	type TQuery = Query<AnyCreators>
 	const entities = createRefBox<AnyEntity>()
 	const components = map<ComponentKey, Set<TQuery>>()
 	const queries = map<TQuery, RefBox>()
 
-	function addComponent(entity: AnyEntity, key: ComponentKey) {
+	function updateByComponent(entityId: string, key: ComponentKey) {
 		const queries = getQueries(key)
 
 		for (const query of queries) {
-			processEntity(entity, query)
+			processEntity(entityId, query)
 		}
 	}
 
-	function processEntity(entity: AnyEntity, query: TQuery) {
-		const queryEntity = queries.get(query)!
+	function processEntity(id: string, query: TQuery) {
+		const queryEntities = queries.get(query)!
+		const entity = entities.getById(id)
 
+		assert(entity, 'Entity not found')
 		if (match(entity, query)) {
-			const id = entities.getId(entity)
-			if (id === undefined) {
-				throw new Error('Unknown entity')
-			}
-
-			queryEntity.add(id, entity)
+			queryEntities.add(id, entity)
 		}
 		else {
-			queryEntity.remove(entity)
+			queryEntities.remove(id)
 		}
 	}
 
@@ -92,23 +86,14 @@ export function createWorld(): World {
 		return components.get(key)!
 	}
 
-	function compute<TComponents extends AnyComponents>(query: Query<TComponents>) {
-		const queryEntities = queries.get(query)!
-
-		for (const [id, entity] of entities.byId) {
-			if (match(entity, query)) {
-				queryEntities.add(id, entity)
-			}
-			else {
-				queryEntities.remove(entity)
-			}
+	function compute<TCreator extends AnyCreators>(query: Query<TCreator>) {
+		for (const [id] of entities.byId) {
+			processEntity(id, query)
 		}
 	}
 
 	function spawn(id: string, entity: AnyEntity): AnyEntity {
-		if (entities.has(id)) {
-			throw new Error(`Entity with id "${id}" already exists`)
-		}
+		assert(!entities.has(id), `Entity with id "${id}" already exists`)
 
 		entities.add(id, entity)
 
@@ -116,7 +101,7 @@ export function createWorld(): World {
 			const queries = getQueries(component)
 
 			for (const query of queries) {
-				processEntity(entity, query)
+				processEntity(id, query)
 			}
 		}
 
@@ -135,6 +120,9 @@ export function createWorld(): World {
 
 	function update(...args: UpdateArgs): void {
 		const [entity, valuesOrName, value] = args
+		const id = entities.getId(entity)
+
+		assert(id, 'Entity not found')
 
 		if (typeof valuesOrName === 'object') {
 			for (const component in valuesOrName) {
@@ -161,7 +149,7 @@ export function createWorld(): World {
 
 			if (value !== undefined) {
 				entity[component] = value
-				addComponent(entity, component)
+				updateByComponent(id, component)
 			}
 		}
 	}
@@ -181,14 +169,13 @@ export function createWorld(): World {
 		entities.clear()
 	}
 
-	function registerQuery<TComponents extends AnyComponents>(query: Query<TComponents>) {
-		for (const component of [...query.with, ...query.without]) {
-			if (isMaybeComponent(component)) {
+	function registerQuery<TCreators extends AnyCreators>(query: Query<TCreators>) {
+		for (const creator of [...query.with, ...query.without]) {
+			if (isMaybe(creator)) {
 				continue
 			}
-			const id = getComponentId(component)
 
-			const queries = getQueries(id)
+			const queries = getQueries(creator.componentName)
 			queries.add(query)
 		}
 
@@ -196,14 +183,14 @@ export function createWorld(): World {
 		compute(query)
 	}
 
-	function select<TComponents extends AnyComponents>(query: Query<TComponents>) {
+	function select<TCreator extends AnyCreators>(query: Query<TCreator>) {
 		if (!queries.has(query)) {
 			registerQuery(query)
 		}
 
 		const result = queries.get(query) || createRefBox()
 
-		return result as unknown as RefBox<InferWithComponents<TComponents>>
+		return result as unknown as RefBox<InferWithComponents<TCreator>>
 	}
 
 	const world: World = {
@@ -220,10 +207,10 @@ export function createWorld(): World {
 	return world
 }
 
-function match(entity: AnyEntity, query: Query<AnyComponents>) {
-	const { with: withComponents, without: withoutComponents, where } = query
+function match(entity: AnyEntity, query: Query<AnyCreators>) {
+	const { with: withComponents, without: withoutCreatorTCreator, where } = query
 	for (const component of withComponents) {
-		if (isMaybeComponent(component)) {
+		if (isMaybe(component)) {
 			continue
 		}
 
@@ -232,7 +219,7 @@ function match(entity: AnyEntity, query: Query<AnyComponents>) {
 		}
 	}
 
-	for (const component of withoutComponents) {
+	for (const component of withoutCreatorTCreator) {
 		if (hasComponent(entity, component)) {
 			return false
 		}

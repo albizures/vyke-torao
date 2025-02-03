@@ -1,39 +1,29 @@
-import type { Vec2D } from '../vec'
+import type { Vec2d } from '../vec'
 import { assertType, beforeEach, describe, expect, it } from 'vitest'
-import { createWorld, defineComponent, defineQuery, maybe } from './'
+import { createWorld, defineEntity, defineQuery, identity, maybe } from './'
 
-const Position = defineComponent('position', (values: Partial<Vec2D>) => {
-	const { x = 0, y = 0 } = values
+const entity = defineEntity({
+	position(values: Partial<Vec2d>) {
+		const { x = 0, y = 0 } = values
 
-	return { x, y }
+		return { x, y }
+	},
+	player: identity<true>(),
+	enemy: identity<'boss' | 'minion'>(),
+	buff: identity<{ type: 'speed' | 'damage' }>(),
 })
-
-const Player = defineComponent<'player', true>('player')
-
-type EnemyType = 'boss' | 'minion'
-
-const Enemy = defineComponent<'enemy', EnemyType>('enemy')
-
-const Buff = defineComponent<'buff', { type: 'speed' | 'damage' }>('buff')
-
-const entity = {
-	...Position,
-	...Player,
-	...Enemy,
-	...Buff,
-}
 
 const world = createWorld()
 const { spawn, despawn, reset, update, select } = world
 
 const allPlayers = defineQuery({
-	id: 'query-test',
-	with: [Position, Player, maybe(Buff)],
+	id: 'all-players-test',
+	with: [entity.position, entity.player, maybe(entity.buff)],
 })
 
 const allEnemies = defineQuery({
 	id: 'query-test',
-	with: [Position, Enemy, maybe(Buff)],
+	with: [entity.position, entity.enemy, maybe(entity.buff)],
 })
 
 beforeEach(() => {
@@ -145,7 +135,7 @@ describe('querying', () => {
 
 			const onlyBosses = defineQuery({
 				id: 'only-bosses',
-				with: [Enemy],
+				with: [entity.enemy],
 				where: (values) => values.enemy === 'boss',
 			})
 
@@ -164,13 +154,13 @@ describe('querying', () => {
 
 				const farAwayEntities = defineQuery({
 					id: 'far-way-entities',
-					with: [Position],
+					with: [entity.position],
 					where: (values) => values.position.x > 10,
 				})
 
 				const onlyBosses = defineQuery({
 					id: 'only-bosses',
-					with: [Enemy],
+					with: [entity.enemy],
 					where: (values) => values.enemy === 'boss',
 				})
 
@@ -199,7 +189,7 @@ describe('querying', () => {
 
 					const farAwayEntities = defineQuery({
 						id: 'far-way-entities',
-						with: [Position],
+						with: [entity.position],
 						where: (values) => values.position.x > 10,
 					})
 

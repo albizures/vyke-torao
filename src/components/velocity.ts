@@ -1,11 +1,11 @@
-import type { Component } from '../ecs/entity'
-import type { Vec2D } from '../vec'
-import { defineComponent } from '../ecs'
+import type { Vec2d } from '../vec'
+import { defineEntity } from '../ecs'
 
-export type Velocity2DComponent = Component<'velocity2D', Vec2D, Partial<Vec2D>>
-export const Velocity2D: Velocity2DComponent = defineComponent('velocity2D', createVelocity2D)
+export const Velocity2dEntity = defineEntity({
+	velocity2d: createVelocity2d,
+})
 
-function createVelocity2D(values: Partial<Vec2D>): Vec2D {
+function createVelocity2d(values: Partial<Vec2d>): Vec2d {
 	const { x = 0, y = 0 } = values
 
 	return { x, y }

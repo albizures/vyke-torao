@@ -23,7 +23,9 @@ describe('createDirector', () => {
 			home: never
 		}>(game)
 
-		director.scene('home', {})
+		director.scene('home', {
+			entity: {},
+		})
 		// @ts-expect-error invalid scene name
 		director.scene('invalid', {})
 	})
@@ -39,11 +41,11 @@ describe('createDirector', () => {
 			expect(() => {
 				// @ts-expect-error invalid scene name
 				director.start('invalid')
-			}).toThrow('Scene "invalid" does not exist')
+			}).toThrow('No scenes added to the director')
 			expect(() => {
 				// in this case, the scene name is correct, but the scene has not been defined
 				director.start('home')
-			}).toThrow('Scene "home" does not exist')
+			}).toThrow('No scenes added to the director')
 		})
 	})
 
@@ -56,6 +58,7 @@ describe('createDirector', () => {
 
 		const enter = vi.fn()
 		director.scene('home', {
+			entity: {},
 			enter,
 		})
 
@@ -75,9 +78,11 @@ describe('createDirector', () => {
 		const enter = vi.fn()
 		const otherEnter = vi.fn()
 		director.scene('home', {
+			entity: {},
 			enter,
 		})
 		director.scene('other', {
+			entity: {},
 			enter: otherEnter,
 		})
 
@@ -100,10 +105,12 @@ describe('createDirector', () => {
 
 		const enter = vi.fn()
 		director.scene('home', {
+			entity: {},
 			enter,
 		})
 
 		director.scene('end', {
+			entity: {},
 			enter(context) {
 				expectTypeOf(context.scene.props).toEqualTypeOf<{ message: string }>()
 			},

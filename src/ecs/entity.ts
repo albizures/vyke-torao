@@ -1,93 +1,86 @@
 import type { Merge, Simplify } from 'type-fest'
-import type { Maybe } from './query'
 import { assert } from '../error'
-import { map, set } from '../types'
+import { set } from '../types'
+import { Maybe } from './query'
 
 export type ComponentKey = string | number | symbol
 
-export type AnyEntity = Record<ComponentKey, any>
-
-function identityFn<TValue>(value: TValue): TValue {
-	return value
-}
+export type AnyEntity = Partial<Record<ComponentKey, any>>
 
 export function identity<TValue>() {
-	return identityFn as Creator<TValue, TValue>
-}
-
-export type AnyEntityCreator = Record<string, Creator<any, any>>
-
-type Creator<TValue, TArgs> = (args: TArgs) => TValue
-
-export type Component<TName extends ComponentKey, TValue, TArgs> = Record<TName, Creator<TValue, TArgs>>
-
-export type AnyComponent = Component<ComponentKey, any, any>
-
-const allComponents = set<ComponentKey>()
-const components = map<AnyComponent, ComponentKey>()
-
-/**
- * Define a new component.
- * @example
- * ```ts
- * const Size = defineComponent('size', (value: number) => value)
- * const Position = defineComponent('position', (pos: {x?: number, y?: number}) => {
- * 	return {x: pos.x ?? 0, y: pos.y ?? 0}
- * })
- * ```
- */
-export function defineComponent<TName extends ComponentKey, TValue, TArgs = TValue>(
-	name: TName,
-	creator: Creator<TValue, TArgs>,
-): Component<TName, TValue, TArgs> {
-	if (allComponents.has(name)) {
-		throw new Error(`Component ${String(name)} already exists`)
+	function identityFn<TValue>(value: TValue): TValue {
+		return value
 	}
 
-	const component = {
-		[name]: creator,
-	} as Component<TName, TValue, TArgs>
-	components.set(
-		component,
-		name,
-	)
-	return component
+	return identityFn as CreatorFn<TValue, TValue>
 }
 
-export function getComponentId(component: AnyComponent): ComponentKey {
-	const id = components.get(component)
-	assert(id, `Component ${component} not found`)
+type CreatorFn<TValue, TArgs> = (args: TArgs) => TValue
+type Creator<TName, TValue, TArgs> = {
+	(args: TArgs): TValue
+	componentName: TName
+}
+export type AnyCreator = Creator<any, any, any>
 
-	return id
+export type Component<TName extends ComponentKey, TValue, TArgs> = Record<TName, Creator<TName, TValue, TArgs>>
+
+export function hasComponent(entity: AnyEntity, creator: AnyCreator): boolean {
+	return creator.componentName in entity
 }
 
-export function hasComponent(entity: AnyEntity, component: AnyComponent): boolean {
-	const name = components.get(component)!
-
-	return name in entity
-}
-
-export function isMaybeComponent(component: unknown): component is Maybe<AnyComponent> {
-	return Boolean(typeof component === 'object' && component && 'component' in component)
+export function isMaybe(component: unknown): component is Maybe<AnyCreator> {
+	return component instanceof Maybe
 }
 
 export type InferEntity<TCreator> = Simplify<{
-	[K in keyof TCreator]?: TCreator[K] extends Creator<infer TValue, any>
+	[K in keyof TCreator]?: TCreator[K] extends Creator<any, infer TValue, any>
 		? TValue
 		: never
 }>
 
-export type InferWithComponent<TComponent extends AnyComponent> = TComponent extends Component<infer TName, infer TValue, any>
-	? { [K in TName]: TValue }
+type InferWithComponent<TCreator extends AnyCreator> = TCreator extends Creator<infer TName, infer TValue, any>
+	? TName extends ComponentKey
+		? Record<TName, TValue>
+		: never
 	: never
 
-export type InferWith<TComponent> = TComponent extends AnyComponent
-	? InferWithComponent<TComponent>
-	: TComponent extends Maybe<infer TComponent>
-		? Partial<InferWith<TComponent>>
+export type InferWith<TCreator> = TCreator extends AnyCreator
+	? InferWithComponent<TCreator>
+	: TCreator extends Maybe<infer TCreator>
+		? Partial<InferWith<TCreator>>
 		: never
 
-export type InferWithComponents<TComponents> = TComponents extends [infer TComponent, ...infer TRest]
-	? Merge<InferWith<TComponent>, InferWithComponents<TRest>>
+export type InferWithComponents<TCreators> = TCreators extends [infer TCreator, ...infer TRest]
+	? Merge<InferWith<TCreator>, InferWithComponents<TRest>>
 	// eslint-disable-next-line ts/no-empty-object-type
 	: {}
+
+type EntityDefinition = {
+	[key: string]: CreatorFn<any, any>
+}
+
+export type InferEntityDefinition<TDefinition extends EntityDefinition> = Simplify<{
+	[TKey in keyof TDefinition]: TDefinition[TKey] extends Creator<any, infer TValue, infer TArgs>
+		? Creator<TKey, TValue, TArgs>
+		: TDefinition[TKey] extends CreatorFn<infer TValue, infer TArgs>
+			? Creator<TKey, TValue, TArgs>
+			: never
+}>
+/**
+ * Define an entity with components.
+ */
+export function defineEntity<TDefinition extends EntityDefinition>(definition: TDefinition): InferEntityDefinition<TDefinition> {
+	const components = set<ComponentKey>()
+
+	for (const key in definition) {
+		assert(!components.has(key), `Component ${key} is already defined`)
+
+		if (definition[key]) {
+			const creator = definition[key] as AnyCreator
+			creator.componentName = key
+			components.add(key)
+		}
+	}
+
+	return definition as unknown as InferEntityDefinition<TDefinition>
+}

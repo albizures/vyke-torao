@@ -1,10 +1,10 @@
 import type { Resource } from '../../ecs'
-import type { Vec2D } from '../../vec'
+import type { Vec2d } from '../../vec'
 import { createResource } from '../../ecs'
 
 type HtmlCanvas = {
 	canvas: HTMLCanvasElement
-	onResize: (listener: (size: Vec2D) => void) => () => void
+	onResize: (listener: (size: Vec2d) => void) => () => void
 }
 
 export const HtmlCanvasRes: Resource<HtmlCanvas | undefined> = createResource<HtmlCanvas | undefined>({
@@ -13,9 +13,9 @@ export const HtmlCanvasRes: Resource<HtmlCanvas | undefined> = createResource<Ht
 })
 
 type CanvasRect = {
-	size: Vec2D
-	position: Vec2D
-	halfSize: Vec2D
+	size: Vec2d
+	position: Vec2d
+	halfSize: Vec2d
 }
 
 export const HtmlCanvasRectRes: Resource<CanvasRect | undefined> = createResource<CanvasRect | undefined>({

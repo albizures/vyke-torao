@@ -27,13 +27,13 @@
 </html>
 
 <script>
-import type { InferWithComponent } from '../../src'
+import type { InferWith } from '../../src'
 import type { SystemContext } from '../../src/ecs'
-import type { Vec2D } from '../../src/vec'
+import type { Vec2d } from '../../src/vec'
 import { createDirector, createGame } from '../../src'
-import { Velocity2D } from '../../src/components'
-import { defineComponent, defineQuery, identity, Systems, SystemType } from '../../src/ecs'
-import { Canvas2dEntity, createCamera2d, createCanvas2d, Transform2D } from '../../src/plugins/canvas2d'
+import { Velocity2dEntity } from '../../src/components'
+import { defineEntity, defineQuery, identity, Systems, SystemType } from '../../src/ecs'
+import { Canvas2dEntity, createCamera2d, createCanvas2d, Transform2dEntity } from '../../src/plugins/canvas2d'
 import { createEnterExit, EnterExitEntity } from '../../src/plugins/enter-exit'
 import { assets } from '../definitions'
 
@@ -42,33 +42,26 @@ const canvas2d = createCanvas2d({
 	resizeMode: 'fill',
 })
 
-const BorderBehavior = defineComponent('borderBehavior', identity<'wrap' | 'die'>())
-const Grid = defineComponent('gridSize', identity<Vec2D>())
-const HeadPosition = defineComponent('headPosition', identity<Vec2D>())
-const Direction = defineComponent('direction', identity<DirectionType>())
-const PrevPosition = defineComponent('prevPosition', identity<Vec2D>())
-
-type WithDirection = InferWithComponent<typeof Direction>
+type WithDirection = InferWith<typeof entity.direction>
 
 type TailArgs = {
-	position: Vec2D
+	position: Vec2d
 	direction: DirectionType
 	follow: string
 }
 
-const Tail = defineComponent('tail', identity<TailArgs>())
-
-const entity = {
-	...Canvas2dEntity,
+const entity = defineEntity({
+	borderBehavior: identity<'wrap' | 'die'>(),
+	gridSize: identity<Vec2d>(),
+	headPosition: identity<Vec2d>(),
+	tail: identity<TailArgs>(),
+	direction: identity<DirectionType>(),
+	prevPosition: identity<Vec2d>(),
+	...Velocity2dEntity,
+	...Transform2dEntity,
 	...EnterExitEntity,
-	...BorderBehavior,
-	...Grid,
-	...HeadPosition,
-	...Tail,
-	...Direction,
-	...Velocity2D,
-	...PrevPosition,
-}
+	...Canvas2dEntity,
+})
 
 const INITIAL_SIZE = 4
 const GRID_SIZE = 20
@@ -93,25 +86,25 @@ const director = createDirector<{
 const allHeads = defineQuery({
 	id: 'all-heads',
 	with: [
-		HeadPosition,
-		Transform2D,
-		BorderBehavior,
-		PrevPosition,
-		Velocity2D,
-		Direction,
+		entity.headPosition,
+		entity.transform2d,
+		entity.borderBehavior,
+		entity.prevPosition,
+		entity.velocity2d,
+		entity.direction,
 	],
 })
 
 const allTails = defineQuery({
 	id: 'all-tails',
-	with: [Tail, Transform2D, PrevPosition],
+	with: [entity.tail, entity.transform2d, entity.prevPosition],
 })
 
 const allGrids = defineQuery({
 	id: 'all-grids',
 	with: [
-		Grid,
-		Transform2D,
+		entity.gridSize,
+		entity.transform2d,
 	],
 })
 
@@ -119,21 +112,21 @@ function move(context: SystemContext) {
 	const { select } = context
 
 	for (const item of select(allHeads)) {
-		const { direction, velocity2D, headPosition } = item
+		const { direction, velocity2d, headPosition } = item
 
 		switch (direction) {
 			case DirectionType.Up:
 
-				headPosition.y -= velocity2D.y
+				headPosition.y -= velocity2d.y
 				break
 			case DirectionType.Down:
-				headPosition.y += velocity2D.y
+				headPosition.y += velocity2d.y
 				break
 			case DirectionType.Left:
-				headPosition.x -= velocity2D.x
+				headPosition.x -= velocity2d.x
 				break
 			case DirectionType.Right:
-				headPosition.x += velocity2D.x
+				headPosition.x += velocity2d.x
 				break
 		}
 	}
@@ -142,11 +135,11 @@ function move(context: SystemContext) {
 function snapToGrid(context: SystemContext) {
 	const { select } = context
 
-	const offset = select(allGrids).first()!.transform2D.position
+	const offset = select(allGrids).first()!.transform2d.position
 
 	for (const item of select(allHeads)) {
-		const { transform2D, headPosition, prevPosition } = item
-		const position = transform2D.position
+		const { transform2d, headPosition, prevPosition } = item
+		const position = transform2d.position
 
 		const inGridX = headPosition.x + offset.x
 		const inGridY = headPosition.y + offset.y
@@ -199,11 +192,11 @@ function followSystem(context: SystemContext) {
 	const { select, getEntity } = context
 
 	for (const item of select(allTails)) {
-		const { tail: tailValues, transform2D, prevPosition } = item
+		const { tail: tailValues, transform2d, prevPosition } = item
 		const { follow } = tailValues
 
 		const followPrevPosition = getEntity(follow)?.prevPosition
-		const position = transform2D.position
+		const position = transform2d.position
 
 		if (followPrevPosition && (followPrevPosition.x !== position.x || followPrevPosition.y !== position.y)) {
 			prevPosition.x = position.x
@@ -237,6 +230,7 @@ const enterExit = createEnterExit({
 })
 
 director.scene('home', {
+	entity,
 	systems: Systems(
 		[SystemType.FixedUpdate, move],
 		[SystemType.FixedUpdate, snapToGrid],
@@ -289,18 +283,18 @@ director.scene('home', {
 		})
 
 		spawn('grid', {
-			grid: entity.gridSize({ x: CELL_SIZE, y: CELL_SIZE }),
-			transform2D: entity.transform2D({ position: { x: 20, y: 20 } }),
+			gridSize: entity.gridSize({ x: CELL_SIZE, y: CELL_SIZE }),
+			transform2d: entity.transform2d({ position: { x: 20, y: 20 } }),
 			sprite: gridSprite,
 		})
 
 		const startX = 80
 
 		spawn('head', {
-			head: entity.headPosition({ x: startX, y: 20 }),
+			headPosition: entity.headPosition({ x: startX, y: 20 }),
 			borderBehavior: entity.borderBehavior('wrap'),
-			velocity2D: { x: VELOCITY, y: VELOCITY },
-			transform2D: entity.transform2D({
+			velocity2d: { x: VELOCITY, y: VELOCITY },
+			transform2d: entity.transform2d({
 				position: { x: startX + CELL_SIZE, y: 30 },
 			}),
 			prevPosition: { x: startX, y: 30 },
@@ -321,7 +315,7 @@ director.scene('home', {
 					direction: DirectionType.Right,
 					follow,
 				},
-				transform2D: entity.transform2D({
+				transform2d: entity.transform2d({
 					position: {
 						x: startX - (index * CELL_SIZE),
 						y: 30,

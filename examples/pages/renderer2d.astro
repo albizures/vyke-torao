@@ -16,7 +16,7 @@
 </html>
 
 <script>
-import { createDirector, createGame, defineComponent } from '../../src'
+import { createDirector, createGame, defineEntity, identity } from '../../src'
 import { Canvas2dEntity, createCamera2d, createCanvas2d } from '../../src/plugins/canvas2d'
 import { assets } from '../definitions'
 
@@ -25,14 +25,11 @@ const canvas2d = createCanvas2d({
 	resizeMode: 'fill',
 })
 
-const Coin = defineComponent('coin', (value: true) => value)
-const Square = defineComponent('square', (value: true) => value)
-
-const entity = {
+const entity = defineEntity({
+	coin: identity<true>(),
+	square: identity<true>(),
 	...Canvas2dEntity,
-	...Coin,
-	...Square,
-}
+})
 
 const game = createGame({
 	plugins: [
@@ -45,6 +42,7 @@ const director = createDirector<{
 }>(game)
 
 director.scene('home', {
+	entity,
 	enter(context) {
 		const { spawn } = context
 		const size = 30
@@ -64,7 +62,7 @@ director.scene('home', {
 
 		spawn('square', {
 			square: true,
-			transform2D: entity.transform2D({
+			transform2d: entity.transform2d({
 				position: { x: 10, y: 10 },
 			}),
 			sprite: entity.sprite({
@@ -78,7 +76,7 @@ director.scene('home', {
 
 		spawn('coin', {
 			square: true,
-			transform2D: entity.transform2D({
+			transform2d: entity.transform2d({
 				position: { x: 50, y: 10 },
 			}),
 			sprite: entity.sprite({

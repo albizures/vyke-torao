@@ -1,9 +1,9 @@
-import type { Vec2D } from '../../vec'
+import type { Vec2d } from '../../vec'
 import { assert } from '../../error'
-import { vec2D } from '../../vec'
+import { vec2d } from '../../vec'
 import { HtmlCanvasRectRes, HtmlCanvasRes } from './resources'
 
-type ResizeListener = (size: Vec2D) => void
+type ResizeListener = (size: Vec2d) => void
 
 export type CanvasArgs = {
 	element: HTMLElement
@@ -11,7 +11,7 @@ export type CanvasArgs = {
 	resizeMode: 'fill'
 } | {
 	resizeMode: 'static'
-	size: Vec2D
+	size: Vec2d
 })
 
 export type ResizeMode = CanvasArgs['resizeMode']
@@ -34,12 +34,12 @@ export function createCanvas(args: CanvasArgs) {
 		canvas.height = height
 
 		const rect = element.getBoundingClientRect()
-		const size = vec2D(rect.width, rect.height)
+		const size = vec2d(rect.width, rect.height)
 
 		HtmlCanvasRectRes.set({
 			size,
-			position: vec2D(rect.left, rect.top),
-			halfSize: vec2D.divideScalar(size, 2),
+			position: vec2d(rect.left, rect.top),
+			halfSize: vec2d.divideScalar(size, 2),
 		})
 
 		resizeListeners.forEach((listener) => listener(size))
