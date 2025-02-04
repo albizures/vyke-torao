@@ -1,6 +1,6 @@
 import type { RefBox } from '../boxes/ref-box'
 import type { AnyEntity, ComponentKey, InferWithComponents } from './entity'
-import type { AnyCreators, Query, QueryArgs } from './query'
+import type { AnyCreators, Query } from './query'
 import { createRefBox } from '../boxes/ref-box'
 import { assert } from '../error'
 import { map, set } from '../types'

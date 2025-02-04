@@ -38,7 +38,7 @@ export type Torao = {
  * }
  *
  * const director = createDirector<{
- * home: never,
+ * 	home: never,
  * 	// ...your scenes
  * }>()
  *
